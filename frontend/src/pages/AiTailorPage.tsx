@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { saveAs } from 'file-saver'; // Make sure to install this: npm install file-saver
+import { saveAs } from 'file-saver'; 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
@@ -17,7 +17,8 @@ const AiTailorPage: React.FC = () => {
     const [copyButtonText, setCopyButtonText] = useState('Copy');
 
     const handleTailorResume = async () => {
-        if (!resumeText || !jobDescription) {
+        // Defensive programming: trim spaces
+        if (!resumeText.trim() || !jobDescription.trim()) {
             setError('Please provide both your resume and the job description.');
             return;
         }
@@ -29,21 +30,29 @@ const AiTailorPage: React.FC = () => {
         try {
             const payload = { resumeText, jobDescription };
             const response = await axios.post(`${API_BASE_URL}/api/v1/tailor`, payload);
-            setTailoredResume(response.data.tailoredResume);
+            
+            // Defensive programming: Check API contract
+            if (response.data && response.data.tailoredResume) {
+                setTailoredResume(response.data.tailoredResume);
+            } else {
+                throw new Error("Invalid response format received from server.");
+            }
         } catch (err) {
             console.error("Error tailoring resume:", err);
-            setError('Failed to get AI suggestions. The service may be down.');
+            setError('Failed to get AI suggestions. Please check your connection or try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleTxtDownload = () => {
+        if (!tailoredResume) return;
         const blob = new Blob([tailoredResume], { type: 'text/plain;charset=utf-8' });
-        saveAs(blob, 'tailored_resume.txt');
+        saveAs(blob, 'Tailored_Resume_Suggestions.txt');
     };
 
     const handleCopy = () => {
+        if (!tailoredResume) return;
         navigator.clipboard.writeText(tailoredResume).then(() => {
             setCopyButtonText('Copied!');
             setTimeout(() => setCopyButtonText('Copy'), 2000);
@@ -72,6 +81,7 @@ const AiTailorPage: React.FC = () => {
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
                             placeholder="Paste your full resume text here..."
+                            disabled={isLoading}
                         />
                     </div>
                     <div className="input-panel">
@@ -80,6 +90,7 @@ const AiTailorPage: React.FC = () => {
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             placeholder="Paste the target job description here..."
+                            disabled={isLoading}
                         />
                     </div>
                     <div className="results-panel">
@@ -95,9 +106,25 @@ const AiTailorPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="results-content">
-                            {isLoading && <div className="status-text">Generating suggestions...</div>}
-                            {error && <div className="error-text">{error}</div>}
-                            {tailoredResume && <pre>{tailoredResume}</pre>}
+                            {isLoading && <div className="status-text">Analyzing and tailoring... Please wait.</div>}
+                            {error && <div className="error-text" style={{ color: '#ff4d4f' }}>{error}</div>}
+                            
+                            {/* FIX: Removed <pre> tag. Added div with proper text wrapping */}
+                            {tailoredResume && (
+                                <div 
+                                    className="evaluation-output" 
+                                    style={{ 
+                                        whiteSpace: 'pre-wrap', 
+                                        wordWrap: 'break-word', 
+                                        fontFamily: 'inherit', 
+                                        lineHeight: '1.6',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    {tailoredResume}
+                                </div>
+                            )}
+                            
                             {!isLoading && !error && !tailoredResume && (
                                 <div className="placeholder-text">Your tailored resume will appear here.</div>
                             )}
@@ -106,7 +133,11 @@ const AiTailorPage: React.FC = () => {
                 </div>
 
                 <div className="tailor-action">
-                    <button className="btn btn-primary" onClick={handleTailorResume} disabled={isLoading || !resumeText || !jobDescription}>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={handleTailorResume} 
+                        disabled={isLoading || !resumeText.trim() || !jobDescription.trim()}
+                    >
                         {isLoading ? 'Analyzing...' : 'Tailor My Resume'}
                     </button>
                 </div>

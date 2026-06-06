@@ -5,6 +5,7 @@ import ResumeFromScratchPage from "./pages/ResumeFromScratchPage";
 import AiTailorPage from './pages/AiTailorPage';
 import ResumeEvaluator from './pages/ResumeEvaluator';
 import CoverLetterGeneratorPage from './pages/CoverLetterGeneratorPage';
+import MockInterviewPage from './pages/MockInterviewPage';
 import "./App.css";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/ai-tailor" element={<AiTailorPage />} />  {/* <-- ADD THIS ROUTE */}
         <Route path="/ats-evaluator" element={<ResumeEvaluator />} />
         <Route path="/cover-letter" element={<CoverLetterGeneratorPage />} />
+        <Route path="/mock-interview" element={<MockInterviewPage />} />
       </Routes>
     </div>
   );

@@ -1,0 +1,43 @@
+{
+    "personal_info": {
+        "full_name": "Mohd Arshad",
+        "address": "Lucknow India",
+        "email": "arshadmohd8574@gmail.com",
+        "phone": "07887096421",
+        "github_handle": "https://github.com/MohdArshad-cell",
+        "linkedin_handle": "",
+        "portfolio_url": "https://mohdarshad-cell.github.io/Portfolio-Website/",
+        "extra_info": null
+    },
+    "education": [
+        {
+            "degree": "Bachelor of Technology in Information Technology",
+            "institution": "Babu Banarsi Das Northern India Institute Of Technology",
+            "start_year": "Sep 2022",
+            "end_year": "Aug 2026",
+            "gpa": "7.6 / 10.0"
+        }
+    ],
+    "work_experience": [
+        {
+            "job_title": " Backend Developer & Resume Specialist",
+            "company_name": "",
+            "location": "",
+            "start_date": "",
+            "end_date": "",
+            "description_points": []
+        }
+    ],
+    "projects": [
+        {
+            "project_name": "",
+            "start_date": "",
+            "end_date": "",
+            "tech_stack": "",
+            "description_points": []
+        }
+    ],
+    "skills": [],
+    "achievements": [],
+    "certifications": []
+}

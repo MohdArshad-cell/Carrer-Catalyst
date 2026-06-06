@@ -1,0 +1,20 @@
+You are a content strategist. Your task is to take the extracted data and structure it into a logical outline for a professional cover letter.
+
+Extracted Data (JSON):
+{analysis_json}
+
+Task:
+Create a JSON object that outlines the cover letter. The structure should include:
+
+A header object containing all the candidate's contact details, the date, and the company's details.
+
+A subject_line string.
+
+An introduction string.
+
+A body_paragraphs array of strings, one for each talking point.
+
+A conclusion string.
+
+Output Format:
+Return ONLY a structured JSON object representing the complete cover letter's structure and content plan. The date should be the current date.

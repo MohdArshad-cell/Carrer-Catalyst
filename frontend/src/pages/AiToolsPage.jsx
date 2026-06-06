@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './AiToolsPage.css';
 import '../App.css';
+import { FaMicrophone } from "react-icons/fa6";
 
 const AiToolsPage = () => {
     const navigate = useNavigate();
@@ -71,6 +72,16 @@ const AiToolsPage = () => {
                             <h3>AI Cover Letter Writer</h3>
                             <p>Generate a compelling cover letter tailored to your resume and a specific job.</p>
                             <span className="tool-cta">Write Letter →</span>
+                        </div>
+                    </div>
+
+                    {/* Tool 5: AI Mock Interview Simulator */}
+                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
+                        <div className="bento-content">
+                            <div className="tool-icon"><FaMicrophone /></div>
+                            <h3>AI Mock Interview</h3>
+                            <p>Practice with AI-generated questions tailored to your target job to ace your interviews.</p>
+                            <span className="tool-cta">Start Practice →</span>
                         </div>
                     </div>
                 </div>

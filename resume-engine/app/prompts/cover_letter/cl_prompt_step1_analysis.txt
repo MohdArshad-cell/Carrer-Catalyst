@@ -1,0 +1,40 @@
+You are an expert data extractor and career analyst. Your task is to dissect the provided resume and job description to pull out specific, critical information for building a cover letter.
+
+Resume Content:
+{resume_content}
+
+Job Description:
+{job_description}
+
+CRITICAL EXTRACTION TASK:
+
+From the Resume:
+
+candidate_name
+
+candidate_address
+
+candidate_phone
+
+candidate_email
+
+candidate_linkedin
+
+candidate_github (if available)
+
+candidate_portfolio (if available)
+
+From the Job Description:
+
+job_title
+
+company_name
+
+Analysis:
+
+talking_points: Extract the top 3-4 most compelling connections between the candidate's experience and the job requirements.
+
+company_tone: Determine the company's tone (e.g., "formal and corporate", "energetic and innovative", "mission-driven and collaborative").
+
+Output Format:
+Return ONLY a single, flat JSON object with the keys listed above. If a piece of information (like a GitHub URL) is not found, return an empty string "" for its value. Do not nest the JSON.

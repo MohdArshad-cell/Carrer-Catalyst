@@ -13,14 +13,12 @@ import ProjectsForm from '../forms/ProjectsForm';
 import AchievementsForm from '../forms/AchievementsForm';
 import CertificationsForm from '../forms/CertificationsForm';
 
-
 import './ResumeFromScratchPage.css';
 import ParticleBackground from '../components/ParticleBackground';
-import Navbar from '../components/Navbar'; // <-- IMPORT NAVBAR
-import Footer from '../components/Footer'; // <-- IMPORT FOOTER
+import Navbar from '../components/Navbar'; 
+import Footer from '../components/Footer'; 
 
-
-// The initial empty state for a new resume
+// The initial empty state for a new resume (UI STATE - uses snake_case and UUIDs for React rendering)
 const initialResumeData: ResumeData = {
     personal_info: { full_name: '', address: '', email: '', phone: '', github_handle: '', linkedin_handle: '', portfolio_url: '' },
     education: [{ id: uuidv4(), degree: '', institution: '', start_year: '', end_year: '', gpa: '' }],
@@ -31,19 +29,67 @@ const initialResumeData: ResumeData = {
     certifications: [],
 };
 
-// Simplified navigation items using strings
 const navItems = [
-    'Templates',
-    'Profile',
-    'Education',
-    'Work',
-    'Projects',
-    'Skills',
-    'Achievements',
-    'Certifications'
+    'Templates', 'Profile', 'Education', 'Work', 
+    'Projects', 'Skills', 'Achievements', 'Certifications'
 ];
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+
+// --- THE ADAPTER: Sanitizes React State into Strict API Contract (camelCase, No UUIDs, No Empty Strings) ---
+const buildApiPayload = (data: ResumeData, template: string) => {
+    return {
+        template_name: template.toLowerCase().replace(/ /g, '_'),
+        resume_data: {
+            personal_info: {
+                fullName: data.personal_info.full_name || "",
+                email: data.personal_info.email || "",
+                phone: data.personal_info.phone || "",
+                address: data.personal_info.address || "",
+                github: data.personal_info.github_handle || "",
+                linkedin: data.personal_info.linkedin_handle || "",
+                portfolioUrl: data.personal_info.portfolio_url || ""
+            },
+            education: data.education
+                .filter(edu => edu.institution || edu.degree)
+                .map(edu => ({
+                    degree: edu.degree,
+                    institution: edu.institution,
+                    startYear: edu.start_year,
+                    endYear: edu.end_year,
+                    grade: edu.gpa
+                })),
+            workExperience: data.work_experience
+                .filter(exp => exp.company_name || exp.job_title)
+                .map(exp => ({
+                    role: exp.job_title,
+                    company: exp.company_name,
+                    location: exp.location,
+                    startDate: exp.start_date,
+                    endDate: exp.end_date,
+                    descriptionPoints: exp.description_points ? exp.description_points.split('\n').filter(p => p.trim() !== '') : []
+                })),
+            projects: data.projects
+                .filter(proj => proj.project_name)
+                .map(proj => ({
+                    projectName: proj.project_name,
+                    tech_stack: proj.tech_stack, 
+                    startDate: proj.start_date,
+                    endDate: proj.end_date,
+                    descriptionPoints: proj.description_points ? proj.description_points.split('\n').filter(p => p.trim() !== '') : []
+                })),
+            skills: data.skills
+                .filter(skill => skill.name)
+                .map(skill => ({ name: skill.name, value: skill.value })),
+            achievements: data.achievements
+                .filter(ach => ach.description)
+                .map(ach => ({ description: ach.description })),
+            certifications: data.certifications
+                .filter(cert => cert.name)
+                .map(cert => ({ name: cert.name, issuer: cert.issuer, date: cert.date }))
+        }
+    };
+};
 
 const ResumeFromScratchPage: React.FC = () => {
     const [activeSection, setActiveSection] = useState('Templates');
@@ -61,14 +107,9 @@ const ResumeFromScratchPage: React.FC = () => {
         setIsPreviewLoading(true);
         setDownloadLinks(null);
         setErrorMessage('');
-        const payload = {
-            template_name: template.toLowerCase().replace(/ /g, '_'),
-            resume_data: {
-                ...data,
-                work_experience: data.work_experience.map(exp => ({ ...exp, description_points: exp.description_points.split('\n').filter(p => p.trim() !== '') })),
-                projects: data.projects.map(proj => ({ ...proj, description_points: proj.description_points.split('\n').filter(p => p.trim() !== '') }))
-            }
-        };
+        
+        const payload = buildApiPayload(data, template);
+        
         try {
             const response = await axios.post(`${API_BASE_URL}/api/v1/preview`, payload, { responseType: 'blob' });
             if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
@@ -81,27 +122,15 @@ const ResumeFromScratchPage: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (resumeData.personal_info.full_name || resumeData.education[0].institution) {
-                handlePreviewUpdate(resumeData, selectedTemplate);
-            }
-        }, 1500);
-        return () => clearTimeout(handler);
-    }, [resumeData, selectedTemplate]);
+
 
     const handleMakeResume = async () => {
         setIsGenerating(true);
         setDownloadLinks(null);
         setErrorMessage('');
-        const payload = {
-            template_name: selectedTemplate.toLowerCase().replace(/ /g, '_'),
-            resume_data: {
-                ...resumeData,
-                work_experience: resumeData.work_experience.map(exp => ({ ...exp, description_points: exp.description_points.split('\n').filter(p => p.trim() !== '') })),
-                projects: resumeData.projects.map(proj => ({ ...proj, description_points: proj.description_points.split('\n').filter(p => p.trim() !== '') })),
-            },
-        };
+        
+        const payload = buildApiPayload(resumeData, selectedTemplate);
+        
         try {
             const response = await axios.post(`${API_BASE_URL}/api/v1/generate`, payload);
             const relativeLinks = response.data;
@@ -112,7 +141,7 @@ const ResumeFromScratchPage: React.FC = () => {
             });
         } catch (error) {
             console.error("Error generating resume:", error);
-            setErrorMessage('Failed to generate final resume files.');
+            setErrorMessage('Failed to generate final resume files. Please check the server logs.');
         } finally {
             setIsGenerating(false);
         }
@@ -134,13 +163,11 @@ const ResumeFromScratchPage: React.FC = () => {
 
     return (
     <div className="page-container">
-        {/* Background elements */}
         <ParticleBackground />
         <div className="background-aurora"></div>
         <Navbar />
 
         <div className="scratch-builder-container">
-            {/* Sidebar */}
             <aside className="scratch-sidebar">
                 <a href="/" className="sidebar-logo" title="Back to Home">Resume Builder</a>
                 <nav>
@@ -161,31 +188,42 @@ const ResumeFromScratchPage: React.FC = () => {
                 </div>
             </aside>
 
-            {/* Main Content Panel */}
             <main className="scratch-main-panel">
-                {/* Left side: Forms */}
                 <div className="scratch-forms-area">
                     {renderActiveForm()}
                 </div>
 
-                {/* Right side: Preview */}
                 <div className="scratch-preview-area">
                     <div className="scratch-preview-sticky">
-                        <div className="preview-header">
-                            <h3>Live Preview</h3>
-                        </div>
+                        <div className="preview-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <h3>Live Preview</h3>
+    <button 
+        className="btn btn-secondary btn-sm" 
+        onClick={() => handlePreviewUpdate(resumeData, selectedTemplate)}
+        disabled={isPreviewLoading}
+        style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}
+    >
+        {isPreviewLoading ? 'Updating...' : '↻ Refresh Preview'}
+    </button>
+</div>
                         
                         {isGenerating && <div className="preview-status">Generating...</div>}
                         {isPreviewLoading && !isGenerating && <div className="preview-status">Updating...</div>}
                         {errorMessage && <div className="error-message">{errorMessage}</div>}
 
                         {downloadLinks && (
-                            <div className="download-links">
-                                <a href={downloadLinks.pdfUrl} download>Download PDF</a>
-                                <a href={downloadLinks.latexUrl} download>Download LaTeX</a>
-                                <a href={downloadLinks.jsonUrl} download>Download JSON</a>
-                            </div>
-                        )}
+    <div className="download-links-container">
+        <a href={downloadLinks.pdfUrl} download className="action-btn pdf-btn">
+            📄 Download PDF
+        </a>
+        <a href={downloadLinks.latexUrl} download className="action-btn latex-btn">
+            💻 Download LaTeX
+        </a>
+        <a href={downloadLinks.jsonUrl} download className="action-btn json-btn">
+            ⚙️ Download JSON
+        </a>
+    </div>
+)}
 
                         {previewPdfUrl ? (
                             <object data={previewPdfUrl} type="application/pdf" className="pdf-preview-object" aria-label="Resume Preview" />
@@ -200,7 +238,7 @@ const ResumeFromScratchPage: React.FC = () => {
         </div>
         <Footer />
     </div>
-);
+    );
 };
 
 export default ResumeFromScratchPage;

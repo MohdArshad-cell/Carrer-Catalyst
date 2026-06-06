@@ -1,0 +1,6 @@
+Analyze the following Job Description (JD).
+Identify the top 3 Technical Skills and top 2 Behavioral Traits required.
+Return the result as a valid JSON object.
+
+JD:
+{job_description}

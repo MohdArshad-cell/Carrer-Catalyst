@@ -1,73 +1,88 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
-from humps import camelize
+from pydantic import BaseModel, Field
+from typing import List, Optional, Any
 
-# Helper function to convert snake_case to camelCase for the API schema
-def to_camel(string):
-    return camelize(string)
+# ==========================================
+# SUPER-FLEXIBLE PYDANTIC MODELS
+# ==========================================
 
-# Base model with the camelCase configuration
-class CamelCaseModel(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_name=True,
-    )
+class PersonalInfo(BaseModel):
+    name: Optional[str] = None
+    fullName: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    linkedin: Optional[str] = None
+    github: Optional[str] = None
+    address: Optional[str] = None
 
-# --- All your models now inherit from CamelCaseModel ---
+class EducationItem(BaseModel):
+    degree: Optional[str] = None
+    institution: Optional[str] = None
+    year: Optional[str] = None
+    startYear: Optional[str] = None
+    endYear: Optional[str] = None
+    grade: Optional[str] = None
 
-class PersonalInfo(CamelCaseModel):
-    full_name: str
-    address: str
-    email: str
-    phone: str
-    github_handle: Optional[str] = None
-    linkedin_handle: Optional[str] = None
-    portfolio_url: Optional[str] = None
-    extra_info: Optional[str] = None
+class ExperienceItem(BaseModel):
+    role: Optional[str] = None
+    company: Optional[str] = None
+    duration: Optional[str] = None
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[List[str]] = []
+    descriptionPoints: Optional[List[str]] = []
 
-class Education(CamelCaseModel):
-    degree: str
-    institution: str
-    start_year: str
-    end_year: str
-    gpa: Optional[str] = None
+class ProjectItem(BaseModel):
+    name: Optional[str] = None
+    projectName: Optional[str] = None
+    tech_stack: Optional[str] = None
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    description: Optional[List[str]] = []
+    descriptionPoints: Optional[List[str]] = []
 
-class WorkExperience(CamelCaseModel):
-    job_title: str
-    company_name: str
-    location: str
-    start_date: str
-    end_date: str
-    description_points: List[str]
+class SkillItem(BaseModel):
+    name: Optional[str] = None
+    value: Optional[str] = None
 
-class Project(CamelCaseModel):
-    project_name: str
-    start_date: str
-    end_date: str
-    tech_stack: str
-    description_points: List[str]
+class ResumeData(BaseModel):
+    personal_info: Optional[PersonalInfo] = None
+    education: Optional[List[EducationItem]] = []
+    
+    # Accept both Java's format and original format
+    experience: Optional[List[ExperienceItem]] = []
+    workExperience: Optional[List[ExperienceItem]] = []
+    
+    projects: Optional[List[ProjectItem]] = []
+    skills: Optional[List[SkillItem]] = []
+    achievements: Optional[List[Any]] = []
+    certifications: Optional[List[Any]] = []
 
-class SkillItem(CamelCaseModel):
-    name: str
-    value: str
+# --- REQUEST MODELS ---
+class GenerationRequest(BaseModel):
+    template_name: Optional[str] = "modern_template"
+    templateName: Optional[str] = "modern_template"
+    resume_data: Optional[ResumeData] = None
+    resumeData: Optional[ResumeData] = None
 
-class AchievementItem(CamelCaseModel):
-    description: str
+    model_config = {"extra": "ignore"} # Ignore any unknown garbage Java sends
 
-class CertificationItem(CamelCaseModel):
-    name: str
-    issuer: str
-    date: str
+class TailorRequest(BaseModel):
+    resume_text: Optional[str] = Field(None, alias="resumeText")
+    job_description: Optional[str] = Field(None, alias="jobDescription")
+    model_config = {"populate_by_name": True, "extra": "ignore"}
 
-class ResumeData(CamelCaseModel):
-    personal_info: PersonalInfo
-    education: List[Education]
-    work_experience: List[WorkExperience]
-    projects: List[Project]
-    skills: List[SkillItem]
-    achievements: List[AchievementItem]
-    certifications: List[CertificationItem]
+class EvaluateRequest(BaseModel):
+    resume_text: Optional[str] = Field(None, alias="resumeText")
+    resume: Optional[str] = None 
+    job_description: Optional[str] = Field(None, alias="jobDescription")
+    model_config = {"populate_by_name": True, "extra": "ignore"}
 
-class GenerationRequest(CamelCaseModel):
-    template_name: str
-    resume_data: ResumeData
+class CoverLetterRequest(BaseModel):
+    resume_text: Optional[str] = Field(None, alias="resumeText")
+    job_description: Optional[str] = Field(None, alias="jobDescription")
+    model_config = {"populate_by_name": True, "extra": "ignore"}
+
+class InterviewRequest(BaseModel):
+    job_description: Optional[str] = Field(None, alias="jobDescription")
+    model_config = {"populate_by_name": True, "extra": "ignore"}

@@ -2,45 +2,57 @@ import zipfile
 import io
 import traceback
 import os
-from fastapi import FastAPI, HTTPException
+import json
+from fastapi import FastAPI, HTTPException, Body
 from starlette.responses import StreamingResponse
-from .models import GenerationRequest
+from dotenv import load_dotenv
+
+# Ensure these models exist in your models.py
+from .models import (
+    GenerationRequest, 
+    TailorRequest, 
+    EvaluateRequest, 
+    CoverLetterRequest, 
+    InterviewRequest
+)
 from .generator import ResumeGenerator
 
-app = FastAPI()
+# Import the modular services we created earlier
+from app.services.tailor_service import execute_tailor_chain
+from app.services.evaluate_service import execute_evaluate_chain
+from app.services.cover_letter_service import execute_cover_letter_chain
+from app.services.interview_service import execute_interview_chain
+
+load_dotenv()
+
+# ==========================================
+# FASTAPI APP SETUP
+# ==========================================
+app = FastAPI(title="HireEase Core AI & Resume Engine")
 generator = ResumeGenerator()
 
-# Health check endpoint
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Resume Engine is running!"}
+    return {"status": "ok", "message": "HireEase Resume Engine is running!"}
 
+# --- PDF GENERATION ENDPOINT ---
 @app.post("/generate")
 async def generate_resume(request: GenerationRequest):
-    print("--- ✅ REQUEST RECEIVED ---")
+    print("--- ✅ GENERATE REQUEST RECEIVED ---")
     try:
-        print(f"--- ⚙️ Using template: {request.template_name} ---")
-        print(f"--- 📝 Received name: {request.resume_data.personal_info.full_name} ---")
-
-        # This is the most likely point of failure.
         generated_files = generator.generate(
             request.template_name,
             request.resume_data.dict()
         )
 
-        print(f"--- ✅ SUCCESS: Files generated at {generated_files} ---")
-
         pdf_path = generated_files.get("pdf_path")
         tex_path = generated_files.get("tex_path")
         json_path = generated_files.get("json_path")
 
-        # Check if the files actually exist before trying to zip them
         for path in [pdf_path, tex_path, json_path]:
             if not path or not os.path.exists(path):
-                print(f"--- ❌ ERROR: File path not found or does not exist: {path} ---")
                 raise HTTPException(status_code=500, detail=f"Generated file not found: {path}")
 
-        print("--- ⚙️ Zipping files... ---")
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, False) as zip_file:
             zip_file.write(pdf_path, arcname="resume.pdf")
@@ -48,8 +60,6 @@ async def generate_resume(request: GenerationRequest):
             zip_file.write(json_path, arcname="resume.json")
 
         zip_buffer.seek(0)
-        print("--- ✅ SUCCESS: Zipping complete. Sending response. ---")
-
         return StreamingResponse(
             zip_buffer,
             media_type="application/x-zip-compressed",
@@ -58,6 +68,52 @@ async def generate_resume(request: GenerationRequest):
 
     except Exception as e:
         print("--- ❌ CRITICAL ERROR CAUGHT ---")
-        traceback.print_exc()  # This will print the full, detailed error to your logs
-        print("---------------------------")
+        traceback.print_exc() 
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+# ==========================================
+# MODULAR AI ENDPOINTS
+# ==========================================
+
+@app.post("/api/ai/tailor")
+def tailor_resume(request: TailorRequest):
+    print("--- 🧠 AI TAILOR REQUEST RECEIVED ---")
+    try:
+        final_latex = execute_tailor_chain(request.resume_text, request.job_description)
+        return {"tailored_content": final_latex}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"AI Tailoring failed: {str(e)}")
+
+
+@app.post("/api/ai/evaluate")
+def evaluate_resume(request: EvaluateRequest):
+    print("--- 🧠 AI EVALUATE REQUEST RECEIVED ---")
+    try:
+        result = execute_evaluate_chain(request.resume_text, request.job_description)
+        return {"evaluation_result": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"AI Evaluation failed: {str(e)}")
+
+
+@app.post("/api/ai/coverletter")
+def generate_cover_letter(request: CoverLetterRequest):
+    print("--- 🧠 AI COVER LETTER REQUEST RECEIVED ---")
+    try:
+        result = execute_cover_letter_chain(request.resume_text, request.job_description)
+        return {"cover_letter": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Cover Letter generation failed: {str(e)}")
+
+
+@app.post("/api/ai/interview")
+def generate_interview(request: InterviewRequest):
+    print("--- 🧠 AI INTERVIEW REQUEST RECEIVED ---")
+    try:
+        result = execute_interview_chain(request.job_description)
+        return {"interview_data": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Interview generation failed: {str(e)}")

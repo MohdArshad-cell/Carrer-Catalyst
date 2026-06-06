@@ -1,78 +1,28 @@
 package com.backend.careercatalyst.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ResumeData {
 
+    // JSON payload mein "personal_info" hai, toh yeh theek hai.
     @JsonProperty("personal_info")
     private PersonalInfo personalInfo;
 
     private List<Education> education;
 
-    @JsonProperty("work_experience")
+    // YAHAN GALTI THI: Tune JSON mein "workExperience" bheja tha, aur yahan "work_experience" dhoondh raha tha.
+    // Annotation hata diya hai taaki Jackson automatically "workExperience" map kare.
     private List<WorkExperience> workExperience;
 
     private List<Project> projects;
     private List<SkillItem> skills;
     private List<AchievementItem> achievements;
     private List<CertificationItem> certifications;
-
-    // --- Getters and Setters ---
-
-    public PersonalInfo getPersonalInfo() {
-        return personalInfo;
-    }
-
-    public void setPersonalInfo(PersonalInfo personalInfo) {
-        this.personalInfo = personalInfo;
-    }
-
-    public List<Education> getEducation() {
-        return education;
-    }
-
-    public void setEducation(List<Education> education) {
-        this.education = education;
-    }
-
-    public List<WorkExperience> getWorkExperience() {
-        return workExperience;
-    }
-
-    public void setWorkExperience(List<WorkExperience> workExperience) {
-        this.workExperience = workExperience;
-    }
-
-    public List<Project> getProjects() {
-        return projects;
-    }
-
-    public void setProjects(List<Project> projects) {
-        this.projects = projects;
-    }
-
-    public List<SkillItem> getSkills() {
-        return skills;
-    }
-
-    public void setSkills(List<SkillItem> skills) {
-        this.skills = skills;
-    }
-
-    public List<AchievementItem> getAchievements() {
-        return achievements;
-    }
-
-    public void setAchievements(List<AchievementItem> achievements) {
-        this.achievements = achievements;
-    }
-
-    public List<CertificationItem> getCertifications() {
-        return certifications;
-    }
-
-    public void setCertifications(List<CertificationItem> certifications) {
-        this.certifications = certifications;
-    }
 }

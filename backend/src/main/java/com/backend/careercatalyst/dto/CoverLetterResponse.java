@@ -1,20 +1,12 @@
 package com.backend.careercatalyst.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CoverLetterResponse {
     private String generatedCoverLetter;
-
-    public CoverLetterResponse() {}
-
-    public CoverLetterResponse(String generatedCoverLetter) {
-        this.generatedCoverLetter = generatedCoverLetter;
-    }
-
-    // Getters and Setters
-    public String getGeneratedCoverLetter() {
-        return generatedCoverLetter;
-    }
-
-    public void setGeneratedCoverLetter(String generatedCoverLetter) {
-        this.generatedCoverLetter = generatedCoverLetter;
-    }
 }

@@ -1,0 +1,33 @@
+You are an expert technical recruiter and talent analyst. Your primary task is to dissect the provided job description and extract all critical information into a structured JSON format. Pay close attention to both explicit requirements and implicit cultural cues.
+
+**Job Description to Analyze:**
+{job_description}
+
+**Instructions:**
+1. Extract all "required_skills" and "preferred_skills" into separate arrays of strings. Include both technical and soft skills.
+2. Extract the "key_responsibilities" into an array of strings.
+3. Perform a "tone_analysis". Based on the language, word choice, and phrasing in the job description, determine the likely "company_culture" (e.g., "fast-paced startup", "formal corporate") and the appropriate applicant "voice" (e.g., "energetic and innovative", "professional and reliable").
+
+**CRITICAL JSON FORMATTING RULES:**
+- You MUST return ONLY a valid, RFC-compliant JSON object. No intro, no outro text.
+- You MUST use double quotes ("") for all JSON keys and string values. NEVER use single quotes ('').
+- You MUST adhere EXACTLY to the following JSON structure:
+
+{
+  "required_skills": [
+    "skill 1", 
+    "skill 2"
+  ],
+  "preferred_skills": [
+    "skill 1", 
+    "skill 2"
+  ],
+  "key_responsibilities": [
+    "responsibility 1", 
+    "responsibility 2"
+  ],
+  "tone_analysis": {
+    "company_culture": "short description of company culture",
+    "voice": "short description of required applicant voice"
+  }
+}

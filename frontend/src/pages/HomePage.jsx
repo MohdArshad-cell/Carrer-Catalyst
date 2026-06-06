@@ -5,8 +5,8 @@ import Scene from '../components/Scene';
 import './HomePage.css';
 import '../App.css';
 
-import Navbar from '../components/Navbar'; // <-- IMPORT NAVBAR
-import Footer from '../components/Footer'; // <-- IMPORT FOOTER
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const faqData = [
     {
@@ -51,23 +51,23 @@ const HomePage = () => {
             <Scene />
             <div className="background-aurora"></div>
             {/* Navigation Bar */}
-             <Navbar />
+            <Navbar />
 
             <div className="content-wrapper">
                 {/* Hero Section */}
                 <header id="hero" className="container full-height-hero">
-                <div className="hero-content">
-                    <h1 className="hero-title animated-gradient">
-                        Build a Job-Winning Resume in Minutes
-                    </h1>
-                    <p className="hero-subtitle">
-                        Our AI-powered tools help you create, tailor, and evaluate your resume to land your dream job.
-                    </p>
-                    <button onClick={launchTools} className="btn btn-primary pulse">
-                        Launch the AI Tools
-                    </button>
-                </div>
-            </header>
+                    <div className="hero-content">
+                        <h1 className="hero-title animated-gradient">
+                            Build a Job-Winning Resume in Minutes
+                        </h1>
+                        <p className="hero-subtitle">
+                            Our AI-powered tools help you create, tailor, and evaluate your resume to land your dream job.
+                        </p>
+                        <button onClick={launchTools} className="btn btn-primary pulse">
+                            Launch the AI Tools
+                        </button>
+                    </div>
+                </header>
             </div>
 
             {/* FULL PAGE BENTO GRID */}
@@ -76,7 +76,6 @@ const HomePage = () => {
                 <div className="full-bento-container">
 
                     {/* ITEM 1: Core AI Features */}
-                    {/* ITEM 1: Core AI Features - REDESIGNED */}
                     <div className="bento-item bento-main-feature" onMouseMove={handleMouseMove}>
                         <div className="bento-content">
                             <h3>🚀 Your All-in-One Career Toolkit</h3>
@@ -94,6 +93,11 @@ const HomePage = () => {
                                 <div className="toolkit-item">
                                     <h4>📊 ATS Evaluator</h4>
                                     <p>Get a real-time score on your resume's compatibility with Applicant Tracking Systems and get actionable feedback.</p>
+                                </div>
+                                {/* NEW FEATURE ADDED HERE */}
+                                <div className="toolkit-item">
+                                    <h4>🎤 Mock Interview</h4>
+                                    <p>Practice with AI-generated questions tailored to your target job to ace your interviews.</p>
                                 </div>
                             </div>
                         </div>

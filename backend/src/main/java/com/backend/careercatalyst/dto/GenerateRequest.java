@@ -1,7 +1,14 @@
 package com.backend.careercatalyst.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GenerateRequest {
 
     @JsonProperty("template_name")
@@ -10,21 +17,5 @@ public class GenerateRequest {
     @JsonProperty("resume_data")
     private ResumeData resumeData;
 
-    // --- Getters and Setters ---
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public void setTemplateName(String templateName) {
-        this.templateName = templateName;
-    }
-
-    public ResumeData getResumeData() {
-        return resumeData;
-    }
-
-    public void setResumeData(ResumeData resumeData) {
-        this.resumeData = resumeData;
-    }
+    
 }

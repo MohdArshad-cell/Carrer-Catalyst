@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
-import Navbar from '../components/Navbar';       // Assuming you have these components
-import Footer from '../components/Footer';       // Assuming you have these components
-import ParticleBackground from '../components/ParticleBackground'; // Assuming you have these components
-import './AiTailorPage.css'; // You can reuse the same CSS file
+import Navbar from '../components/Navbar';       
+import Footer from '../components/Footer';       
+import ParticleBackground from '../components/ParticleBackground'; 
+import './AiTailorPage.css'; 
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
 
 const AtsEvaluatorPage: React.FC = () => {
-    // Adapted state variables
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
-    const [evaluationResult, setEvaluationResult] = useState(''); // Changed from tailoredResume
+    const [evaluationResult, setEvaluationResult] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [copyButtonText, setCopyButtonText] = useState('Copy');
 
-    // Adapted handler function
     const handleEvaluateResume = async () => {
-        if (!resumeText || !jobDescription) {
+        if (!resumeText.trim() || !jobDescription.trim()) {
             setError('Please provide both your resume and the job description.');
             return;
         }
@@ -29,28 +27,31 @@ const AtsEvaluatorPage: React.FC = () => {
         setCopyButtonText('Copy');
 
         try {
-            // NOTE: The payload keys `resume` and `jobDescription` must match your Spring Boot DTO
             const payload = { resume: resumeText, jobDescription: jobDescription };
-            // NOTE: Using the correct API endpoint for the evaluator
             const response = await axios.post(`${API_BASE_URL}/api/v1/evaluate-resume`, payload);
-            // NOTE: Using the correct response key `evaluation` from your backend
-            setEvaluationResult(response.data.evaluation);
+            
+            // Defensive programming: Check if the key actually exists
+            if (response.data && response.data.evaluation) {
+                setEvaluationResult(response.data.evaluation);
+            } else {
+                throw new Error("Invalid response format received from server.");
+            }
         } catch (err) {
             console.error("Error evaluating resume:", err);
-            setError('Failed to get evaluation. The service may be down.');
+            setError('Failed to get evaluation. Please check your connection or try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleTxtDownload = () => {
-        // Saves the evaluation result
+        if (!evaluationResult) return;
         const blob = new Blob([evaluationResult], { type: 'text/plain;charset=utf-8' });
-        saveAs(blob, 'evaluation_report.txt'); // Changed filename
+        saveAs(blob, 'ATS_Evaluation_Report.txt'); 
     };
 
     const handleCopy = () => {
-        // Copies the evaluation result
+        if (!evaluationResult) return;
         navigator.clipboard.writeText(evaluationResult).then(() => {
             setCopyButtonText('Copied!');
             setTimeout(() => setCopyButtonText('Copy'), 2000);
@@ -79,6 +80,7 @@ const AtsEvaluatorPage: React.FC = () => {
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
                             placeholder="Paste your full resume text here..."
+                            disabled={isLoading}
                         />
                     </div>
                     <div className="input-panel">
@@ -87,6 +89,7 @@ const AtsEvaluatorPage: React.FC = () => {
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             placeholder="Paste the target job description here..."
+                            disabled={isLoading}
                         />
                     </div>
                     <div className="results-panel">
@@ -102,10 +105,25 @@ const AtsEvaluatorPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="results-content">
-                            {isLoading && <div className="status-text">Generating report...</div>}
-                            {error && <div className="error-text">{error}</div>}
-                            {/* Using evaluationResult state and <pre> tag for formatting */}
-                            {evaluationResult && <pre>{evaluationResult}</pre>}
+                            {isLoading && <div className="status-text">Analyzing your profile... Please wait.</div>}
+                            {error && <div className="error-text" style={{ color: '#ff4d4f' }}>{error}</div>}
+                            
+                            {/* Replaced <pre> with a stylized div to prevent layout breakage and improve readability */}
+                            {evaluationResult && (
+                                <div 
+                                    className="evaluation-output" 
+                                    style={{ 
+                                        whiteSpace: 'pre-wrap', 
+                                        wordWrap: 'break-word', 
+                                        fontFamily: 'inherit', 
+                                        lineHeight: '1.6',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    {evaluationResult}
+                                </div>
+                            )}
+                            
                             {!isLoading && !error && !evaluationResult && (
                                 <div className="placeholder-text">Your evaluation report will appear here.</div>
                             )}
@@ -114,8 +132,11 @@ const AtsEvaluatorPage: React.FC = () => {
                 </div>
 
                 <div className="tailor-action">
-                    {/* Connects to the new handler */}
-                    <button className="btn btn-primary" onClick={handleEvaluateResume} disabled={isLoading || !resumeText || !jobDescription}>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={handleEvaluateResume} 
+                        disabled={isLoading || !resumeText.trim() || !jobDescription.trim()}
+                    >
                         {isLoading ? 'Analyzing...' : 'Evaluate My Resume'}
                     </button>
                 </div>

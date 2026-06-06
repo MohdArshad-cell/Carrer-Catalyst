@@ -1,74 +1,32 @@
 package com.backend.careercatalyst.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class WorkExperience {
 
-    @JsonProperty("job_title")
+    // Postman se "role" aa raha hai, usko is jobTitle variable se map kar.
+    @JsonProperty("role")
     private String jobTitle;
 
-    @JsonProperty("company_name")
+    // Postman se "company" aa raha hai.
+    @JsonProperty("company")
     private String companyName;
 
     private String location;
 
-    @JsonProperty("start_date")
+    // Jackson will automatically map this to "startDate"
     private String startDate;
 
-    @JsonProperty("end_date")
+    // Jackson will automatically map this to "endDate"
     private String endDate;
 
-    @JsonProperty("description_points")
+    // Jackson will automatically map this to "descriptionPoints"
     private List<String> descriptionPoints;
-
-    // --- Getters and Setters ---
-
-    public String getJobTitle() {
-        return jobTitle;
-    }
-
-    public void setJobTitle(String jobTitle) {
-        this.jobTitle = jobTitle;
-    }
-
-    public String getCompanyName() {
-        return companyName;
-    }
-
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
-    public String getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
-    }
-
-    public List<String> getDescriptionPoints() {
-        return descriptionPoints;
-    }
-
-    public void setDescriptionPoints(List<String> descriptionPoints) {
-        this.descriptionPoints = descriptionPoints;
-    }
 }

@@ -1,64 +1,29 @@
 package com.backend.careercatalyst.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Project {
 
-    @JsonProperty("project_name")
+    // Jackson will automatically map this to "projectName"
     private String projectName;
 
-    @JsonProperty("start_date")
+    // Jackson will automatically map this to "startDate"
     private String startDate;
 
-    @JsonProperty("end_date")
+    // Jackson will automatically map this to "endDate"
     private String endDate;
 
+    // Isko annotation chahiye kyunki Postman mein "tech_stack" bheja tha
     @JsonProperty("tech_stack")
     private String techStack;
 
-    @JsonProperty("description_points")
+    // Jackson will automatically map this to "descriptionPoints"
     private List<String> descriptionPoints;
-
-    // --- Getters and Setters ---
-
-    public String getProjectName() {
-        return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    public String getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
-    public String getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getTechStack() {
-        return techStack;
-    }
-
-    public void setTechStack(String techStack) {
-        this.techStack = techStack;
-    }
-
-    public List<String> getDescriptionPoints() {
-        return descriptionPoints;
-    }
-
-    public void setDescriptionPoints(List<String> descriptionPoints) {
-        this.descriptionPoints = descriptionPoints;
-    }
 }

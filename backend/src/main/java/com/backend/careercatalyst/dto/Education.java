@@ -1,59 +1,25 @@
 package com.backend.careercatalyst.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Education {
 
     private String degree;
     private String institution;
 
-    @JsonProperty("start_year")
+    // Jackson will automatically map this to "startYear"
     private String startYear;
 
-    @JsonProperty("end_year")
+    // Jackson will automatically map this to "endYear"
     private String endYear;
 
-    private String gpa;
-
-    // --- Getters and Setters ---
-
-    public String getDegree() {
-        return degree;
-    }
-
-    public void setDegree(String degree) {
-        this.degree = degree;
-    }
-
-    public String getInstitution() {
-        return institution;
-    }
-
-    public void setInstitution(String institution) {
-        this.institution = institution;
-    }
-
-    public String getStartYear() {
-        return startYear;
-    }
-
-    public void setStartYear(String startYear) {
-        this.startYear = startYear;
-    }
-
-    public String getEndYear() {
-        return endYear;
-    }
-
-    public void setEndYear(String endYear) {
-        this.endYear = endYear;
-    }
-
-    public String getGpa() {
-        return gpa;
-    }
-
-    public void setGpa(String gpa) {
-        this.gpa = gpa;
-    }
+    // Postman sends "grade", so we tell Java to map "grade" to this variable
+    @JsonProperty("grade")
+    private String gpa; 
 }

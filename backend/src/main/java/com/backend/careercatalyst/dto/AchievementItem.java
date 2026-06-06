@@ -1,16 +1,11 @@
 package com.backend.careercatalyst.dto;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AchievementItem {
-
     private String description;
-
-    // --- Getters and Setters ---
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 }

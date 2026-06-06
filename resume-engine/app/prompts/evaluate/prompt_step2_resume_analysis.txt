@@ -1,0 +1,12 @@
+You are an expert resume parser. Your task is to extract all key information from the candidate's resume into a structured JSON format.
+
+**Candidate's Plain Text Resume:**
+{resume_content}
+
+**Instructions:**
+1. Extract all **technical_skills** and **soft_skills** into separate lists of strings.
+2. Provide a concise **experience_summary** as a single string, highlighting key accomplishments.
+3. List all **project_titles** in a list of strings.
+
+**Output Format:**
+Return ONLY the structured JSON object. The JSON must have the keys: "technical_skills", "soft_skills", "experience_summary", and "project_titles".

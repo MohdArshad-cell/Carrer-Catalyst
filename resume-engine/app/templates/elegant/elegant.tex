@@ -66,16 +66,16 @@
 \begin{document}
 
 %----------HEADING----------
-\BLOCK{ if resume_data.personal_info.full_name }
+\BLOCK{ if resume_data.personal_info.fullName }
 \begin{center}
-    {\Huge \textbf{\VAR{ resume_data.personal_info.full_name | escape_tex }}} \\ \vspace{2pt}
+    {\Huge \textbf{\VAR{ resume_data.personal_info.fullName | escape_tex }}} \\ \vspace{2pt}
     \small
     \BLOCK{ if resume_data.personal_info.phone }+91-\VAR{ resume_data.personal_info.phone | escape_tex }\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.email }\BLOCK{ if resume_data.personal_info.phone } $|$ \BLOCK{ endif }\href{mailto:\VAR{ resume_data.personal_info.email }}{\underline{\VAR{ resume_data.personal_info.email | escape_tex }}}\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.address }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone } $|$ \BLOCK{ endif }\VAR{ resume_data.personal_info.address | escape_tex }\BLOCK{ endif }
-    \BLOCK{ if resume_data.personal_info.linkedin_handle }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address } $|$ \BLOCK{ endif }\href{https://linkedin.com/in/\VAR{resume_data.personal_info.linkedin_handle}}{\faLinkedinSquare\ \underline{LinkedIn}}\BLOCK{ endif }
-    \BLOCK{ if resume_data.personal_info.github_handle }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin_handle } $|$ \BLOCK{ endif }\href{https://github.com/\VAR{resume_data.personal_info.github_handle}}{\faGithub\ \underline{GitHub}}\BLOCK{ endif }
-    \BLOCK{ if resume_data.personal_info.portfolio_url }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin_handle or resume_data.personal_info.github_handle } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolio_url}}{\faGlobe\ \underline{Portfolio}}\BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.linkedin }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.linkedin}}{\faLinkedinSquare\ \underline{LinkedIn}}\BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.github }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.github}}{\faGithub\ \underline{GitHub}}\BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.portfolioUrl }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin or resume_data.personal_info.github } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolioUrl}}{\faGlobe\ \underline{Portfolio}}\BLOCK{ endif }
 \end{center}
 \BLOCK{ endif }
 
@@ -87,26 +87,26 @@
         \BLOCK{ if edu.institution }
         \resumeSubheading
           {\VAR{ edu.institution | escape_tex }}
-          {\VAR{ edu.start_year | escape_tex } -- \VAR{ edu.end_year | escape_tex }}
+          {\VAR{ edu.startYear | escape_tex } -- \VAR{ edu.endYear | escape_tex }}
           {\VAR{ edu.degree | escape_tex }}
-          {\BLOCK{ if edu.gpa }GPA: \VAR{ edu.gpa | escape_tex }\BLOCK{ endif }}
+          {\BLOCK{ if edu.grade }GPA: \VAR{ edu.grade | escape_tex }\BLOCK{ endif }}
         \BLOCK{ endif }
     \BLOCK{ endfor }
   \resumeSubHeadingListEnd
 \BLOCK{ endif }
 
 %-----------EXPERIENCE-----------
-\BLOCK{ if resume_data.work_experience and resume_data.work_experience|selectattr('company_name')|list|length > 0 }
+\BLOCK{ if resume_data.workExperience and resume_data.workExperience|selectattr('company')|list|length > 0 }
 \section*{Experience}
   \resumeSubHeadingListStart
-    \BLOCK{ for job in resume_data.work_experience }
-      \BLOCK{ if job.company_name }
+    \BLOCK{ for job in resume_data.workExperience }
+      \BLOCK{ if job.company }
       \resumeSubheading
-        {\VAR{ job.job_title | escape_tex }}{\VAR{ job.location | escape_tex }}
-        {\VAR{ job.company_name | escape_tex }}{\VAR{ job.start_date | escape_tex } -- \VAR{ job.end_date | escape_tex }}
-        \BLOCK{ if job.description_points }
+        {\VAR{ job.role | escape_tex }}{\VAR{ job.location | escape_tex }}
+        {\VAR{ job.company | escape_tex }}{\VAR{ job.startDate | escape_tex } -- \VAR{ job.endDate | escape_tex }}
+        \BLOCK{ if job.descriptionPoints }
         \resumeItemListStart
-            \BLOCK{ for point in job.description_points }
+            \BLOCK{ for point in job.descriptionPoints }
                 \resumeItem{\VAR{ point | escape_tex }}
             \BLOCK{ endfor }
         \resumeItemListEnd
@@ -117,16 +117,16 @@
 \BLOCK{ endif }
 
 %-----------PROJECTS-----------
-\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('project_name')|list|length > 0 }
+\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('projectName')|list|length > 0 }
 \section*{Projects}
     \resumeSubHeadingListStart
     \BLOCK{ for proj in resume_data.projects }
-      \BLOCK{ if proj.project_name }
+      \BLOCK{ if proj.projectName }
       \resumeProjectHeading
-          {\textbf{\VAR{ proj.project_name | escape_tex }} $|$ \emph{\VAR{ proj.tech_stack | escape_tex }}}{\VAR{ proj.start_date | escape_tex } -- \VAR{ proj.end_date | escape_tex }}
-          \BLOCK{ if proj.description_points }
+          {\textbf{\VAR{ proj.projectName | escape_tex }} $|$ \emph{\VAR{ proj.tech_stack | escape_tex }}}{\VAR{ proj.startDate | escape_tex } -- \VAR{ proj.endDate | escape_tex }}
+          \BLOCK{ if proj.descriptionPoints }
           \resumeItemListStart
-            \BLOCK{ for point in proj.description_points }
+            \BLOCK{ for point in proj.descriptionPoints }
                 \resumeItem{\VAR{ point | escape_tex }}
             \BLOCK{ endfor }
           \resumeItemListEnd

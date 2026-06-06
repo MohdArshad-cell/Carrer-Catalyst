@@ -6,7 +6,6 @@ import re
 import tempfile
 from jinja2 import Environment, FileSystemLoader
 
-# A function to escape most special LaTeX characters
 def escape_latex(text):
     if not isinstance(text, str):
         return text
@@ -18,7 +17,6 @@ def escape_latex(text):
     regex = re.compile('|'.join(re.escape(key) for key in sorted(conv.keys(), key = len, reverse=True)))
     return regex.sub(lambda match: conv[match.group()], text)
 
-# NEW: A less aggressive filter that allows some commands like \textbf{}
 def safe_latex(text):
     if not isinstance(text, str):
         return text
@@ -44,17 +42,19 @@ class ResumeGenerator:
             autoescape=False,
         )
         self.env.filters['escape_tex'] = escape_latex
-        self.env.filters['safe_tex'] = safe_latex # <-- ADD THIS LINE to register the filter
+        self.env.filters['safe_tex'] = safe_latex 
         
         self.temp_dir = os.path.join(tempfile.gettempdir(), "resume_generator")
         os.makedirs(self.temp_dir, exist_ok=True)
         
-        self.pdflatex_path = r"D:\MIKTex\miktex\bin\x64\pdflatex.exe"
+        # REMOVED: D:\MIKTex hardcoded path
+        # Using Tectonic which must be installed in the system PATH
+        self.compiler_cmd = "tectonic"
 
     def generate(self, template_name: str, data: dict):
         session_id = str(uuid.uuid4())
         output_dir = os.path.join(self.temp_dir, session_id)
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
         main_tex_filename = f"{template_name}.tex"
         template = self.env.get_template(f"{template_name}/{main_tex_filename}")
@@ -64,14 +64,17 @@ class ResumeGenerator:
         with open(tex_filepath, 'w', encoding='utf-8') as f:
             f.write(latex_source)
 
-        cmd = [self.pdflatex_path, "resume.tex"]
+        # Switch to tectonic: it resolves dependencies automatically and only needs 1 run
+        cmd = [self.compiler_cmd, "resume.tex"]
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=output_dir)
-            subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=output_dir)
         except subprocess.CalledProcessError as e:
-            print("LaTeX compilation failed. See log below:")
-            print(e.stdout)
-            raise RuntimeError(f"LaTeX Error: {e.stdout}")
+            print("--- ❌ LATEX COMPILATION FAILED ---")
+            print("STDOUT:", e.stdout)
+            print("STDERR:", e.stderr)
+            raise RuntimeError(f"LaTeX Error: {e.stderr or e.stdout}")
+        except FileNotFoundError:
+            raise RuntimeError("Tectonic is not installed or not in system PATH. Install it via 'conda install tectonic' or 'brew install tectonic'.")
 
         pdf_filepath = os.path.join(output_dir, "resume.pdf")
         
@@ -85,5 +88,6 @@ class ResumeGenerator:
         return {
             "pdf_path": pdf_filepath,
             "tex_path": tex_filepath,
-            "json_path": json_filepath
+            "json_path": json_filepath,
+            "session_dir": output_dir # Exposing this so main.py can delete it later
         }

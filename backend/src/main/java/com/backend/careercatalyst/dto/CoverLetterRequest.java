@@ -1,23 +1,13 @@
 package com.backend.careercatalyst.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CoverLetterRequest {
-    private String resume;
+    private String resumeText; // 'resumeText' use karo taaki baaki DTOs aur Python API ke sath naming consistent rahe
     private String jobDescription;
-
-    // Getters and Setters
-    public String getResume() {
-        return resume;
-    }
-
-    public void setResume(String resume) {
-        this.resume = resume;
-    }
-
-    public String getJobDescription() {
-        return jobDescription;
-    }
-
-    public void setJobDescription(String jobDescription) {
-        this.jobDescription = jobDescription;
-    }
 }
