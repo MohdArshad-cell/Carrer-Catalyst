@@ -56,15 +56,17 @@ class ResumeGenerator:
         output_dir = os.path.join(self.temp_dir, session_id)
         os.makedirs(output_dir, exist_ok=True)
 
+        # 1. Compile the TeX string in memory
         main_tex_filename = f"{template_name}.tex"
         template = self.env.get_template(f"{template_name}/{main_tex_filename}")
         latex_source = template.render(resume_data=data)
         
+        # 2. Write ONLY the .tex file required for the compiler
         tex_filepath = os.path.join(output_dir, "resume.tex")
         with open(tex_filepath, 'w', encoding='utf-8') as f:
             f.write(latex_source)
 
-        # Switch to tectonic: it resolves dependencies automatically and only needs 1 run
+        # 3. Run Tectonic
         cmd = [self.compiler_cmd, "resume.tex"]
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=output_dir)
@@ -74,20 +76,16 @@ class ResumeGenerator:
             print("STDERR:", e.stderr)
             raise RuntimeError(f"LaTeX Error: {e.stderr or e.stdout}")
         except FileNotFoundError:
-            raise RuntimeError("Tectonic is not installed or not in system PATH. Install it via 'conda install tectonic' or 'brew install tectonic'.")
+            raise RuntimeError("Tectonic is not installed or not in system PATH.")
 
         pdf_filepath = os.path.join(output_dir, "resume.pdf")
-        
         if not os.path.exists(pdf_filepath):
             raise FileNotFoundError("PDF generation failed, file not found.")
 
-        json_filepath = os.path.join(output_dir, "resume.json")
-        with open(json_filepath, 'w') as f:
-            json.dump(data, f, indent=4)
-        
+        # 🚨 KILLED THE JSON FILE WRITING LOGIC 🚨
+
+        # 4. Return ONLY what FastAPI needs to serve the file and nuke the folder
         return {
             "pdf_path": pdf_filepath,
-            "tex_path": tex_filepath,
-            "json_path": json_filepath,
-            "session_dir": output_dir # Exposing this so main.py can delete it later
+            "session_dir": output_dir 
         }

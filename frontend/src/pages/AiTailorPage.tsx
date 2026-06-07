@@ -1,65 +1,77 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { saveAs } from 'file-saver'; 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import './AiTailorPage.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const AiTailorPage: React.FC = () => {
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
-    const [tailoredResume, setTailoredResume] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [copyButtonText, setCopyButtonText] = useState('Copy');
+    
+    // Naye state variables backend response ke liye
+    const [latexCode, setLatexCode] = useState<string>('');
+    const [pdfData, setPdfData] = useState<string | null>(null);
 
     const handleTailorResume = async () => {
-        // Defensive programming: trim spaces
         if (!resumeText.trim() || !jobDescription.trim()) {
             setError('Please provide both your resume and the job description.');
             return;
         }
+        
         setIsLoading(true);
         setError('');
-        setTailoredResume('');
-        setCopyButtonText('Copy');
+        setLatexCode('');
+        setPdfData(null);
 
         try {
-            const payload = { resumeText, jobDescription };
-            const response = await axios.post(`${API_BASE_URL}/api/v1/tailor`, payload);
+            // Backend endpoint ko exact match kiya gaya hai
+            const payload = { 
+                resume_text: resumeText, 
+                job_description: jobDescription 
+            };
             
-            // Defensive programming: Check API contract
-            if (response.data && response.data.tailoredResume) {
-                setTailoredResume(response.data.tailoredResume);
+            const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload);
+            
+            if (response.data && response.data.latex_code && response.data.pdf_base64) {
+                setLatexCode(response.data.latex_code);
+                setPdfData(response.data.pdf_base64);
             } else {
                 throw new Error("Invalid response format received from server.");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error tailoring resume:", err);
-            setError('Failed to get AI suggestions. Please check your connection or try again later.');
+            setError(err.response?.data?.detail || 'Failed to tailor resume. Ensure backend is running and data is JSON-formatted.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleTxtDownload = () => {
-        if (!tailoredResume) return;
-        const blob = new Blob([tailoredResume], { type: 'text/plain;charset=utf-8' });
-        saveAs(blob, 'Tailored_Resume_Suggestions.txt');
+    const handleDownloadPdf = () => {
+        if (!pdfData) return;
+        const byteCharacters = atob(pdfData);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Tailored_Resume.pdf';
+        link.click();
     };
 
-    const handleCopy = () => {
-        if (!tailoredResume) return;
-        navigator.clipboard.writeText(tailoredResume).then(() => {
-            setCopyButtonText('Copied!');
-            setTimeout(() => setCopyButtonText('Copy'), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            setCopyButtonText('Failed!');
-        });
+    const handleDownloadLatex = () => {
+        if (!latexCode) return;
+        const blob = new Blob([latexCode], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Tailored_Resume.tex';
+        link.click();
     };
 
     return (
@@ -71,16 +83,16 @@ const AiTailorPage: React.FC = () => {
             <div className="tailor-container">
                 <div className="tailor-header">
                     <h1>AI Resume Tailor</h1>
-                    <p>Instantly optimize your resume for any job description with AI.</p>
+                    <p>Instantly optimize your structured JSON resume against any job description.</p>
                 </div>
 
                 <div className="tailor-grid">
                     <div className="input-panel">
-                        <h2>Your Resume</h2>
+                        <h2>Your Resume (JSON)</h2>
                         <textarea
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
-                            placeholder="Paste your full resume text here..."
+                            placeholder="Paste your strict JSON resume data here..."
                             disabled={isLoading}
                         />
                     </div>
@@ -93,40 +105,72 @@ const AiTailorPage: React.FC = () => {
                             disabled={isLoading}
                         />
                     </div>
+                    
                     <div className="results-panel">
-                        <div className="results-header">
-                            <h2>AI Suggestions</h2>
-                            <div className="results-actions">
-                                <button onClick={handleCopy} disabled={!tailoredResume || isLoading} className="btn btn-secondary">
-                                    {copyButtonText}
+                        <div className="results-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2>Tailored Output</h2>
+                            <div className="results-actions" style={{ display: 'flex', gap: '10px' }}>
+                                <button 
+                                    onClick={handleDownloadLatex} 
+                                    disabled={!latexCode || isLoading} 
+                                    className="btn btn-secondary"
+                                >
+                                    💻 Download LaTeX
                                 </button>
-                                <button onClick={handleTxtDownload} disabled={!tailoredResume || isLoading} className="btn btn-secondary">
-                                    Download TXT
+                                <button 
+                                    onClick={handleDownloadPdf} 
+                                    disabled={!pdfData || isLoading} 
+                                    className="btn btn-primary"
+                                >
+                                    📄 Download PDF
                                 </button>
                             </div>
                         </div>
-                        <div className="results-content">
-                            {isLoading && <div className="status-text">Analyzing and tailoring... Please wait.</div>}
+                        
+                        <div className="results-content" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            {isLoading && <div className="status-text">Analyzing JD, Micro-Tailoring, and Compiling PDF...</div>}
                             {error && <div className="error-text" style={{ color: '#ff4d4f' }}>{error}</div>}
                             
-                            {/* FIX: Removed <pre> tag. Added div with proper text wrapping */}
-                            {tailoredResume && (
-                                <div 
-                                    className="evaluation-output" 
-                                    style={{ 
-                                        whiteSpace: 'pre-wrap', 
-                                        wordWrap: 'break-word', 
-                                        fontFamily: 'inherit', 
-                                        lineHeight: '1.6',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    {tailoredResume}
+                            {latexCode && (
+                                <div className="latex-preview-container">
+                                    <h4 style={{ marginBottom: '5px', color: '#00e5ff' }}>Generated LaTeX Code:</h4>
+                                    <textarea 
+                                        readOnly 
+                                        value={latexCode} 
+                                        style={{
+                                            width: '100%', 
+                                            height: '200px', 
+                                            fontFamily: 'monospace', 
+                                            padding: '10px',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                                            color: '#a9b7c6',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '4px'
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            {pdfData && (
+                                <div className="pdf-preview-container" style={{ flexGrow: 1 }}>
+                                    <h4 style={{ marginBottom: '5px', color: '#00e5ff' }}>PDF Preview:</h4>
+                                    <object 
+                                        data={URL.createObjectURL(new Blob([new Uint8Array(atob(pdfData).split('').map(c => c.charCodeAt(0)))], { type: 'application/pdf' }))} 
+                                        type="application/pdf" 
+                                        className="pdf-preview-object" 
+                                        aria-label="Tailored Resume Preview"
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '400px', 
+                                            borderRadius: '8px', 
+                                            border: '1px solid rgba(255,255,255,0.1)' 
+                                        }} 
+                                    />
                                 </div>
                             )}
                             
-                            {!isLoading && !error && !tailoredResume && (
-                                <div className="placeholder-text">Your tailored resume will appear here.</div>
+                            {!isLoading && !error && !latexCode && (
+                                <div className="placeholder-text">Your tailored LaTeX code and PDF preview will appear here.</div>
                             )}
                         </div>
                     </div>
@@ -138,7 +182,7 @@ const AiTailorPage: React.FC = () => {
                         onClick={handleTailorResume} 
                         disabled={isLoading || !resumeText.trim() || !jobDescription.trim()}
                     >
-                        {isLoading ? 'Analyzing...' : 'Tailor My Resume'}
+                        {isLoading ? 'Processing Pipeline...' : 'Tailor My Resume'}
                     </button>
                 </div>
             </div>

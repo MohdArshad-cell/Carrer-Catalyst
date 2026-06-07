@@ -1,23 +1,19 @@
-import zipfile
-import io
 import traceback
 import os
-import json
-from fastapi import FastAPI, HTTPException, Body
-from starlette.responses import StreamingResponse
+import shutil
+import uuid
+import base64
+import json  # <-- ADDED FOR JSON DUMPING
+from typing import Dict, Any
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-# Ensure these models exist in your models.py
 from .models import (
-    GenerationRequest, 
-    TailorRequest, 
-    EvaluateRequest, 
-    CoverLetterRequest, 
-    InterviewRequest
+    GenerationRequest, TailorRequest, EvaluateRequest, CoverLetterRequest, InterviewRequest
 )
 from .generator import ResumeGenerator
-
-# Import the modular services we created earlier
 from app.services.tailor_service import execute_tailor_chain
 from app.services.evaluate_service import execute_evaluate_chain
 from app.services.cover_letter_service import execute_cover_letter_chain
@@ -25,95 +21,115 @@ from app.services.interview_service import execute_interview_chain
 
 load_dotenv()
 
-# ==========================================
-# FASTAPI APP SETUP
-# ==========================================
-app = FastAPI(title="HireEase Core AI & Resume Engine")
+app = FastAPI(title="Core AI & Resume Engine")
+
+# CORS middleware for frontend connection
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 generator = ResumeGenerator()
+active_tasks: Dict[str, Dict[str, Any]] = {}
+
+def process_resume_background(task_id: str, template_name: str, resume_data: dict):
+    try:
+        result = generator.generate(template_name, resume_data)
+        active_tasks[task_id].update({
+            "status": "completed", 
+            "pdf_path": result["pdf_path"], 
+            "session_dir": result["session_dir"],
+            "raw_json": resume_data  # 🚨 BUG FIX: Holding raw JSON directly in memory
+        })
+    except Exception as e:
+        active_tasks[task_id].update({"status": "failed", "error": str(e)})
+
+def cleanup_session_and_task(task_id: str, session_dir: str):
+    """Deletes the files AND removes the task from memory after download."""
+    shutil.rmtree(session_dir, ignore_errors=True)
+    if task_id in active_tasks: 
+        del active_tasks[task_id]
 
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "HireEase Resume Engine is running!"}
 
-# --- PDF GENERATION ENDPOINT ---
-@app.post("/generate")
-async def generate_resume(request: GenerationRequest):
-    print("--- ✅ GENERATE REQUEST RECEIVED ---")
+@app.post("/generate/start")
+async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):
+    task_id = str(uuid.uuid4())
+    active_tasks[task_id] = {"status": "processing"}
+    background_tasks.add_task(process_resume_background, task_id, request.template_name, request.resume_data.dict())
+    return {"task_id": task_id}
+
+@app.get("/generate/status/{task_id}")
+async def check_status(task_id: str):
+    if task_id not in active_tasks: 
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"status": active_tasks[task_id]["status"], "error": active_tasks[task_id].get("error")}
+
+# 🚨 UPDATED: Reads TeX and PDF from disk, but grabs JSON directly from memory 🚨
+@app.get("/generate/download/{task_id}")
+async def download_files(task_id: str, background_tasks: BackgroundTasks):
+    task = active_tasks.get(task_id)
+    if not task or task["status"] != "completed": 
+        raise HTTPException(status_code=400, detail="Not ready")
+    
+    pdf_path = task["pdf_path"]
+    tex_path = pdf_path.replace(".pdf", ".tex") 
+    
     try:
-        generated_files = generator.generate(
-            request.template_name,
-            request.resume_data.dict()
-        )
-
-        pdf_path = generated_files.get("pdf_path")
-        tex_path = generated_files.get("tex_path")
-        json_path = generated_files.get("json_path")
-
-        for path in [pdf_path, tex_path, json_path]:
-            if not path or not os.path.exists(path):
-                raise HTTPException(status_code=500, detail=f"Generated file not found: {path}")
-
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, False) as zip_file:
-            zip_file.write(pdf_path, arcname="resume.pdf")
-            zip_file.write(tex_path, arcname="resume.tex")
-            zip_file.write(json_path, arcname="resume.json")
-
-        zip_buffer.seek(0)
-        return StreamingResponse(
-            zip_buffer,
-            media_type="application/x-zip-compressed",
-            headers={"Content-Disposition": "attachment; filename=resume_files.zip"}
-        )
-
+        # Read PDF as Base64
+        with open(pdf_path, "rb") as f:
+            pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+            
+        # Read TeX as plain text
+        with open(tex_path, "r", encoding="utf-8") as f:
+            tex_content = f.read()
+            
+        # Convert the memory dictionary back into a pretty JSON string
+        json_content = json.dumps(task["raw_json"], indent=4)
+        
     except Exception as e:
-        print("--- ❌ CRITICAL ERROR CAUGHT ---")
-        traceback.print_exc() 
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error reading generated files: {str(e)}")
+
+    # Schedule the deletion of the temp folder right after sending response
+    background_tasks.add_task(cleanup_session_and_task, task_id, task["session_dir"])
+    
+    return JSONResponse({
+        "pdf_base64": pdf_b64,
+        "tex_content": tex_content,
+        "json_content": json_content
+    })
 
 # ==========================================
-# MODULAR AI ENDPOINTS
+# AI Routes (Untouched)
 # ==========================================
-
 @app.post("/api/ai/tailor")
-def tailor_resume(request: TailorRequest):
-    print("--- 🧠 AI TAILOR REQUEST RECEIVED ---")
-    try:
-        final_latex = execute_tailor_chain(request.resume_text, request.job_description)
-        return {"tailored_content": final_latex}
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"AI Tailoring failed: {str(e)}")
-
+async def tailor(request: TailorRequest, background_tasks: BackgroundTasks): 
+    # AI chain run karo, jisme ab PDF aur LaTeX generate ho raha hai
+    result = execute_tailor_chain(request.resume_text, request.job_description)
+    
+    # Stateless Architecture: Download hone ke turant baad background mein kachra delete karo
+    background_tasks.add_task(cleanup_session_and_task, "tailor_task", result.get("session_dir", ""))
+    
+    # Frontend ko session_dir bhejne ki zaroorat nahi hai, usko hata do
+    if "session_dir" in result:
+        del result["session_dir"]
+        
+    # Ab data directly return karo bina kisi extra wrapper ke
+    return result
 
 @app.post("/api/ai/evaluate")
-def evaluate_resume(request: EvaluateRequest):
-    print("--- 🧠 AI EVALUATE REQUEST RECEIVED ---")
-    try:
-        result = execute_evaluate_chain(request.resume_text, request.job_description)
-        return {"evaluation_result": result}
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"AI Evaluation failed: {str(e)}")
-
+def evaluate(request: EvaluateRequest): 
+    return {"evaluation_result": execute_evaluate_chain(request.resume_text, request.job_description)}
 
 @app.post("/api/ai/coverletter")
-def generate_cover_letter(request: CoverLetterRequest):
-    print("--- 🧠 AI COVER LETTER REQUEST RECEIVED ---")
-    try:
-        result = execute_cover_letter_chain(request.resume_text, request.job_description)
-        return {"cover_letter": result}
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Cover Letter generation failed: {str(e)}")
-
+def coverletter(request: CoverLetterRequest): 
+    return {"cover_letter": execute_cover_letter_chain(request.resume_text, request.job_description)}
 
 @app.post("/api/ai/interview")
-def generate_interview(request: InterviewRequest):
-    print("--- 🧠 AI INTERVIEW REQUEST RECEIVED ---")
-    try:
-        result = execute_interview_chain(request.job_description)
-        return {"interview_data": result}
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Interview generation failed: {str(e)}")
+def interview(request: InterviewRequest): 
+    return {"interview_data": execute_interview_chain(request.job_description)}
