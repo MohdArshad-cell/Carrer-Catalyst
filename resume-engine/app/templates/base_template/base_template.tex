@@ -1,0 +1,155 @@
+\documentclass[letterpaper,10pt]{article}
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.35in}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{
+  \vspace{-10pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-7pt}]
+
+% --- BULLETPROOF COMMANDS (No Tabular Crash) ---
+\newcommand{\resumeItem}[1]{
+  \item\small{{#1 \vspace{-3pt}}}
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \textbf{#1} \hfill #2 \\
+    \textit{\small#3} \hfill \textit{\small #4} \vspace{-6pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+  \vspace{-2pt}\item
+    \textbf{\small#1} \hfill #2 \vspace{-6pt}
+}
+
+\newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=*, label=$\bullet$]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape \VAR{resume_data.personal_info.fullName | escape_tex}} \\ \vspace{1pt}
+    \small \VAR{resume_data.personal_info.phone | escape_tex} $|$ 
+    \href{mailto:\VAR{resume_data.personal_info.email}}{\underline{\VAR{resume_data.personal_info.email | escape_tex}}}
+    \BLOCK{ if resume_data.personal_info.linkedin } $|$ \href{\VAR{resume_data.personal_info.linkedin}}{\underline{LinkedIn}} \BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.github } $|$ \href{\VAR{resume_data.personal_info.github}}{\underline{GitHub}} \BLOCK{ endif }
+\end{center}
+
+%-----------SUMMARY-----------
+\BLOCK{ if resume_data.summary }
+\section{Summary}
+\small{\VAR{resume_data.summary | escape_tex}}
+\vspace{5pt}
+\BLOCK{ endif }
+
+%-----------EDUCATION-----------
+\BLOCK{ if resume_data.education and resume_data.education|length > 0 }
+\section{Education}
+  \resumeSubHeadingListStart
+  \BLOCK{ for edu in resume_data.education }
+    \resumeSubheading
+      {\VAR{edu.institution | escape_tex}}{\VAR{edu.location | escape_tex}}
+      {\VAR{edu.degree | escape_tex}}{\VAR{edu.startYear | escape_tex} -- \VAR{edu.endYear | escape_tex}}
+  \BLOCK{ endfor }
+  \resumeSubHeadingListEnd
+\BLOCK{ endif }
+
+%-----------EXPERIENCE-----------
+\BLOCK{ if resume_data.experience and resume_data.experience|length > 0 }
+\section{Experience}
+  \resumeSubHeadingListStart
+  \BLOCK{ for exp in resume_data.experience }
+    \resumeSubheading
+      {\VAR{exp.role | escape_tex}}{\VAR{exp.startDate | escape_tex} \BLOCK{ if exp.endDate }-- \VAR{exp.endDate | escape_tex}\BLOCK{ endif }}
+      {\VAR{exp.company | escape_tex}}{\VAR{exp.location | escape_tex}}
+      \resumeItemListStart
+        \BLOCK{ for bullet in exp.descriptionPoints }
+        \resumeItem{\VAR{bullet | escape_tex}}
+        \BLOCK{ endfor }
+      \resumeItemListEnd
+  \BLOCK{ endfor }
+  \resumeSubHeadingListEnd
+\BLOCK{ endif }
+
+%-----------PROJECTS-----------
+\BLOCK{ if resume_data.projects and resume_data.projects|length > 0 }
+\section{Projects}
+    \resumeSubHeadingListStart
+    \BLOCK{ for proj in resume_data.projects }
+      \resumeProjectHeading
+          {\VAR{proj.name | escape_tex} \BLOCK{ if proj.tech_stack }$|$ \emph{\VAR{proj.tech_stack | escape_tex}}\BLOCK{ endif }}{\VAR{proj.startDate | escape_tex} \BLOCK{ if proj.endDate }-- \VAR{proj.endDate | escape_tex}\BLOCK{ endif }}
+          \resumeItemListStart
+            \BLOCK{ for bullet in proj.descriptionPoints }
+            \resumeItem{\VAR{bullet | escape_tex}}
+            \BLOCK{ endfor }
+          \resumeItemListEnd
+    \BLOCK{ endfor }
+    \resumeSubHeadingListEnd
+\BLOCK{ endif }
+
+%-----------TECHNICAL SKILLS-----------
+\BLOCK{ if resume_data.skills and resume_data.skills|length > 0 }
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \item {\small
+    \BLOCK{ for skill in resume_data.skills }
+     \textbf{\VAR{skill.name | escape_tex}}{: \VAR{skill.value | escape_tex}} \BLOCK{ if not loop.last } \\ \BLOCK{ endif }
+    \BLOCK{ endfor }
+    }
+ \end{itemize}
+\BLOCK{ endif }
+
+%-----------CERTIFICATIONS-----------
+\BLOCK{ if resume_data.certifications and resume_data.certifications|length > 0 }
+\section{Certifications}
+  \begin{itemize}[leftmargin=0.15in, label={}]
+    \BLOCK{ for cert in resume_data.certifications }
+      \item \small{
+        \textbf{\VAR{cert.name | escape_tex}} 
+        \BLOCK{ if cert.issuer } $|$ \emph{\VAR{cert.issuer | escape_tex}} \BLOCK{ endif } 
+        \BLOCK{ if cert.date } \hfill \VAR{cert.date | escape_tex} \BLOCK{ endif }
+      }
+    \BLOCK{ endfor }
+  \end{itemize}
+\BLOCK{ endif }
+
+%-----------ACHIEVEMENTS-----------
+\BLOCK{ if resume_data.achievements and resume_data.achievements|length > 0 }
+\section{Achievements}
+  \resumeSubHeadingListStart
+  \BLOCK{ for ach in resume_data.achievements }
+    \resumeItem{\VAR{ach.description | escape_tex}}
+  \BLOCK{ endfor }
+  \resumeSubHeadingListEnd
+\BLOCK{ endif }
+
+%-------------------------------------------
+\end{document}

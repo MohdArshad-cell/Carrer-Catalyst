@@ -32,14 +32,14 @@ public class AiService {
         body.put("resumeText", resume != null ? resume : "");
         body.put("jobDescription", jobDescription != null ? jobDescription : "");
 
-        Map response = this.webClient.post()
+        // 🚨 CRITICAL FIX: Returing RAW String. 
+        // Do NOT parse it into a Map to look for "tailored_content" because Python now sends "latex_code" and "pdf_base64"
+        return this.webClient.post()
                 .uri("/api/ai/tailor")
                 .bodyValue(body)
                 .retrieve()
-                .bodyToMono(Map.class)
-                .block(); // Blocks ONLY this specific thread waiting for HTTP response, doesn't spawn OS processes.
-
-        return response != null ? (String) response.get("tailored_content") : "";
+                .bodyToMono(String.class)
+                .block();
     }
 
     /**

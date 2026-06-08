@@ -99,15 +99,21 @@ public class ApiController {
                 });
     }
 
-    @PostMapping("/tailor")
-    public Mono<ResponseEntity<TailorResponse>> tailorResume(@RequestBody TailorRequest request) {
+    // --- UPDATED TAILOR ENDPOINT ---
+    // Returns exact JSON from Python so React can read latex_code and pdf_base64 directly
+    @PostMapping(value = "/tailor", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<String>> tailorResume(@RequestBody TailorRequest request) {
         return Mono.fromCallable(() -> aiService.getTailoredResume(request.getResumeText(), request.getJobDescription()))
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(tailoredContent -> ResponseEntity.ok(new TailorResponse(tailoredContent)))
+                .map(rawJsonFromPython -> {
+                    // We DO NOT wrap this in TailorResponse anymore. 
+                    // We send the raw JSON string directly to the frontend.
+                    return ResponseEntity.ok(rawJsonFromPython);
+                })
                 .onErrorResume(e -> {
                     logger.error("AI Tailoring Service failed.", e);
-                    TailorResponse errorResponse = new TailorResponse("An error occurred while processing the AI request. Please try again later.");
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("{\"error\": \"An error occurred while processing the AI request.\"}"));
                 });
     }
 

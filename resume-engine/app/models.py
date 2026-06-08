@@ -55,6 +55,7 @@ class CertificationItem(BaseModel):
     date: Optional[str] = None
 
 class ResumeData(BaseModel):
+    summary: Optional[str] = None  # 🚨 YEH LINE ADD KAR LE
     personal_info: Optional[PersonalInfo] = Field(None, validation_alias=AliasChoices('personal_info', 'personalInfo'))
     education: Optional[List[EducationItem]] = []
     
