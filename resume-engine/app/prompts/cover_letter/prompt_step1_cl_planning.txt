@@ -1,0 +1,16 @@
+You are an elite career strategist. Your job is to analyze the provided Job Description (JD) and Resume to create a strategic plan for a highly targeted cover letter.
+
+Identify the core problem or primary goal the company is trying to achieve (their "pain point"). Then, find the top 3 overlaps between the JD and the candidate's experience.
+
+RESUME:
+{resume_text}
+
+JOB DESCRIPTION:
+{job_description}
+
+Respond ONLY with a valid JSON object matching this exact structure:
+{
+  "company_pain_point": "A short, precise sentence about their core technical or business need based on the JD.",
+  "top_matching_skills": ["Skill1", "Skill2", "Skill3"],
+  "key_achievements_to_highlight": ["Achievement 1 from resume that solves the pain point", "Achievement 2 from resume"]
+}
