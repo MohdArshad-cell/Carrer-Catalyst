@@ -77,7 +77,7 @@
   \BLOCK{ for edu in resume_data.education }
     \resumeSubheading
       {\VAR{edu.institution | escape_tex}}{\VAR{edu.location | escape_tex}}
-      {\VAR{edu.degree | escape_tex}}{\VAR{edu.startYear | escape_tex} -- \VAR{edu.endYear | escape_tex}}
+      {\VAR{edu.degree | escape_tex}\BLOCK{ if edu.grade and edu.grade not in edu.degree } (GPA: \VAR{edu.grade | escape_tex})\BLOCK{ endif }}{\VAR{edu.startYear | escape_tex} \BLOCK{ if edu.endYear }-- \VAR{edu.endYear | escape_tex}\BLOCK{ endif }}
   \BLOCK{ endfor }
   \resumeSubHeadingListEnd
 \BLOCK{ endif }

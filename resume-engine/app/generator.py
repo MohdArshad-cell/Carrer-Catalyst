@@ -9,22 +9,32 @@ from jinja2 import Environment, FileSystemLoader
 def escape_latex(text):
     if not isinstance(text, str):
         return text
+        
+    # Prevent double-escaping by ensuring the character isn't already preceded by a backslash.
+    # We explicitly REMOVED the blind '\' conversion so it doesn't destroy valid LaTeX commands.
     conv = {
         '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#', '_': r'\_',
-        '{': r'\{', '}': r'\}', '~': r'\textasciitilde{}',
-        '^': r'\textasciicircum{}', '\\': r'\textbackslash{}',
+        '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'
     }
-    regex = re.compile('|'.join(re.escape(key) for key in sorted(conv.keys(), key = len, reverse=True)))
-    return regex.sub(lambda match: conv[match.group()], text)
+    
+    for char, replacement in conv.items():
+        # (?<!\\) ensures we only replace the char if it does NOT have a backslash before it
+        text = re.sub(r'(?<!\\)' + re.escape(char), replacement, text)
+        
+    return text
 
 def safe_latex(text):
     if not isinstance(text, str):
         return text
+        
     conv = {
         '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#', '_': r'\_',
     }
-    regex = re.compile('|'.join(re.escape(key) for key in sorted(conv.keys(), key = len, reverse=True)))
-    return regex.sub(lambda match: conv[match.group()], text)
+    
+    for char, replacement in conv.items():
+        text = re.sub(r'(?<!\\)' + re.escape(char), replacement, text)
+        
+    return text
 
 
 class ResumeGenerator:
@@ -47,7 +57,6 @@ class ResumeGenerator:
         self.temp_dir = os.path.join(tempfile.gettempdir(), "resume_generator")
         os.makedirs(self.temp_dir, exist_ok=True)
         
-        # REMOVED: D:\MIKTex hardcoded path
         # Using Tectonic which must be installed in the system PATH
         self.compiler_cmd = "tectonic"
 
@@ -81,8 +90,6 @@ class ResumeGenerator:
         pdf_filepath = os.path.join(output_dir, "resume.pdf")
         if not os.path.exists(pdf_filepath):
             raise FileNotFoundError("PDF generation failed, file not found.")
-
-        # 🚨 KILLED THE JSON FILE WRITING LOGIC 🚨
 
         # 4. Return ONLY what FastAPI needs to serve the file and nuke the folder
         return {

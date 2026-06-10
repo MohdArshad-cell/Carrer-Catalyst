@@ -82,7 +82,7 @@ class GenerationRequest(BaseModel):
     model_config = {"extra": "ignore"} 
 
 class TailorRequest(BaseModel):
-    # REQUIRED fields. The AI cannot tailor a ghost.
+    # 🚨 REVERTED: Ab yeh user se raw text ya LaTeX code easily accept karega
     resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
     job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
     

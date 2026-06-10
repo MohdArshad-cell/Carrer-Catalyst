@@ -8,7 +8,7 @@ import './AiTailorPage.css';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const loadingSteps = [
-    "⏳ Parsing Job Description & Resume...",
+    "⏳ Parsing Input to JSON (Step 0)...",
     "🧠 Executing Gap Analysis...",
     "✨ Micro-Tailoring Bullet Points...",
     "⚙️ Compiling Pixel-Perfect PDF..."
@@ -51,7 +51,7 @@ const AiTailorPage: React.FC = () => {
             };
             reader.readAsText(file);
         } else {
-            setError("Please drop a valid .txt or .json file.");
+            setError("Please drop a valid .txt or .json file for now. (PDF coming soon)");
         }
     };
 
@@ -83,7 +83,12 @@ const AiTailorPage: React.FC = () => {
         }, 4000);
 
         try {
-            const payload = { resume_text: resumeText, job_description: jobDescription };
+            // 🚨 UPDATED PAYLOAD: Seedha raw string bhej rahe hain
+            const payload = { 
+                resume_text: resumeText, // Matches the new TailorRequest model
+                job_description: jobDescription 
+            };
+            
             const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload);
             
             if (response.data && response.data.latex_code && response.data.pdf_base64) {
@@ -95,7 +100,34 @@ const AiTailorPage: React.FC = () => {
             }
         } catch (err: any) {
             console.error("Error tailoring resume:", err);
-            setError(err.response?.data?.detail || 'Failed to tailor resume. Ensure backend is running.');
+            
+            // 🚨 THE ABSOLUTE SHIELD: Guarantees a string is returned to React
+            let finalErrorMessage = "Failed to tailor resume. Ensure backend is running.";
+            
+            try {
+                const detail = err.response?.data?.detail;
+                if (detail) {
+                    if (Array.isArray(detail)) {
+                        // Extract Pydantic array validation errors
+                        finalErrorMessage = detail.map((e: any) => {
+                            const location = Array.isArray(e.loc) ? e.loc.join(' -> ') : 'Field';
+                            return `${location}: ${e.msg}`;
+                        }).join(" | ");
+                    } else if (typeof detail === "string") {
+                        finalErrorMessage = detail;
+                    } else {
+                        finalErrorMessage = JSON.stringify(detail);
+                    }
+                } else if (err.message) {
+                    finalErrorMessage = err.message;
+                }
+            } catch (fallbackError) {
+                finalErrorMessage = "An unknown server error occurred.";
+            }
+
+            // Force cast to String just in case
+            setError(String(finalErrorMessage));
+            
         } finally {
             clearInterval(stepInterval);
             setIsLoading(false);
@@ -164,7 +196,7 @@ const AiTailorPage: React.FC = () => {
                 {/* --- TOP ROW: INPUTS --- */}
                 <div className="input-grid">
                     <div className="panel relative-panel">
-                        <h2>Your Resume (JSON or Text)</h2>
+                        <h2>Your Resume (Text, LaTeX, or JSON)</h2>
                         <textarea
                             className={`drop-zone ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
@@ -172,7 +204,7 @@ const AiTailorPage: React.FC = () => {
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            placeholder="Paste your resume data here or Drop a .txt/.json file..."
+                            placeholder='Paste your raw resume text, LaTeX code, or JSON here...'
                             disabled={isLoading}
                         />
                     </div>

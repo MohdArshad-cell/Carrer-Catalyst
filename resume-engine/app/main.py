@@ -149,17 +149,15 @@ async def compile_latex_only(request: CompileRequest):
 
 @app.post("/api/ai/tailor")
 async def tailor(request: TailorRequest, background_tasks: BackgroundTasks): 
-    # AI chain run karo, jisme ab PDF aur LaTeX generate ho raha hai
+    # Seedha raw text ya LaTeX pass kar rahe hain
     result = execute_tailor_chain(request.resume_text, request.job_description)
     
-    # Stateless Architecture: Download hone ke turant baad background mein kachra delete karo
+    # Stateless Cleanup
     background_tasks.add_task(cleanup_session_and_task, "tailor_task", result.get("session_dir", ""))
     
-    # Frontend ko session_dir bhejne ki zaroorat nahi hai, usko hata do
     if "session_dir" in result:
         del result["session_dir"]
         
-    # Ab data directly return karo bina kisi extra wrapper ke
     return result
 
 @app.post("/api/ai/evaluate")
