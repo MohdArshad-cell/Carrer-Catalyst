@@ -1,17 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature } from "react-icons/fa6";
+import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone } from "react-icons/fa6";
 import ParticleBackground from '../components/ParticleBackground';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './AiToolsPage.css';
 import '../App.css';
-import { FaMicrophone } from "react-icons/fa6";
 
 const AiToolsPage = () => {
     const navigate = useNavigate();
 
-    // Function to handle the spotlight hover effect
+    // Mouse flashlight effect for the premium cards
     const handleMouseMove = (e) => {
         const { currentTarget: target } = e;
         const rect = target.getBoundingClientRect();
@@ -27,101 +26,133 @@ const AiToolsPage = () => {
             <ParticleBackground />
             <div className="background-aurora"></div>
 
-            {/* Reusable Navbar */}
             <Navbar />
 
-            <div className="container" style={{ marginTop: '120px', marginBottom: '5rem' }}>
-                <h1 className="ai-tools-title animated-gradient">AI Toolkit Dashboard</h1>
-                <p className="ai-tools-subtitle">Select a tool to optimize your job application and get ahead of the competition.</p>
+            <div className="container content-wrapper" style={{ paddingTop: '120px', paddingBottom: '5rem' }}>
+                
+                {/* Premium Header Section */}
+                <div className="page-header text-center">
+                    <div className="hero-badge">
+                        <span className="sparkle">🛠️</span> Choose Your Weapon
+                    </div>
+                    <h1 className="hero-title animated-gradient-text">AI Toolkit Dashboard</h1>
+                    <p className="hero-subtitle" style={{ maxWidth: '700px', margin: '0 auto 3rem auto' }}>
+                        Select a tool to optimize your job application, beat the ATS, and get ahead of the competition.
+                    </p>
+                </div>
 
+                {/* PREMIUM BENTO GRID FOR TOOLS */}
                 <div className="tools-bento-grid">
+                    
                     {/* Tool 1: Resume From Scratch */}
-                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/ResumeFromScratchPage')}>
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ResumeFromScratchPage')}>
+                        <div className="bento-glow"></div>
                         <div className="bento-content">
-                            <div className="tool-icon"><FaFileSignature /></div>
+                            <div className="tool-icon-wrapper">
+                                <FaFileSignature className="premium-icon" />
+                            </div>
                             <h3>Create From Scratch</h3>
                             <p>A step-by-step builder to craft a new, professional resume from the ground up.</p>
-                            <span className="tool-cta">Start Building →</span>
+                            <div className="tool-cta">Start Building <span className="arrow">→</span></div>
                         </div>
                     </div>
 
                     {/* Tool 2: AI Resume Tailor */}
-                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/ai-tailor')}>
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ai-tailor')}>
+                        <div className="bento-glow"></div>
                         <div className="bento-content">
-                            <div className="tool-icon"><FaWandMagicSparkles /></div>
+                            <div className="tool-icon-wrapper">
+                                <FaWandMagicSparkles className="premium-icon" />
+                            </div>
                             <h3>AI Resume Tailor</h3>
                             <p>Paste your resume and a job description to get an AI-optimized version in seconds.</p>
-                            <span className="tool-cta">Start Tailoring →</span>
+                            <div className="tool-cta">Start Tailoring <span className="arrow">→</span></div>
                         </div>
                     </div>
 
                     {/* Tool 3: ATS Score & Checker */}
-                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-evaluator')}>
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-evaluator')}>
+                        <div className="bento-glow"></div>
                         <div className="bento-content">
-                            <div className="tool-icon"><FaFileLines /></div>
+                            <div className="tool-icon-wrapper">
+                                <FaFileLines className="premium-icon" />
+                            </div>
                             <h3>ATS Score & Checker</h3>
                             <p>Analyze your resume's compatibility with automated screening software (ATS).</p>
-                            <span className="tool-cta">Analyze Now →</span>
+                            <div className="tool-cta">Analyze Now <span className="arrow">→</span></div>
                         </div>
                     </div>
 
                     {/* Tool 4: AI Cover Letter Writer */}
-                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/cover-letter')}>
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cover-letter')}>
+                        <div className="bento-glow"></div>
                         <div className="bento-content">
-                            <div className="tool-icon"><FaEnvelopeOpenText /></div>
+                            <div className="tool-icon-wrapper">
+                                <FaEnvelopeOpenText className="premium-icon" />
+                            </div>
                             <h3>AI Cover Letter Writer</h3>
                             <p>Generate a compelling cover letter tailored to your resume and a specific job.</p>
-                            <span className="tool-cta">Write Letter →</span>
+                            <div className="tool-cta">Write Letter <span className="arrow">→</span></div>
                         </div>
                     </div>
 
                     {/* Tool 5: AI Mock Interview Simulator */}
-                    <div className="bento-item tool-card" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
+                        <div className="bento-glow"></div>
                         <div className="bento-content">
-                            <div className="tool-icon"><FaMicrophone /></div>
+                            <div className="tool-icon-wrapper">
+                                <FaMicrophone className="premium-icon" />
+                            </div>
                             <h3>AI Mock Interview</h3>
                             <p>Practice with AI-generated questions tailored to your target job to ace your interviews.</p>
-                            <span className="tool-cta">Start Practice →</span>
+                            <div className="tool-cta">Start Practice <span className="arrow">→</span></div>
                         </div>
                     </div>
                 </div>
 
-                {/* "HOW IT WORKS" SECTION */}
-                <div className="how-it-works-timeline">
-                    <h2 className="section-title">A Simple Process</h2>
-                    <div className="timeline">
-                        <div className="timeline-item">
-                            <div className="timeline-dot"></div>
-                            <div className="timeline-content">
-                                <h3>1. Select a Tool</h3>
+                {/* PREMIUM "HOW IT WORKS" SECTION */}
+                <div className="how-it-works-section glass-card" style={{ marginTop: '5rem', padding: '3rem' }}>
+                    <h2 className="section-title" style={{ marginBottom: '3rem' }}>A Simple Process</h2>
+                    
+                    <div className="timeline-premium">
+                        <div className="timeline-item-premium">
+                            <div className="timeline-glow-dot">1</div>
+                            <div className="timeline-content-premium">
+                                <h3>Select a Tool</h3>
                                 <p>Choose from our suite of AI-powered tools.</p>
                             </div>
                         </div>
-                        <div className="timeline-item">
-                            <div className="timeline-dot"></div>
-                            <div className="timeline-content">
-                                <h3>2. Provide Input</h3>
+                        
+                        <div className="timeline-connector"></div>
+                        
+                        <div className="timeline-item-premium">
+                            <div className="timeline-glow-dot">2</div>
+                            <div className="timeline-content-premium">
+                                <h3>Provide Input</h3>
                                 <p>Upload your resume, paste a job description, or fill in our guided forms.</p>
                             </div>
                         </div>
-                        <div className="timeline-item">
-                            <div className="timeline-dot"></div>
-                            <div className="timeline-content">
-                                <h3>3. Get Results</h3>
+                        
+                        <div className="timeline-connector"></div>
+                        
+                        <div className="timeline-item-premium">
+                            <div className="timeline-glow-dot">3</div>
+                            <div className="timeline-content-premium">
+                                <h3>Get Results</h3>
                                 <p>Receive your optimized resume, ATS score, or generated cover letter in seconds.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Back Button */}
                 <div style={{ textAlign: 'center', margin: '4rem 0' }}>
-                    <button className="btn btn-outline" onClick={() => navigate('/')}>
+                    <button className="btn-outline pulse-glow" onClick={() => navigate('/')} style={{ padding: '0.8rem 2rem', borderRadius: '50px' }}>
                         ← Back to Home
                     </button>
                 </div>
             </div>
             
-            {/* Reusable Footer */}
             <Footer />
         </div>
     );

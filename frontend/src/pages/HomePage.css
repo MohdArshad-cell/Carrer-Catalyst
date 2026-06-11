@@ -1,320 +1,434 @@
-/* === Hero Section Specifics === */
-/* NEW: Makes the hero section take up the full viewport height */
+/* ==========================================================================
+   PREMIUM HOMEPAGE STYLES (NEXT-GEN UI)
+   ========================================================================== */
+
+/* === 1. Hero Section === */
 .full-height-hero {
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Vertically centers the content */
-    position: relative; /* Crucial for containing the background */
-    overflow: hidden; /* This will contain the animations within the hero section */
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
-/* Add a wrapper for the hero content to ensure it's above the animations */
 .hero-content {
     position: relative;
     z-index: 2;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+}
+
+/* Premium Badge styling */
+.hero-badge {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: float 6s ease-in-out infinite;
+}
+
+.sparkle {
+    font-size: 1.1rem;
+    animation: pulse-sparkle 2s infinite;
 }
 
 .hero-title {
-    font-size: 4.5rem; /* Larger font for more impact */
-    font-weight: 700;
+    font-size: 4.5rem;
+    font-weight: 800;
     margin-bottom: 1.5rem;
     line-height: 1.1;
+    letter-spacing: -1px;
+}
+
+.animated-gradient-text {
+    background: linear-gradient(to right, #ffffff 20%, var(--accent-cyan) 40%, var(--accent-purple) 60%, #ffffff 80%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5s linear infinite;
 }
 
 .hero-subtitle {
-    font-size: 1.3rem;
-    color: var(--text-secondary);
-    max-width: 650px;
+    font-size: 1.25rem;
+    color: #94a3b8;
+    max-width: 600px;
     margin: 0 auto 2.5rem;
+    line-height: 1.6;
 }
 
+/* Glowing Primary Button */
+.btn-premium {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
 
-/* === Advanced Hero Section Styles === */
-/* CORRECTED: This now confines the 3D scene to the hero section */
+.pulse-glow {
+    box-shadow: 0 0 20px rgba(98, 72, 255, 0.4);
+    animation: button-pulse 2s infinite;
+}
+
+.pulse-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(0, 246, 255, 0.6);
+}
+
+/* Background Canvas Fixes */
 .hero-3d-canvas {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; 
-    z-index: -1; /* Above particles, below text */
-    opacity: 0.2;
+    top: 0; left: 0; width: 100%; height: 100%; 
+    z-index: -1;
+    opacity: 0.25;
 }
 
-/* CORRECTED: Also confine the particle background to the hero */
 #tsparticles {
-    position: absolute !important; /* Use important to override inline styles */
-    top: 0 !important;
-    left: 0 !important;
-    height: 100% !important;
-    width: 100% !important;
-    z-index: -2 !important; /* Lowest layer */
+    position: absolute !important;
+    top: 0 !important; left: 0 !important;
+    height: 100% !important; width: 100% !important;
+    z-index: -2 !important;
 }
 
-.hero-title.animated-gradient {
-    position: relative;
-    z-index: 1;
-    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-cyan));
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradient-animation 4s ease infinite;
-}
-@keyframes gradient-animation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.btn-primary.pulse {
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-    transform: translate3d(0, 0, 0);
-    box-shadow: 0 0 20px rgba(0, 246, 255, 0.4);
-    animation: pulse-animation 2s infinite;
-}
-@keyframes pulse-animation {
-    0% { box-shadow: 0 0 20px rgba(0, 246, 255, 0.4); }
-    50% { box-shadow: 0 0 40px rgba(0, 246, 255, 0.8); }
-    100% { box-shadow: 0 0 20px rgba(0, 246, 255, 0.4); }
+/* === 2. BENTO GRID SYSTEM === */
+.bento-section {
+    padding-top: 2rem;
 }
 
-/* === FULL PAGE Bento Grid Layout === */
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.section-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.section-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
 .full-bento-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, minmax(220px, auto)) 180px minmax(220px, auto);
+    grid-template-rows: repeat(2, auto) auto auto;
     gap: 1.5rem;
-    margin: 5rem 0;
+    margin-bottom: 5rem;
 }
 
-.bento-item {
-    background: rgba(18, 24, 43, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
+/* Premium Glass Cards (The secret sauce) */
+.glass-card {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
-    padding: 2rem;
+    padding: 2.5rem;
     position: relative;
     overflow: hidden;
-    transition: transform 0.3s ease, border-color 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
-.bento-item:hover {
-    transform: scale(1.02);
-    border-color: var(--accent-cyan);
+
+.hover-glow:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 246, 255, 0.3);
+    box-shadow: 0 20px 40px -10px rgba(0, 246, 255, 0.15);
 }
+
+/* Dynamic Mouse Flashlight Effect */
+.bento-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle closest-side, rgba(0, 246, 255, 0.15), transparent);
+    transform: translate(-50%, -50%);
+    top: var(--mouse-y, 0);
+    left: var(--mouse-x, 0);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.glass-card:hover .bento-glow {
+    opacity: 1;
+}
+
 .bento-content {
     position: relative;
     z-index: 2;
 }
-.bento-item::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(
-        300px circle at var(--mouse-x) var(--mouse-y),
-        rgba(0, 246, 255, 0.25),
-        transparent 80%
-    );
-    opacity: 0;
-    transition: opacity 0.4s ease-out;
-    z-index: 1;
-}
-.bento-item:hover::before {
-    opacity: 1;
-}
-.section-title {
-    text-align: center;
-    font-size: 2.8rem;
-    font-weight: 700;
-    margin-bottom: 4rem;
-    color: var(--text-primary);
-    text-shadow: 0 0 15px rgba(0, 246, 255, 0.3);
-}
 
-/* Grid Area Definitions */
-.bento-main-feature {
-    grid-column: 1 / 3;
-    grid-row: 1 / 3;
-}
-.bento-side-feature-1 {
-    grid-column: 3 / 4;
-    grid-row: 1 / 2;
-}
-.bento-persona {
-    grid-column: 3 / 4;
-    grid-row: 2 / 4;
-}
-.bento-testimonials {
-    grid-column: 1 / 3;
-    grid-row: 3 / 4;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-.bento-faq {
-    grid-column: 1 / 4;
-    grid-row: 4 / 5;
-}
+/* Grid Layout Assignments */
+.bento-main-feature { grid-column: 1 / 3; grid-row: 1 / 3; }
+.bento-side-feature-1 { grid-column: 3 / 4; grid-row: 1 / 2; display: flex; align-items: center; justify-content: center; }
+.bento-persona { grid-column: 3 / 4; grid-row: 2 / 4; }
+.bento-testimonials { grid-column: 1 / 3; grid-row: 3 / 4; }
+.bento-faq { grid-column: 1 / 4; grid-row: 4 / 5; }
 
-/* Styles for richer content in bento boxes */
-.bento-item h3 {
-    text-shadow: 0 0 10px rgba(0, 246, 255, 0.2);
-}
-.bento-tags {
+
+/* === 3. SPECIFIC BENTO ITEM STYLES === */
+
+/* Main Toolkit Area */
+.bento-header {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
-}
-.bento-tags span {
-    background: rgba(0, 246, 255, 0.1);
-    color: var(--accent-cyan);
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-.bento-persona ul {
-    list-style: none;
-    padding: 0;
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-.bento-persona li {
-    display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
-}
-.bento-persona li p {
-    margin: 0;
-    text-align: left;
-}
-.bento-testimonials p {
-    font-style: italic;
-    font-size: 1.2rem;
-}
-.bento-testimonials span {
-    display: block;
-    margin-top: 1rem;
-    font-style: normal;
-    font-weight: bold;
-    color: var(--accent-cyan);
-}
-.faq-bento-container {
-    height: 100%;
-    overflow-y: auto;
-}
-.faq-bento-item {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
     margin-bottom: 1rem;
 }
-.faq-bento-item:last-child {
-    border-bottom: none;
+
+.bento-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 10px rgba(0, 246, 255, 0.5));
 }
-.faq-question {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+.bento-item h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.bento-desc {
+    color: var(--text-secondary);
     font-size: 1.1rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-.faq-answer {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out;
-}
-.faq-answer.open {
-    max-height: 200px;
-    padding-top: 1rem;
 }
 
-/* === Long Footer === */
-.footer-long {
-    background:rgba(0, 0, 0, 0.2);
-    padding: 4rem 0 2rem;
-    border-top: 1px solid var(--border-color);
-}
-.footer-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 2rem;
-    margin-bottom: 3rem;
-}
-.footer-col h3 {
-    color: var(--accent-cyan);
-    margin-bottom: 1.5rem;
-}
-.footer-col ul { list-style: none; padding: 0; }
-.footer-col ul li { margin-bottom: 1rem; }
-.footer-col ul a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-.footer-col ul a:hover { color: var(--text-primary); }
-.social-icons a {
-    display: inline-flex;
-    width: 40px;
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    margin-right: 0.5rem;
-    color: var(--text-primary);
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 1.5rem;
-    align-items: center;
-    justify-content: center;
-}
-.social-icons a:hover {
-    background-color: var(--accent-cyan);
-    color: var(--dark-bg);
-}
-.footer-copyright {
-    text-align: center;
-    color: var(--text-secondary);
-    padding-top: 2rem;
-    border-top: 1px solid var(--border-color);
-}
-
-/* === 16. Toolkit Styles for Main Bento Box === */
 .toolkit-grid {
-    margin-top: 2rem;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    margin-top: 2.5rem;
 }
 
 .toolkit-item {
-    padding: 1rem;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.2); /* Subtle inner card background */
-    border: 1px solid var(--border-color);
-    transition: background-color 0.3s ease;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 16px;
+    transition: all 0.3s ease;
 }
 
 .toolkit-item:hover {
-    background: rgba(0, 246, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(0, 246, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .toolkit-item h4 {
-    margin: 0 0 0.5rem 0;
-    color: var(--accent-cyan);
+    color: var(--text-primary);
     font-size: 1.1rem;
+    margin: 0 0 0.8rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .toolkit-item p {
-    margin: 0;
-    font-size: 0.9rem;
     color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Side Feature (Cover Letter) */
+.big-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 20px rgba(98, 72, 255, 0.4));
+}
+.text-center { text-align: center; }
+
+/* Persona List */
+.persona-list {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.persona-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.persona-list li:hover {
+    border-color: rgba(98, 72, 255, 0.3);
+    background: rgba(98, 72, 255, 0.05);
+}
+
+.persona-icon { font-size: 1.5rem; }
+.persona-text strong { display: block; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.2rem;}
+.persona-text p { margin: 0; color: var(--text-secondary); font-size: 0.9rem;}
+
+/* Testimonial */
+.relative-quote {
+    position: relative;
+    padding: 1rem;
+}
+
+.quote-mark {
+    position: absolute;
+    top: -20px; left: -10px;
+    font-size: 6rem;
+    font-family: serif;
+    color: rgba(0, 246, 255, 0.1);
+    line-height: 1;
+}
+
+.testimonial-text {
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    font-style: italic;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.author-avatar {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1.2rem;
+}
+
+.author-info strong { display: block; font-size: 1.1rem; }
+.author-info span { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* FAQ Section */
+.faq-wrapper {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.faq-item {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.faq-item.active {
+    border-color: rgba(0, 246, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 246, 255, 0.1);
+}
+
+.faq-question {
+    padding: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.faq-toggle-icon {
+    color: var(--accent-cyan);
+    font-size: 1.5rem;
+    font-weight: 300;
+}
+
+.faq-answer-container {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+
+.faq-item.active .faq-answer-container {
+    grid-template-rows: 1fr;
+}
+
+.faq-answer-inner {
+    overflow: hidden;
+}
+
+.faq-answer-inner p {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* === 4. KEYFRAME ANIMATIONS === */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-sparkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+@keyframes button-pulse {
+    0% { box-shadow: 0 0 20px rgba(98, 72, 255, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(0, 246, 255, 0.6); }
+    100% { box-shadow: 0 0 20px rgba(98, 72, 255, 0.4); }
+}
+
+/* === 5. RESPONSIVE DESIGN (Mobiles/Tablets) === */
+@media (max-width: 992px) {
+    .full-bento-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+    .bento-main-feature, .bento-side-feature-1, 
+    .bento-persona, .bento-testimonials, .bento-faq {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+    .hero-title { font-size: 3.5rem; }
+    .toolkit-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .hero-title { font-size: 2.5rem; }
+    .glass-card { padding: 1.5rem; }
 }

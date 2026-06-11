@@ -6,6 +6,7 @@ import AiTailorPage from './pages/AiTailorPage';
 import ResumeEvaluator from './pages/ResumeEvaluator';
 import CoverLetterGeneratorPage from './pages/CoverLetterGeneratorPage';
 import MockInterviewPage from './pages/MockInterviewPage';
+import LoginPage from './pages/LoginPage';
 import "./App.css";
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
       <Routes>
         {/* Rule 1: When the URL is "/", show the HomePage */}
         <Route path="/" element={<HomePage />} />
-
+        <Route path="/login" element={<LoginPage />} />
         {/* Rule 2: When the URL is "/resume-builder", show the ResumeBuilderPage */}
         <Route path="/ai-tools" element={<AiToolsPage />} />
         <Route path="/ResumeFromScratchPage" element={<ResumeFromScratchPage />} />

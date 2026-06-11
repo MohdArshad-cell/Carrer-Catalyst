@@ -1,139 +1,232 @@
-/* Inherits global styles from index.css, including .bento-item */
+/* ==========================================================================
+   AI TOOLS DASHBOARD PREMIUM STYLES
+   ========================================================================== */
 
-.ai-tools-title {
-    text-align: center;
-    font-size: 3rem;
+/* === 1. Page Header (Standalone in case HomePage.css isn't loaded) === */
+.page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+.hero-badge {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
     margin-bottom: 1rem;
-}
-.ai-tools-container {
-    padding: 4rem 0;
-  
-    min-height: calc(100vh - 80px);
-    background-color: var(--dark-bg);
+    line-height: 1.2;
 }
 
-/* This is a special class from the homepage, let's reuse it here */
-.animated-gradient {
-    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-cyan));
-    background-size: 200% 200%;
+.animated-gradient-text {
+    background: linear-gradient(to right, #ffffff 20%, var(--accent-cyan) 40%, var(--accent-purple) 60%, #ffffff 80%);
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: gradient-animation 4s ease infinite;
+    animation: shine 5s linear infinite;
 }
 
-@keyframes gradient-animation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: #94a3b8;
+    line-height: 1.6;
 }
 
-.ai-tools-subtitle {
-    text-align: center;
-    color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto 3rem;
-}
-
-/* ... (keep the .ai-tools-title, .animated-gradient, and .ai-tools-subtitle styles) ... */
-
+/* === 2. Bento Grid for Tools === */
 .tools-bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
-    gap: 1.5rem;
-    margin-bottom: 5rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
 }
 
 .tool-card {
-    min-height: 280px; /* A good height for the new design */
+    min-height: 320px;
     cursor: pointer;
-    padding: 2rem;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Styles for the content *inside* the bento cards */
 .tool-card .bento-content {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align content to the left */
-    justify-content: space-between; /* Pushes the CTA to the bottom */
-    text-align: left;
     height: 100%;
 }
 
-.tool-icon {
-    font-size: 2.5rem; /* Slightly smaller icon */
-    color: var(--accent-purple); /* Using purple for a new look */
+/* Icon Wrapper Animation */
+.tool-icon-wrapper {
+    width: 65px;
+    height: 65px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(98, 72, 255, 0.15), rgba(0, 246, 255, 0.15));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 1.5rem;
-    filter: drop-shadow(0 0 12px var(--accent-purple)); /* Glowing icon effect */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.tool-card:hover .tool-icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+    background: linear-gradient(135deg, rgba(98, 72, 255, 0.3), rgba(0, 246, 255, 0.3));
+    border-color: rgba(0, 246, 255, 0.5);
+    box-shadow: 0 0 25px rgba(0, 246, 255, 0.4);
+}
+
+.premium-icon {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+/* Typography inside card */
 .tool-card h3 {
-    text-shadow: none; /* Remove previous shadow */
-    margin: 0 0 0.5rem 0;
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
     color: var(--text-primary);
 }
 
 .tool-card p {
     color: var(--text-secondary);
     line-height: 1.6;
-    margin-bottom: 1rem;
+    margin: 0 0 2rem 0;
+    flex-grow: 1; /* Automatically pushes CTA to the absolute bottom */
 }
 
+/* Animated CTA */
 .tool-cta {
     font-weight: 600;
     color: var(--accent-cyan);
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    transition: all 0.3s ease;
+}
+
+.tool-cta .arrow {
     transition: transform 0.3s ease;
+    display: inline-block;
 }
 
 .tool-card:hover .tool-cta {
-    transform: translateX(5px);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 246, 255, 0.8);
 }
 
-/* === How It Works Timeline === */
-.how-it-works-timeline {
-    margin: 6rem 0;
+.tool-card:hover .tool-cta .arrow {
+    transform: translateX(8px);
 }
 
-.timeline {
+/* === 3. Premium Timeline (How it works) === */
+.timeline-premium {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     position: relative;
+    margin-top: 2rem;
 }
 
-/* The connecting line */
-.timeline::before {
-    content: '';
-    position: absolute;
-    top: 15px; /* Vertically center with the dots */
-    left: 5%;
-    width: 90%;
-    height: 2px;
-    background-color: var(--border-color);
-}
-
-.timeline-item {
+.timeline-item-premium {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     width: 30%;
     position: relative;
+    z-index: 2;
 }
 
-.timeline-dot {
-    width: 30px;
-    height: 30px;
+/* Glowing Numbers */
+.timeline-glow-dot {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background-color: var(--accent-cyan);
-    border: 3px solid var(--dark-bg);
-    box-shadow: 0 0 15px var(--glow-color);
-    z-index: 1;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0, 246, 255, 0.4);
+    margin-bottom: 1.5rem;
+    border: 4px solid rgba(15, 23, 42, 0.9);
 }
 
-.timeline-content {
-    margin-top: 1.5rem;
-}
-
-.timeline-content h3 {
+.timeline-content-premium h3 {
+    font-size: 1.3rem;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
+}
+
+.timeline-content-premium p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* Neon Connecting Line */
+.timeline-connector {
+    flex-grow: 1;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(98, 72, 255, 0.5), rgba(0, 246, 255, 0.5));
+    margin-top: 30px; /* Aligns exactly with the middle of the 60px dots */
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 10px rgba(0, 246, 255, 0.3);
+}
+
+/* === 4. Responsive Adjustments === */
+@media (max-width: 900px) {
+    .timeline-premium {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3rem;
+    }
+    
+    .timeline-item-premium {
+        width: 100%;
+        flex-direction: row;
+        text-align: left;
+        gap: 2rem;
+    }
+    
+    .timeline-glow-dot {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+    
+    /* Hide horizontal line on mobile */
+    .timeline-connector {
+        display: none; 
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    .tools-bento-grid {
+        grid-template-columns: 1fr;
+    }
 }

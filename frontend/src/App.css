@@ -10,7 +10,7 @@
     --accent-purple: #6248FF;
     --glow-color: rgba(0, 246, 255, 0.5);
 }
-/* === Aurora Background Animation === */
+
 /* === STATIC Aurora Background === */
 .background-aurora {
   position: fixed;
@@ -19,31 +19,29 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: -3; /* Keep it as the bottom layer */
+  z-index: -3;
 }
 
 .background-aurora::before,
 .background-aurora::after {
   content: '';
   position: absolute;
-  width: 60vmax; /* Slightly smaller blobs */
+  width: 60vmax;
   height: 60vmax;
   border-radius: 50%;
-  filter: blur(12vmax); /* Increase blur for softness */
+  filter: blur(12vmax);
   z-index: -3;
 }
 
-/* Cyan blob positioned at the bottom-left */
 .background-aurora::before {
-  background: rgba(0, 246, 255, 0.2); /* Reduced opacity */
-  bottom: -20%; /* Pushes most of it below the screen */
+  background: rgba(0, 246, 255, 0.2);
+  bottom: -20%;
   left: -20%;
 }
 
-/* Purple blob positioned at the bottom-right */
 .background-aurora::after {
-  background: rgba(98, 72, 255, 0.2); /* Reduced opacity */
-  bottom: -5%; /* Pushes most of it below the screen */
+  background: rgba(98, 72, 255, 0.2);
+  bottom: -5%;
   right: -5%;
 }
 
@@ -53,13 +51,12 @@ html {
 
 body {
     margin: 0;
-     /* Space for fixed navbar */
     font-family: 'Poppins', sans-serif;
     background-color: var(--dark-bg);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  overflow-y: auto;
+    overflow-y: auto;
 }
 
 .container {
@@ -69,19 +66,20 @@ body {
     padding: 0 1.5rem;
     box-sizing: border-box;
 }
+
 .page-container {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
- 
-    
 }
+
 .content-wrapper {
-    flex: 1; /* This is the key: it makes the main content grow */
+    flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* This helps center content vertically */
+    justify-content: center;
 }
+
 /* === 2. Typography === */
 .section-title {
     text-align: center;
@@ -102,102 +100,258 @@ body {
     border: 1px solid transparent;
     cursor: pointer;
 }
-/* Main solid button (e.g., Hero CTA) */
+
 .btn-primary {
     background-color: rgba(18, 24, 43, 0.7);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
 }
+
 .btn-primary:hover {
     border-color: var(--accent-cyan);
     color: var(--accent-cyan);
 }
-/* Outline button (e.g., Navbar) */
+
 .btn-outline {
     background-color: transparent;
     color: var(--accent-cyan);
     border: 1px solid var(--accent-cyan);
 }
+
 .btn-outline:hover {
     background-color: var(--accent-cyan);
     color: var(--dark-bg);
     box-shadow: 0 0 15px var(--glow-color);
 }
 
-
-/* === 4. Navigation Bar === */
+/* === 4. Premium Ultra-Glass Navbar (V2) === */
 .navbar {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 1.25rem 0;
-    background: rgba(10, 15, 30, 0.6);
-    backdrop-filter: blur(10px);
+    padding: 1.2rem 0; /* Thoda aur space add kiya hai */
+    background: rgba(10, 15, 30, 0.4); /* Zyada transparent taaki aurora dikhe */
+    backdrop-filter: blur(16px) saturate(180%); /* Saturation se piche ke colors pop honge */
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
     z-index: 1000;
-    border-bottom: 1px solid var(--border-color);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 5px 20px rgba(0, 246, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Ekdum soft border */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
 }
+
 .nav-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .nav-logo {
     font-size: 1.8rem;
-    font-weight: 700;
+    font-weight: 800; /* Font thoda bold kiya */
     color: var(--text-primary);
     text-decoration: none;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
 }
+
+/* Logo ke 'Catalyst' part mein Gradient aur Glow */
+.nav-logo span {
+    background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-left: 2px;
+    filter: drop-shadow(0 0 8px rgba(0, 246, 255, 0.4));
+}
+
+.nav-logo:hover {
+    transform: translateY(-1px);
+}
+
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 2.5rem;
+    gap: 3rem; /* Links ke beech thoda zyada space */
 }
+
 .nav-links a {
     color: var(--text-secondary);
     text-decoration: none;
     font-weight: 500;
+    font-size: 1.05rem;
     transition: color 0.3s ease;
+    position: relative;
+    padding: 0.5rem 0;
 }
+
 .nav-links a:hover {
+    color: var(--text-primary); /* Hover par ekdum bright white hoga */
+}
+
+/* Links ke niche Animated Gradient Line */
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--accent-cyan); /* Line par halka sa glow */
+}
+
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+/* Glowing Solid CTA Button */
+.nav-cta-premium {
+    background: linear-gradient(135deg, var(--accent-purple), #4f46e5);
     color: var(--text-primary);
+    border: none;
+    padding: 0.6rem 1.6rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(98, 72, 255, 0.4);
 }
 
-.nav-cta {
-    padding: 0.5rem 1.5rem; /* Make it a bit smaller than main buttons */
-    font-weight: 500;
+.nav-cta-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(98, 72, 255, 0.6), 0 0 10px rgba(0, 246, 255, 0.2);
+    background: linear-gradient(135deg, #7c3aed, var(--accent-purple));
 }
 
-/* === 5. Footer === */
-.footer {
+/* === 5. Premium Footer === */
+.footer-long {
+    margin-top: auto;
+    width: 100%;
+    background: rgba(10, 15, 30, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.2);
+    padding: 4rem 0 0 0; /* Upar se thoda space */
+    position: relative;
+    overflow: hidden;
+}
 
-  margin-top: auto; /* Pushes the footer to the bottom of the flex container */
-  width: 100%;
-  box-sizing: border-box;
+/* Footer ke top par ek subtle glowing line */
+.footer-long::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-purple), var(--accent-cyan), transparent);
+    opacity: 0.5;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 3rem;
+    margin-bottom: 3rem;
+}
+
+.footer-col {
+    display: flex;
+    flex-direction: column;
 }
 
 .footer-logo {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: var(--text-primary);
     text-decoration: none;
     margin-bottom: 1rem;
     display: inline-block;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
-.footer-links { margin: 1.5rem 0; }
-.footer-links a {
+
+/* Logo ke 'Catalyst' part mein wahi Navbar wala Gradient */
+.footer-logo span {
+    background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(0, 246, 255, 0.2));
+}
+
+.footer-col p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.footer-col h3 {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.footer-col ul li a {
     color: var(--text-secondary);
     text-decoration: none;
-    margin: 0 1rem;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
+    display: inline-block;
 }
-.footer-links a:hover { color: var(--text-primary); }
+
+/* Links par hover karne se halka sa right move honge aur glow karenge */
+.footer-col ul li a:hover {
+    color: var(--accent-cyan);
+    transform: translateX(5px); 
+    text-shadow: 0 0 8px rgba(0, 246, 255, 0.4);
+}
+
+.social-icons {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+}
+
+.social-icons a {
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-icons a:hover {
+    color: var(--accent-purple);
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 10px rgba(98, 72, 255, 0.6));
+}
+
 .footer-copyright {
+    text-align: center;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.footer-copyright p {
+    margin: 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
-

@@ -1,14 +1,20 @@
 import React from 'react';
 import { FaGithub, FaLinkedin } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
         <footer id="footer" className="footer-long">
             <div className="container footer-grid">
+                
                 <div className="footer-col">
-                    <a href="/" className="footer-logo">Career Catalyst</a>
+                    {/* Logo styled exactly like the Navbar */}
+                    <Link to="/" className="footer-logo">
+                        Career<span>Catalyst</span>
+                    </Link>
                     <p>Our mission is to empower job seekers with the AI tools they need to stand out and succeed.</p>
                 </div>
+                
                 <div className="footer-col">
                     <h3>Features</h3>
                     <ul>
@@ -18,6 +24,7 @@ const Footer = () => {
                         <li><a href="/#full-bento-grid">Cover Letter Generator</a></li>
                     </ul>
                 </div>
+                
                 <div className="footer-col">
                     <h3>Resources</h3>
                     <ul>
@@ -26,6 +33,7 @@ const Footer = () => {
                         <li><a href="#">Help Center</a></li>
                     </ul>
                 </div>
+                
                 <div className="footer-col">
                     <h3>Social</h3>
                     <div className="social-icons">
@@ -33,7 +41,9 @@ const Footer = () => {
                         <a href="#" aria-label="LinkedIn"><FaLinkedin /></a>
                     </div>
                 </div>
+                
             </div>
+            
             <div className="footer-copyright">
                 <p>&copy; {new Date().getFullYear()} Career Catalyst. All Rights Reserved. Built with passion in Lucknow, India.</p>
             </div>
