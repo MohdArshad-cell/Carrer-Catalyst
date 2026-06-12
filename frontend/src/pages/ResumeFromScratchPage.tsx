@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
+import { supabase } from '../supabaseClient';   // ✅ Added Supabase
 import { ResumeData } from '../types';
 
 import TemplateSelection from '../forms/TemplateSelection';
@@ -31,13 +33,53 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:800
 const buildApiPayload = (data: ResumeData, template: string) => ({
     template_name: template.toLowerCase().replace(/ /g, '_'),
     resume_data: {
-        personal_info: { fullName: data.personal_info.full_name || "", email: data.personal_info.email || "", phone: data.personal_info.phone || "", address: data.personal_info.address || "", github: data.personal_info.github_handle || "", linkedin: data.personal_info.linkedin_handle || "", portfolioUrl: data.personal_info.portfolio_url || "" },
-        education: data.education.filter(e => e.institution || e.degree).map(e => ({ degree: e.degree, institution: e.institution, startYear: e.start_year, endYear: e.end_year, grade: e.gpa })),
-        workExperience: data.work_experience.filter(e => e.company_name || e.job_title).map(e => ({ role: e.job_title, company: e.company_name, location: e.location, startDate: e.start_date, endDate: e.end_date, descriptionPoints: e.description_points ? e.description_points.split('\n') : [] })),
-        projects: data.projects.filter(p => p.project_name).map(p => ({ projectName: p.project_name, tech_stack: p.tech_stack, startDate: p.start_date, endDate: p.end_date, descriptionPoints: p.description_points ? p.description_points.split('\n') : [] })),
-        skills: data.skills.filter(s => s.name).map(s => ({ name: s.name, value: s.value })),
-        achievements: data.achievements.filter(a => a.description).map(a => ({ description: a.description })),
-        certifications: data.certifications.filter(c => c.name).map(c => ({ name: c.name, issuer: c.issuer, date: c.date }))
+        personal_info: { 
+            full_name: data.personal_info.full_name || "", 
+            email: data.personal_info.email || "", 
+            phone: data.personal_info.phone || "", 
+            address: data.personal_info.address || "", 
+            github_handle: data.personal_info.github_handle || "", 
+            linkedin_handle: data.personal_info.linkedin_handle || "", 
+            portfolio_url: data.personal_info.portfolio_url || "" 
+        },
+        education: data.education.filter(e => e.institution || e.degree).map(e => ({ 
+            degree: e.degree, 
+            institution: e.institution, 
+            start_year: e.start_year, 
+            end_year: e.end_year, 
+            gpa: e.gpa 
+        })),
+        work_experience: data.work_experience.filter(e => e.company_name || e.job_title).map(e => ({ 
+            job_title: e.job_title, 
+            company_name: e.company_name, 
+            location: e.location, 
+            start_date: e.start_date, 
+            end_date: e.end_date, 
+            description_points: e.description_points 
+                ? e.description_points.split('\n').map(pt => pt.trim()).filter(pt => pt !== '') 
+                : [] 
+        })),
+        projects: data.projects.filter(p => p.project_name).map(p => ({ 
+            project_name: p.project_name, 
+            tech_stack: p.tech_stack, 
+            start_date: p.start_date, 
+            end_date: p.end_date, 
+            description_points: p.description_points 
+                ? p.description_points.split('\n').map(pt => pt.trim()).filter(pt => pt !== '') 
+                : [] 
+        })),
+        skills: data.skills.filter(s => s.name).map(s => ({ 
+            name: s.name, 
+            value: s.value 
+        })),
+        achievements: data.achievements.filter(a => a.description).map(a => ({ 
+            description: a.description 
+        })),
+        certifications: data.certifications.filter(c => c.name).map(c => ({ 
+            name: c.name, 
+            issuer: c.issuer, 
+            date: c.date 
+        }))
     }
 });
 
@@ -48,6 +90,8 @@ interface LocalDownloadLinks {
 }
 
 const ResumeFromScratchPage: React.FC = () => {
+    const navigate = useNavigate(); // ✅ Hook added for redirection
+
     const [activeSection, setActiveSection] = useState('Templates');
     const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
     const [selectedTemplate, setSelectedTemplate] = useState('Professional');
@@ -110,16 +154,47 @@ const ResumeFromScratchPage: React.FC = () => {
         }, 2000);
     };
 
+    // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
     const handleAction = async (isPreview: boolean) => {
         isPreview ? setIsPreviewLoading(true) : setIsGenerating(true);
         if (!isPreview) setDownloadLinks(null);
         setErrorMessage('');
         
         try {
+            // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+
+            if (!user) {
+                setErrorMessage("You must be logged in to build your resume.");
+                isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
+                setTimeout(() => navigate('/login'), 2000);
+                return;
+            }
+
+            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
+            try {
+                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
+                    user_id: user.id 
+                });
+            } catch (tokenErr: any) {
+                // Agar 403 error aaya, matlab tokens khatam
+                if (tokenErr.response?.status === 403) {
+                    setErrorMessage("🚫 Tokens Empty! Redirecting to Premium upgrade...");
+                    isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
+                    setTimeout(() => navigate('/pricing'), 3000);
+                    return;
+                }
+                throw tokenErr; // Koi aur error ho toh main catch block mein bhej do
+            }
+
+            // ✅ TOLL PLAZA CROSSED! Ab PDF Engine start hoga...
             const payload = buildApiPayload(resumeData, selectedTemplate);
             const startRes = await axios.post(`${API_BASE_URL}/generate/start`, payload);
             await pollTask(startRes.data.task_id, isPreview);
-        } catch (e) {
+            
+        } catch (e: any) {
+            console.error("Error generating resume:", e);
             setErrorMessage('Server connection refused. Check backend.');
             isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
         }
@@ -145,58 +220,81 @@ const ResumeFromScratchPage: React.FC = () => {
             <div className="background-aurora"></div>
             <Navbar />
 
-            <div className="scratch-builder-container">
-                <aside className="scratch-sidebar">
-                    <a href="/" className="sidebar-logo">Resume Builder</a>
-                    <nav>
-                        {navItems.map(item => (
-                            <div key={item} className={`sidebar-item ${activeSection === item ? 'active' : ''}`} onClick={() => setActiveSection(item)}>
-                                {item}
-                            </div>
-                        ))}
-                    </nav>
-                    <div className="sidebar-action">
-                        <button className="btn btn-primary" onClick={() => handleAction(false)} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'MAKE RESUME'}
-                        </button>
+            <div className="scratch-studio-container" style={{ paddingTop: '100px', paddingBottom: '3rem' }}>
+                
+                {/* Premium Studio Header */}
+                <div className="studio-header text-center" style={{ marginBottom: '2rem' }}>
+                    <div className="hero-badge">
+                        <span className="sparkle">⚙️</span> Workspace
                     </div>
-                </aside>
+                    <h1 className="animated-gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Resume Studio</h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>Craft your professional narrative, real-time.</p>
+                </div>
 
-                <main className="scratch-main-panel">
-                    <div className="scratch-forms-area">{renderActiveForm()}</div>
+                <div className="scratch-builder-layout">
+                    
+                    {/* Sidebar Navigation */}
+                    <aside className="scratch-sidebar glass-card">
+                        <nav className="sidebar-nav">
+                            {navItems.map(item => (
+                                <div key={item} className={`sidebar-item ${activeSection === item ? 'active' : ''}`} onClick={() => setActiveSection(item)}>
+                                    {item}
+                                </div>
+                            ))}
+                        </nav>
+                        <div className="sidebar-action">
+                            <button className="btn-premium pulse-glow w-100" onClick={() => handleAction(false)} disabled={isGenerating}>
+                                {isGenerating ? 'Generating...' : 'MAKE RESUME'}
+                            </button>
+                        </div>
+                    </aside>
 
-                    <div className="scratch-preview-area">
+                    {/* Main Forms Area */}
+                    <main className="scratch-main-panel glass-card">
+                        <div className="scratch-forms-area">
+                            <h2 className="form-section-title">{activeSection}</h2>
+                            {renderActiveForm()}
+                        </div>
+                    </main>
+
+                    {/* Live Preview Area */}
+                    <div className="scratch-preview-panel glass-card">
                         <div className="scratch-preview-sticky">
-                            <div className="preview-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3>Live Preview</h3>
-                                <button className="btn btn-secondary btn-sm" onClick={() => handleAction(true)} disabled={isPreviewLoading} style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>
-                                    {isPreviewLoading ? 'Updating...' : '↻ Refresh Preview'}
+                            <div className="preview-header">
+                                <h3 className="preview-title">Live Preview</h3>
+                                <button className="btn-outline preview-refresh-btn" onClick={() => handleAction(true)} disabled={isPreviewLoading}>
+                                    {isPreviewLoading ? 'Updating...' : '↻ Refresh'}
                                 </button>
                             </div>
                             
-                            {isGenerating && <div className="preview-status">Processing request securely...</div>}
-                            {isPreviewLoading && !isGenerating && <div className="preview-status">Updating preview...</div>}
-                            {errorMessage && <div className="error-message">{errorMessage}</div>}
+                            {isGenerating && <div className="preview-status info-status">Processing request securely...</div>}
+                            {isPreviewLoading && !isGenerating && <div className="preview-status info-status">Updating preview...</div>}
+                            {errorMessage && <div className="preview-status error-status">{errorMessage}</div>}
 
-                            {/* The Separate Download Buttons you asked for */}
+                            {/* Premium Download Buttons */}
                             {downloadLinks && (
-                                <div className="download-links-container" style={{ display: 'flex', gap: '10px', marginTop: '15px', marginBottom: '15px' }}>
-                                    <a href={downloadLinks.pdfUrl} download="Resume.pdf" className="action-btn pdf-btn" style={{flex: 1, textAlign: 'center'}}>📄 Download PDF</a>
-                                    <a href={downloadLinks.latexUrl} download="Resume.tex" className="action-btn latex-btn" style={{flex: 1, textAlign: 'center'}}>💻 Download LaTeX</a>
-                                    <a href={downloadLinks.jsonUrl} download="Resume.json" className="action-btn json-btn" style={{flex: 1, textAlign: 'center'}}>⚙️ Download JSON</a>
+                                <div className="download-links-grid">
+                                    <a href={downloadLinks.pdfUrl} download="Resume.pdf" className="premium-download-btn pdf-btn">📄 PDF</a>
+                                    <a href={downloadLinks.latexUrl} download="Resume.tex" className="premium-download-btn latex-btn">💻 LaTeX</a>
+                                    <a href={downloadLinks.jsonUrl} download="Resume.json" className="premium-download-btn json-btn">⚙️ JSON</a>
                                 </div>
                             )}
 
-                            {previewPdfUrl ? (
-                                <object data={previewPdfUrl} type="application/pdf" className="pdf-preview-object" aria-label="Resume Preview" style={{ width: '100%', height: '100%', minHeight: '600px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                            ) : (
-                                <div className="pdf-preview-placeholder">
-                                    {isPreviewLoading ? 'Loading Preview...' : 'Click Refresh Preview to see your resume.'}
-                                </div>
-                            )}
+                            {/* PDF Viewer */}
+                            <div className="pdf-viewer-container">
+                                {previewPdfUrl ? (
+                                    <object data={previewPdfUrl} type="application/pdf" className="pdf-preview-object" aria-label="Resume Preview" />
+                                ) : (
+                                    <div className="pdf-preview-placeholder">
+                                        <div className="placeholder-icon">📄</div>
+                                        <p>{isPreviewLoading ? 'Rendering your resume...' : 'Fill out your details and click Refresh Preview to see the magic.'}</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </main>
+
+                </div>
             </div>
             <Footer />
         </div>

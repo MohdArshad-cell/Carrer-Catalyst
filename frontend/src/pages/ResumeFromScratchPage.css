@@ -1,127 +1,166 @@
-/* === Main App Layout === */
-.scratch-builder-container {
-    display: flex;
-    height: 90vh;
+/* === Main Layout Structure === */
+.scratch-studio-container {
+    /* Changed from 1600px to 96% to utilize almost the entire screen */
+    max-width: 96%; 
+    margin: 0 auto;
     width: 100%;
-    /* The main background color will be visible behind the glass panels */
-    background: transparent;
     color: var(--text-primary);
-    margin-top: 60px;
-    margin-bottom: 80px;
+}
+
+.scratch-builder-layout {
+    display: grid;
+    /* 
+      Sidebar: Fixed at 250px.
+      Form: Flexible (1fr), min 400px.
+      Preview: Flexible (1.3fr) -> Gets the most leftover space for the PDF.
+    */
+    grid-template-columns: 250px minmax(400px, 1fr) minmax(500px, 1.3fr);
+    gap: 2rem; /* Increased gap to let the columns breathe */
+    align-items: start;
+}
+
+/* === Universal Glassmorphism Component === */
+.glass-card {
+    background: rgba(13, 17, 28, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    padding: 1.5rem;
+}
+
+/* === Studio Header === */
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 246, 255, 0.1);
+    color: var(--accent-cyan);
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(0, 246, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.animated-gradient-text {
+    background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* === Sidebar === */
 .scratch-sidebar {
-    flex: 0 0 250px;
     display: flex;
     flex-direction: column;
-    padding: 1.5rem;
-    z-index: 10;
-    
-    /* Glassmorphism Effect */
-    background: transparent; /* Semi-transparent */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-right: 1px solid var(--border-color);
+    height: calc(100vh - 140px); /* Fixed height based on viewport */
+    position: sticky;
+    top: 100px;
 }
 
-.sidebar-logo {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--accent-cyan);
-    text-decoration: none;
-    margin-bottom: 2rem;
-    text-align: center;
+.sidebar-nav {
+    flex-grow: 1;
+    overflow-y: auto;
+    /* Hide Scrollbar */
+    scrollbar-width: none;
 }
+.sidebar-nav::-webkit-scrollbar { display: none; }
 
 .sidebar-item {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-secondary);
     padding: 0.8rem 1rem;
-    margin: 0.25rem 0;
+    margin: 0.3rem 0;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     border-radius: 8px;
-    text-align: left;
+    border: 1px solid transparent;
 }
 
 .sidebar-item:hover {
-    background: transparent;
-    color: var(--accent-cyan);
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .sidebar-item.active {
-    background: var(--accent-cyan);
-    color: var(--dark-bg);
+    background: rgba(0, 246, 255, 0.1);
+    color: var(--accent-cyan);
+    border-color: rgba(0, 246, 255, 0.3);
     font-weight: 600;
-    box-shadow: 0 0 15px var(--glow-color);
 }
 
 .sidebar-action {
-    margin-top: auto;
-}
-.sidebar-action .btn {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-weight: bold;
+    margin-top: 1rem;
 }
 
-/* === Main Content Panel === */
+/* === Main Forms Area === */
 .scratch-main-panel {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    margin-bottom:40px;
-    gap: 1rem;
-    padding: 2rem;
-    
+    height: calc(100vh - 140px);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.scratch-main-panel::-webkit-scrollbar { display: none; }
+
+.form-section-title {
+    color: var(--accent-cyan);
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* === Forms Area (Scrolling) === */
-.scratch-forms-area h2 {
-  margin-top: 0;
-  padding-top: 0;
-  color: var(--accent-cyan);
-  margin-bottom: 1.5rem; 
-  flex-shrink: 0; /* Prevent the heading from shrinking */
-  margin-top: 0;
-}
-
-/* --- Fix to Hide the Scrollbar --- */
-
-/* For Chrome, Safari, and newer versions of Edge */
-.scratch-forms-area::-webkit-scrollbar {
-  display: none;
-}
-
-/* For Firefox */
-.scratch-forms-area {
-  scrollbar-width: none;  /* "thin", "auto", or "none" */
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-/* === Preview Area (Sticky) === */
-.scratch-preview-area {
-    height: calc(100vh - 4rem);
-}
-.scratch-preview-sticky {
-    position: sticky;
-    top: 0;
-    height: 90%;
+.form-group {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
     border-radius: 12px;
-    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* === Form Inputs === */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background-color: rgba(10, 15, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.15);
+    background-color: rgba(10, 15, 30, 0.9);
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* === Preview Area === */
+.scratch-preview-panel {
+    height: calc(100vh - 140px);
+    position: sticky;
+    top: 100px;
     display: flex;
     flex-direction: column;
+}
 
-    /* Glassmorphism Effect */
-    background: transparent;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
+.scratch-preview-sticky {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .preview-header {
@@ -130,175 +169,206 @@
     align-items: center;
     margin-bottom: 1rem;
 }
-.preview-header h3 {
+
+.preview-title {
     margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
 }
-.pdf-preview-object, .pdf-preview-placeholder {
+
+.pdf-viewer-container {
+    flex-grow: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #1a1a24;
+}
+
+.pdf-preview-object {
     width: 100%;
     height: 100%;
-    border-radius: 8px;
-    flex-grow: 1;
+    display: block;
 }
+
 .pdf-preview-placeholder {
+    height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
-    background-color: rgba(10, 15, 30, 0.6);
-    border: 1px dashed var(--border-color);
+    text-align: center;
+    padding: 2rem;
 }
 
-/* === Form Element Styling === */
-.form-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+.placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
 }
-.form-group {
-    padding: 1.5rem;
+
+.info-status { color: var(--accent-cyan); font-size: 0.9rem; margin-bottom: 1rem; }
+.error-status { color: #ef4444; font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* === Premium Buttons === */
+.btn-premium {
+    background: var(--accent-cyan);
+    color: var(--dark-bg);
+    border: none;
     border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-
-    /* Glassmorphism Effect for form groups */
-    background: transparent;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid var(--border-color);
-    margin-bottom: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-textarea {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: rgba(10, 15, 30, 0.6);
-    border: 1px solid var(--border-color);
+.pulse-glow:hover {
+    box-shadow: 0 0 20px rgba(0, 246, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.4rem 0.8rem;
     border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+
+.btn-outline:hover {
+    border-color: var(--text-primary);
     color: var(--text-primary);
-    font-size: 1rem;
-    box-sizing: border-box;
+}
+
+/* === Download Grid Pills === */
+.download-links-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.premium-download-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
     transition: all 0.2s ease;
 }
 
-input[type="text"]:focus,
-textarea:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 10px rgba(0, 246, 255, 0.3);
+.pdf-btn { 
+    background: rgba(239, 68, 68, 0.1); 
+    color: #ef4444; 
+    border: 1px solid rgba(239, 68, 68, 0.2); 
+}
+.pdf-btn:hover { 
+    background: rgba(239, 68, 68, 0.2); 
+    border-color: #ef4444;
 }
 
-textarea {
-    min-height: 100px;
-    resize: vertical;
+.latex-btn { 
+    background: rgba(59, 130, 246, 0.1); 
+    color: #3b82f6; 
+    border: 1px solid rgba(59, 130, 246, 0.2); 
+}
+.latex-btn:hover { 
+    background: rgba(59, 130, 246, 0.2); 
+    border-color: #3b82f6;
 }
 
-/* === Template Gallery Styles === */
+.json-btn { 
+    background: rgba(16, 185, 129, 0.1); 
+    color: #10b981; 
+    border: 1px solid rgba(16, 185, 129, 0.2); 
+}
+.json-btn:hover { 
+    background: rgba(16, 185, 129, 0.2); 
+    border-color: #10b981;
+}
+
+/* === Template Gallery === */
 .template-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    gap: 1.25rem;
 }
-/* In your ResumeFromScratchPage.css file */
-.template-card {
-    /* --- FIX: ADDED FLEXBOX PROPERTIES --- */
-    display: flex;
-    flex-direction: column; 
 
-    /* --- Existing properties --- */
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+.template-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    text-align: center;
+    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.2);
 }
+
 .template-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--accent-cyan);
+    border-color: rgba(0, 246, 255, 0.5);
+    transform: translateY(-4px);
 }
+
 .template-card.active {
     border-color: var(--accent-cyan);
-    box-shadow: 0 0 20px var(--glow-color);
+    box-shadow: 0 0 20px rgba(0, 246, 255, 0.2);
 }
+
 .template-preview-container {
     background-color: #ffffff;
     padding: 1rem;
-    aspect-ratio: 8.5 / 11; 
+    aspect-ratio: 8.5 / 11;
 }
+
 .template-preview-img {
     width: 100%;
     height: 100%;
-    object-fit: contain; 
+    object-fit: contain;
     object-position: top;
 }
+
 .template-card p {
     font-weight: 600;
     padding: 1rem;
     margin: 0;
-    background-color: rgba(18, 24, 43, 0.6);
-}
-/* --- Fix for the Template Section --- */
-
-/* Removes the extra top margin from the heading */
-/* --- DOWNLOAD BUTTONS STYLING --- */
-.download-links-container {
-    display: flex;
-    gap: 12px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s ease-in-out;
+/* === Responsive Design === */
+@media (max-width: 1200px) {
+    .scratch-builder-layout {
+        /* On smaller screens, stack the forms and preview, keep sidebar fixed */
+        grid-template-columns: 200px 1fr;
+    }
+    .scratch-preview-panel {
+        grid-column: 1 / -1;
+        height: 600px; /* Give it a fixed height when stacked */
+        position: static;
+    }
 }
 
-.action-btn:hover {
-    transform: translateY(-2px);
-}
-
-/* Red theme for PDF */
-.pdf-btn {
-    background-color: rgba(239, 68, 68, 0.15); 
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-.pdf-btn:hover { 
-    background-color: rgba(239, 68, 68, 0.25); 
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
-}
-
-/* Blue theme for LaTeX */
-.latex-btn {
-    background-color: rgba(59, 130, 246, 0.15); 
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-}
-.latex-btn:hover { 
-    background-color: rgba(59, 130, 246, 0.25); 
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-}
-
-/* Green theme for JSON */
-.json-btn {
-    background-color: rgba(16, 185, 129, 0.15); 
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-.json-btn:hover { 
-    background-color: rgba(16, 185, 129, 0.25); 
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+@media (max-width: 850px) {
+    .scratch-builder-layout {
+        grid-template-columns: 1fr;
+    }
+    .scratch-sidebar {
+        height: auto;
+        position: static;
+    }
+    .scratch-main-panel {
+        height: auto;
+        overflow-y: visible;
+    }
+    .template-grid {
+        grid-template-columns: 1fr;
+    }
 }

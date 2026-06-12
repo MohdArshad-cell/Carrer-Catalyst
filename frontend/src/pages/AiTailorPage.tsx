@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import { supabase } from '../supabaseClient';
 import './AiTailorPage.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -15,6 +17,8 @@ const loadingSteps = [
 ];
 
 const AiTailorPage: React.FC = () => {
+    const navigate = useNavigate(); // ✅ Correct hook placement
+
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -25,9 +29,7 @@ const AiTailorPage: React.FC = () => {
     const [pdfData, setPdfData] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     
-    // --- NEW STATE FOR MANUAL RECOMPILE ---
     const [isCompiling, setIsCompiling] = useState(false);
-    
     const [metrics, setMetrics] = useState<{ score: number, keywords: string[] } | null>(null);
 
     // --- DRAG & DROP LOGIC ---
@@ -64,13 +66,13 @@ const AiTailorPage: React.FC = () => {
         });
     };
 
-    // --- MAIN API CALL ---
+    // --- MAIN API CALL WITH TOLL PLAZA ---
     const handleTailorResume = async () => {
         if (!resumeText.trim() || !jobDescription.trim()) {
             setError('Please provide both your resume and the job description.');
             return;
         }
-        
+
         setIsLoading(true);
         setError('');
         setLatexCode('');
@@ -78,37 +80,63 @@ const AiTailorPage: React.FC = () => {
         setMetrics(null);
         setLoadingStep(0);
 
-        const stepInterval = setInterval(() => {
-            setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
-        }, 4000);
-
         try {
-            // 🚨 UPDATED PAYLOAD: Seedha raw string bhej rahe hain
+            // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+
+            if (!user) {
+                setError("You must be logged in to use this AI tool.");
+                setIsLoading(false);
+                setTimeout(() => navigate('/login'), 2000);
+                return;
+            }
+
+            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
+            try {
+                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
+                    user_id: user.id 
+                });
+            } catch (tokenErr: any) {
+                if (tokenErr.response?.status === 403) {
+                    setError("🚫 Tokens Empty! Redirecting to Premium upgrade...");
+                    setIsLoading(false);
+                    setTimeout(() => navigate('/pricing'), 3000); 
+                    return;
+                }
+                throw tokenErr;
+            }
+
+            // ✅ TOLL PLAZA CROSSED! Ab AI apna jaadu chalayega...
+            const stepInterval = setInterval(() => {
+                setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
+            }, 4000);
+
             const payload = { 
-                resume_text: resumeText, // Matches the new TailorRequest model
+                resume_text: resumeText, 
                 job_description: jobDescription 
             };
             
             const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload);
+            clearInterval(stepInterval); 
             
             if (response.data && response.data.latex_code && response.data.pdf_base64) {
                 setLatexCode(response.data.latex_code);
                 setPdfData(response.data.pdf_base64);
                 calculateMetrics(jobDescription);
+                setIsLoading(false);
             } else {
                 throw new Error("Invalid response format received from server.");
             }
         } catch (err: any) {
             console.error("Error tailoring resume:", err);
             
-            // 🚨 THE ABSOLUTE SHIELD: Guarantees a string is returned to React
             let finalErrorMessage = "Failed to tailor resume. Ensure backend is running.";
             
             try {
                 const detail = err.response?.data?.detail;
                 if (detail) {
                     if (Array.isArray(detail)) {
-                        // Extract Pydantic array validation errors
                         finalErrorMessage = detail.map((e: any) => {
                             const location = Array.isArray(e.loc) ? e.loc.join(' -> ') : 'Field';
                             return `${location}: ${e.msg}`;
@@ -125,11 +153,7 @@ const AiTailorPage: React.FC = () => {
                 finalErrorMessage = "An unknown server error occurred.";
             }
 
-            // Force cast to String just in case
             setError(String(finalErrorMessage));
-            
-        } finally {
-            clearInterval(stepInterval);
             setIsLoading(false);
         }
     };
@@ -187,30 +211,34 @@ const AiTailorPage: React.FC = () => {
             <div className="background-aurora"></div>
             <Navbar />
 
-            <div className="tailor-container">
-                <div className="tailor-header">
-                    <h1>AI Resume Tailor</h1>
-                    <p>Instantly optimize your resume against any job description. Precision matters.</p>
+            <div className="tailor-studio-container" style={{ paddingTop: '100px', paddingBottom: '3rem', maxWidth: '96%', margin: '0 auto' }}>
+                
+                <div className="studio-header text-center" style={{ marginBottom: '3rem' }}>
+                    <div className="hero-badge">
+                        <span className="sparkle">✨</span> AI Optimizer
+                    </div>
+                    <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>Resume Tailor</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Instantly align your resume with any job description. Precision matters.</p>
                 </div>
 
-                {/* --- TOP ROW: INPUTS --- */}
-                <div className="input-grid">
-                    <div className="panel relative-panel">
-                        <h2>Your Resume (Text, LaTeX, or JSON)</h2>
+                <div className="tailor-input-grid">
+                    <div className="panel glass-card relative-panel">
+                        <h2 className="panel-title">Your Resume (Text or JSON)</h2>
                         <textarea
-                            className={`drop-zone ${isDragging ? 'drag-active' : ''}`}
+                            className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            placeholder='Paste your raw resume text, LaTeX code, or JSON here...'
+                            placeholder='Paste your raw resume text, LaTeX code, or drag & drop a .json/.txt file here...'
                             disabled={isLoading}
                         />
                     </div>
-                    <div className="panel">
-                        <h2>Target Job Description</h2>
+                    <div className="panel glass-card">
+                        <h2 className="panel-title">Target Job Description</h2>
                         <textarea
+                            className="premium-textarea"
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             placeholder="Paste the target JD here..."
@@ -219,101 +247,100 @@ const AiTailorPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- MIDDLE: ACTION BUTTON --- */}
-                <div className="action-row">
+                <div className="action-row text-center" style={{ margin: '3rem 0' }}>
                     <button 
-                        className="btn btn-primary massive-btn" 
+                        className="btn-premium pulse-glow massive-btn" 
                         onClick={handleTailorResume} 
                         disabled={isLoading || !resumeText.trim() || !jobDescription.trim()}
+                        style={{ padding: '1.2rem 3rem', fontSize: '1.2rem', borderRadius: '50px' }}
                     >
-                        {isLoading ? 'Processing Pipeline...' : 'Tailor My Resume'}
+                        {isLoading ? 'Processing Pipeline...' : 'Tailor My Resume 🚀'}
                     </button>
-                    {error && <div className="error-banner">{error}</div>}
+                    {error && <div className="error-status" style={{ marginTop: '1rem', fontSize: '1.1rem' }}>{error}</div>}
                 </div>
 
-                {/* --- BOTTOM ROW: RESULTS --- */}
                 {(isLoading || latexCode || pdfData) && (
-                    <div className="output-grid-container">
-                        <hr className="section-divider" />
-                        
+                    <div className="output-section">
                         {isLoading ? (
-                            <div className="loading-state">
-                                <div className="spinner"></div>
-                                <h3 className="step-text">{loadingSteps[loadingStep]}</h3>
+                            <div className="loading-state glass-card text-center" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
+                                <div className="spinner-premium"></div>
+                                <h3 className="step-text" style={{ color: 'var(--accent-cyan)', margin: '1.5rem 0' }}>{loadingSteps[loadingStep]}</h3>
                                 <div className="progress-bar-container">
-                                    <div className="progress-bar" style={{ width: `${((loadingStep + 1) / 4) * 100}%` }}></div>
+                                    <div className="progress-bar-fill" style={{ width: `${((loadingStep + 1) / 4) * 100}%` }}></div>
                                 </div>
                             </div>
                         ) : (
                             <div className="results-wrapper">
-                                {/* METRICS PANEL */}
                                 {metrics && (
-                                    <div className="metrics-panel">
-                                        <div className="metric-card score-card">
-                                            <h4>Estimated ATS Match</h4>
-                                            <div className="score">{metrics.score}%</div>
-                                        </div>
-                                        <div className="metric-card keywords-card">
-                                            <h4>Keywords Injected</h4>
-                                            <div className="pills">
-                                                {metrics.keywords.map((kw, i) => <span key={i} className="pill">{kw.replace(/[^a-zA-Z]/g, '')}</span>)}
+                                    <div className="metrics-panel glass-card" style={{ marginBottom: '2rem' }}>
+                                        <div className="metrics-grid">
+                                            <div className="metric-item">
+                                                <h4>Estimated ATS Match</h4>
+                                                <div className="score-circle">
+                                                    <span className="score-text">{metrics.score}%</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="metric-card actions-card">
-                                            <h4>Action Verbs</h4>
-                                            <div className="verb-text">Upgraded weak verbs to match JD tone.</div>
+                                            <div className="metric-item keywords-item">
+                                                <h4>Keywords Injected</h4>
+                                                <div className="pills-container">
+                                                    {metrics.keywords.map((kw, i) => <span key={i} className="glow-pill">{kw.replace(/[^a-zA-Z]/g, '')}</span>)}
+                                                </div>
+                                            </div>
+                                            <div className="metric-item">
+                                                <h4>Action Verbs</h4>
+                                                <div className="verb-text" style={{ color: 'var(--text-secondary)' }}>Upgraded weak verbs to match JD tone.</div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* 2-COLUMN OUTPUT PANEL (LaTeX vs PDF) */}
-                                <div className="output-grid mt-4">
-                                    <div className="panel output-panel">
-                                        <div className="panel-header">
-                                            <h3 style={{ color: '#00e5ff' }}>💻 LaTeX Source</h3>
+                                <div className="tailor-output-grid">
+                                    <div className="panel output-panel glass-card">
+                                        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: 0, color: 'var(--accent-cyan)' }}>💻 LaTeX Source</h3>
                                             <div style={{display: 'flex', gap: '10px'}}>
-                                                {/* --- RECOMPILE BUTTON --- */}
                                                 <button 
                                                     onClick={handleRecompile} 
                                                     disabled={isCompiling} 
-                                                    className="btn btn-warning btn-sm"
-                                                    style={{ backgroundColor: '#f59e0b', color: '#000', border: 'none', fontWeight: 'bold' }}
+                                                    className="btn-outline"
+                                                    style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
                                                 >
                                                     {isCompiling ? '🔄 Compiling...' : '🔄 Recompile PDF'}
                                                 </button>
-                                                <button onClick={handleDownloadLatex} className="btn btn-secondary btn-sm">
-                                                    ⬇️ Download .TEX
+                                                <button onClick={handleDownloadLatex} className="btn-outline">
+                                                    ⬇️ .TEX
                                                 </button>
                                             </div>
                                         </div>
-                                        {/* --- EDITABLE TEXTAREA --- */}
                                         <textarea 
                                             value={latexCode} 
                                             onChange={(e) => setLatexCode(e.target.value)}
-                                            className="code-viewer"
+                                            className="code-viewer-premium"
                                             spellCheck={false}
                                         />
                                     </div>
 
-                                    <div className="panel output-panel">
-                                        <div className="panel-header">
-                                            <h3 style={{ color: '#00e5ff' }}>📄 PDF Preview</h3>
-                                            <button onClick={handleDownloadPdf} className="btn btn-primary btn-sm">
+                                    <div className="panel output-panel glass-card">
+                                        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: 0, color: 'var(--accent-purple)' }}>📄 PDF Preview</h3>
+                                            <button onClick={handleDownloadPdf} className="btn-premium" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>
                                                 ⬇️ Download PDF
                                             </button>
                                         </div>
-                                        {pdfData ? (
-                                            <object 
-                                                data={URL.createObjectURL(new Blob([new Uint8Array(atob(pdfData).split('').map(c => c.charCodeAt(0)))], { type: 'application/pdf' }))} 
-                                                type="application/pdf" 
-                                                className="pdf-viewer" 
-                                                aria-label="Tailored Resume Preview"
-                                            />
-                                        ) : (
-                                            <div className="pdf-viewer" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a0aec0'}}>
-                                                {isCompiling ? 'Compiling new PDF...' : 'Preview will appear here'}
-                                            </div>
-                                        )}
+                                        <div className="pdf-viewer-container-premium">
+                                            {pdfData ? (
+                                                <object 
+                                                    data={URL.createObjectURL(new Blob([new Uint8Array(atob(pdfData).split('').map(c => c.charCodeAt(0)))], { type: 'application/pdf' }))} 
+                                                    type="application/pdf" 
+                                                    className="pdf-preview-object" 
+                                                    aria-label="Tailored Resume Preview"
+                                                />
+                                            ) : (
+                                                <div className="pdf-preview-placeholder">
+                                                    {isCompiling ? 'Compiling new PDF...' : 'Preview will appear here'}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -321,7 +348,6 @@ const AiTailorPage: React.FC = () => {
                     </div>
                 )}
             </div>
-
             <Footer />
         </div>
     );

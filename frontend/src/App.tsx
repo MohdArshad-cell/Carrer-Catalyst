@@ -7,6 +7,7 @@ import ResumeEvaluator from './pages/ResumeEvaluator';
 import CoverLetterGeneratorPage from './pages/CoverLetterGeneratorPage';
 import MockInterviewPage from './pages/MockInterviewPage';
 import LoginPage from './pages/LoginPage';
+import Pricing from './pages/Pricing';
 import "./App.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/ats-evaluator" element={<ResumeEvaluator />} />
         <Route path="/cover-letter" element={<CoverLetterGeneratorPage />} />
         <Route path="/mock-interview" element={<MockInterviewPage />} />
+        <Route path="/pricing" element={<Pricing />} />
       </Routes>
     </div>
   );

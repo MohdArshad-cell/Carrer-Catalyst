@@ -20,17 +20,19 @@ class EducationItem(BaseModel):
     year: Optional[str] = None
     startYear: Optional[str] = Field(None, validation_alias=AliasChoices('startYear', 'start_year'))
     endYear: Optional[str] = Field(None, validation_alias=AliasChoices('endYear', 'end_year'))
-    grade: Optional[str] = None
+    # 👇 ADDED 'gpa' ALIAS YAHAN 👇
+    grade: Optional[str] = Field(None, validation_alias=AliasChoices('grade', 'gpa'))
 
 class ExperienceItem(BaseModel):
-    # Ab AI chahe 'role' bole, 'title' bole ya 'position', sab catch hoga
-    role: Optional[str] = Field(None, validation_alias=AliasChoices('role', 'title', 'jobTitle', 'position'))
-    company: Optional[str] = None
+    # 👇 ADDED 'job_title' ALIAS YAHAN 👇
+    role: Optional[str] = Field(None, validation_alias=AliasChoices('role', 'title', 'jobTitle', 'position', 'job_title'))
+    
+    # 👇 ADDED 'company_name' ALIAS YAHAN 👇
+    company: Optional[str] = Field(None, validation_alias=AliasChoices('company', 'companyName', 'company_name'))
+    
     location: Optional[str] = None
-    # Dates merge hone se rokne ke liye broad mapping
     startDate: Optional[str] = Field(None, validation_alias=AliasChoices('startDate', 'start_date', 'date', 'dates'))
     endDate: Optional[str] = Field(None, validation_alias=AliasChoices('endDate', 'end_date'))
-    # Sabse bada bug yahan tha. Ab 'description' aur 'bullets' bhi accept honge
     descriptionPoints: Optional[List[str]] = Field([], validation_alias=AliasChoices('descriptionPoints', 'description_points', 'description', 'bullets', 'details'))
 
 class ProjectItem(BaseModel):
