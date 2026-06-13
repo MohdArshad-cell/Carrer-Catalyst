@@ -13,6 +13,7 @@ class PersonalInfo(BaseModel):
     linkedin: Optional[str] = None
     github: Optional[str] = None
     address: Optional[str] = None
+    portfolio_url: Optional[str] = Field(None, validation_alias=AliasChoices('portfolioUrl', 'portfolio_url'))
 
 class EducationItem(BaseModel):
     degree: Optional[str] = None
@@ -20,14 +21,13 @@ class EducationItem(BaseModel):
     year: Optional[str] = None
     startYear: Optional[str] = Field(None, validation_alias=AliasChoices('startYear', 'start_year'))
     endYear: Optional[str] = Field(None, validation_alias=AliasChoices('endYear', 'end_year'))
-    # 👇 ADDED 'gpa' ALIAS YAHAN 👇
     grade: Optional[str] = Field(None, validation_alias=AliasChoices('grade', 'gpa'))
 
 class ExperienceItem(BaseModel):
-    # 👇 ADDED 'job_title' ALIAS YAHAN 👇
+    # Flexible mapping for Job Title
     role: Optional[str] = Field(None, validation_alias=AliasChoices('role', 'title', 'jobTitle', 'position', 'job_title'))
     
-    # 👇 ADDED 'company_name' ALIAS YAHAN 👇
+    # Flexible mapping for Company Name
     company: Optional[str] = Field(None, validation_alias=AliasChoices('company', 'companyName', 'company_name'))
     
     location: Optional[str] = None
@@ -46,8 +46,6 @@ class SkillItem(BaseModel):
     name: Optional[str] = None
     value: Optional[str] = None
 
-# ... (Keep PersonalInfo, EducationItem, ExperienceItem, ProjectItem, SkillItem exactly as they are)
-
 class AchievementItem(BaseModel):
     description: Optional[str] = None
 
@@ -57,7 +55,7 @@ class CertificationItem(BaseModel):
     date: Optional[str] = None
 
 class ResumeData(BaseModel):
-    summary: Optional[str] = None  # 🚨 YEH LINE ADD KAR LE
+    summary: Optional[str] = None  
     personal_info: Optional[PersonalInfo] = Field(None, validation_alias=AliasChoices('personal_info', 'personalInfo'))
     education: Optional[List[EducationItem]] = []
     
@@ -67,13 +65,13 @@ class ResumeData(BaseModel):
     projects: Optional[List[ProjectItem]] = []
     skills: Optional[List[SkillItem]] = []
     
-    # FIXED: Now matches the exact Object/Dict structure sent by React
     achievements: Optional[List[AchievementItem]] = [] 
     certifications: Optional[List[CertificationItem]] = []
 
-# ... (Keep GenerationRequest, TailorRequest, etc. exactly as they are)
+# ==========================================
+# API REQUEST MODELS
+# ==========================================
 
-# --- REQUEST MODELS ---
 class GenerationRequest(BaseModel):
     # Default template, accepts either naming convention
     template_name: str = Field("modern_line", validation_alias=AliasChoices('template_name', 'templateName'))
@@ -84,7 +82,7 @@ class GenerationRequest(BaseModel):
     model_config = {"extra": "ignore"} 
 
 class TailorRequest(BaseModel):
-    # 🚨 REVERTED: Ab yeh user se raw text ya LaTeX code easily accept karega
+    # Accepts raw text or LaTeX code easily
     resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
     job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
     

@@ -75,7 +75,7 @@
     \BLOCK{ if resume_data.personal_info.address }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone } $|$ \BLOCK{ endif }\VAR{ resume_data.personal_info.address | escape_tex }\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.linkedin }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.linkedin}}{\faLinkedinSquare\ \underline{LinkedIn}}\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.github }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.github}}{\faGithub\ \underline{GitHub}}\BLOCK{ endif }
-    \BLOCK{ if resume_data.personal_info.portfolioUrl }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin or resume_data.personal_info.github } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolioUrl}}{\faGlobe\ \underline{Portfolio}}\BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.portfolio_url }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin or resume_data.personal_info.github } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolio_url}}{\faGlobe\ \underline{Portfolio}}\BLOCK{ endif }
 \end{center}
 \BLOCK{ endif }
 
@@ -96,10 +96,10 @@
 \BLOCK{ endif }
 
 %-----------EXPERIENCE-----------
-\BLOCK{ if resume_data.workExperience and resume_data.workExperience|selectattr('company')|list|length > 0 }
+\BLOCK{ if resume_data.experience and resume_data.experience|selectattr('company')|list|length > 0 }
 \section*{Experience}
   \resumeSubHeadingListStart
-    \BLOCK{ for job in resume_data.workExperience }
+    \BLOCK{ for job in resume_data.experience }
       \BLOCK{ if job.company }
       \resumeSubheading
         {\VAR{ job.role | escape_tex }}{\VAR{ job.location | escape_tex }}
@@ -117,13 +117,13 @@
 \BLOCK{ endif }
 
 %-----------PROJECTS-----------
-\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('projectName')|list|length > 0 }
+\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('name')|list|length > 0 }
 \section*{Projects}
     \resumeSubHeadingListStart
     \BLOCK{ for proj in resume_data.projects }
-      \BLOCK{ if proj.projectName }
+      \BLOCK{ if proj.name }
       \resumeProjectHeading
-          {\textbf{\VAR{ proj.projectName | escape_tex }} $|$ \emph{\VAR{ proj.tech_stack | escape_tex }}}{\VAR{ proj.startDate | escape_tex } -- \VAR{ proj.endDate | escape_tex }}
+          {\textbf{\VAR{ proj.name | escape_tex }} $|$ \emph{\VAR{ proj.tech_stack | escape_tex }}}{\VAR{ proj.startDate | escape_tex } -- \VAR{ proj.endDate | escape_tex }}
           \BLOCK{ if proj.descriptionPoints }
           \resumeItemListStart
             \BLOCK{ for point in proj.descriptionPoints }

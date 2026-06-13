@@ -172,22 +172,22 @@ const ResumeFromScratchPage: React.FC = () => {
                 return;
             }
 
-            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
-            try {
-                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
-                    user_id: user.id 
-                });
-            } catch (tokenErr: any) {
-                // Agar 403 error aaya, matlab tokens khatam
-                if (tokenErr.response?.status === 403) {
-                    setErrorMessage("🚫 Tokens Empty! Redirecting to Premium upgrade...");
-                    isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
-                    setTimeout(() => navigate('/pricing'), 3000);
-                    return;
+            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo (SIRF FINAL RESUME PAR)
+            if (!isPreview) {
+                try {
+                    await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
+                        user_id: user.id 
+                    });
+                } catch (tokenErr: any) {
+                    if (tokenErr.response?.status === 403) {
+                        setErrorMessage("🚫 Tokens Empty! Redirecting to Premium upgrade...");
+                        isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
+                        setTimeout(() => navigate('/pricing'), 3000);
+                        return;
+                    }
+                    throw tokenErr; 
                 }
-                throw tokenErr; // Koi aur error ho toh main catch block mein bhej do
             }
-
             // ✅ TOLL PLAZA CROSSED! Ab PDF Engine start hoga...
             const payload = buildApiPayload(resumeData, selectedTemplate);
             const startRes = await axios.post(`${API_BASE_URL}/generate/start`, payload);

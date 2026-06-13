@@ -55,7 +55,7 @@
     \BLOCK{ if resume_data.personal_info.address }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone } $|$ \BLOCK{ endif }\VAR{ resume_data.personal_info.address | escape_tex }\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.linkedin }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.linkedin}}{\underline{LinkedIn}}\BLOCK{ endif }
     \BLOCK{ if resume_data.personal_info.github }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin } $|$ \BLOCK{ endif }\href{https://\VAR{resume_data.personal_info.github}}{\underline{GitHub}}\BLOCK{ endif }
-    \BLOCK{ if resume_data.personal_info.portfolioUrl }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin or resume_data.personal_info.github } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolioUrl}}{\underline{Portfolio}}\BLOCK{ endif }
+    \BLOCK{ if resume_data.personal_info.portfolio_url }\BLOCK{ if resume_data.personal_info.email or resume_data.personal_info.phone or resume_data.personal_info.address or resume_data.personal_info.linkedin or resume_data.personal_info.github } $|$ \BLOCK{ endif }\href{\VAR{resume_data.personal_info.portfolio_url}}{\underline{Portfolio}}\BLOCK{ endif }
 \end{center}
 \BLOCK{ endif }
 
@@ -76,10 +76,10 @@
 \BLOCK{ endif }
 
 %-----------EXPERIENCE-----------
-\BLOCK{ if resume_data.workExperience and resume_data.workExperience|selectattr('company')|list|length > 0 }
+\BLOCK{ if resume_data.experience and resume_data.experience|selectattr('company')|list|length > 0 }
 \section*{Experience}
 \begin{itemize}[leftmargin=0pt, itemsep=4pt, label={}]
-    \BLOCK{ for job in resume_data.workExperience }
+    \BLOCK{ for job in resume_data.experience }
         \BLOCK{ if job.company }
         \item
         \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
@@ -99,14 +99,14 @@
 \BLOCK{ endif }
 
 %-----------PROJECTS-----------
-\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('projectName')|list|length > 0 }
+\BLOCK{ if resume_data.projects and resume_data.projects|selectattr('name')|list|length > 0 }
 \section*{Projects}
 \begin{itemize}[leftmargin=0pt, itemsep=4pt, label={}]
     \BLOCK{ for proj in resume_data.projects }
-      \BLOCK{ if proj.projectName }
+      \BLOCK{ if proj.name }
       \item
       \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
-        \textbf{\VAR{ proj.projectName | escape_tex }} & \VAR{ proj.startDate | escape_tex } -- \VAR{ proj.endDate | escape_tex } \\
+        \textbf{\VAR{ proj.name | escape_tex }} & \VAR{ proj.startDate | escape_tex } -- \VAR{ proj.endDate | escape_tex } \\
         \textit{\small Tech Stack: \VAR{ proj.tech_stack | escape_tex }} & \\
       \end{tabular*}
       \BLOCK{ if proj.descriptionPoints }
