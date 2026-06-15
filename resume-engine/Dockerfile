@@ -1,35 +1,38 @@
-# 1. Use 'bullseye' (Debian 11) instead of the default 'bookworm' (Debian 12)
-# The newer Debian 12 has a known C-pointer memory bug with Tectonic's font engine.
-FROM python:3.11-slim-bullseye
+# 1. Use the modern, slim Python base image
+FROM python:3.11-slim
 
-# 2. Set environment variables to prevent Python from writing .pyc files & buffering stdout
+# 2. Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # 3. Set the working directory
 WORKDIR /app
 
-# 4. Install Tectonic and its minimal dependencies
+# 4. Install a STATICALLY LINKED Tectonic (musl) to bypass ALL C-library crashes!
+# This script auto-detects if you are on a Mac (aarch64) or Render (x86_64)
+# and downloads the standalone version that doesn't need external libssl or fontconfig.
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
-    libfontconfig1 \
-    libgraphite2-3 \
-    libharfbuzz0b \
     --no-install-recommends \
-    && curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
-    && mv tectonic /usr/local/bin/ \
+    && ARCH=$(uname -m) \
+    && if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+         TARGET="aarch64-unknown-linux-musl"; \
+       else \
+         TARGET="x86_64-unknown-linux-musl"; \
+       fi \
+    && curl -sL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-${TARGET}.tar.gz" | tar -xz -C /usr/local/bin \
     && apt-get remove -y curl \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-cache ALL heavy Tectonic packages used by templates to prevent runtime crashes
+# Pre-cache ALL heavy Tectonic packages used by templates to prevent runtime downloads
 RUN printf '%s\n' '\documentclass{article}\usepackage{fontawesome5}\usepackage{hyperref}\usepackage{titlesec}\usepackage{enumitem}\usepackage{geometry}\usepackage{tabularx}\usepackage{color}\usepackage{latexsym}\begin{document}\faGithub Hello\end{document}' > dummy.tex \
     && tectonic dummy.tex \
     && rm dummy.tex dummy.pdf
 
-# 5. Copy and install Python requirements first (leverage Docker caching)
+# 5. Copy and install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
@@ -37,7 +40,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # 6. Copy your application code
 COPY ./app ./app
 
-# 7. Create a non-root user for Enterprise Security
+# 7. Create a non-root user for security
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
