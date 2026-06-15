@@ -6,17 +6,15 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [tokens, setTokens] = useState(null);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // 📱 New state for mobile menu
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        // Fetch session
         supabase.auth.getSession().then(({ data: { session } }) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
             if (currentUser) fetchTokenBalance(currentUser.id);
         });
 
-        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
@@ -47,11 +45,11 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        setIsMobileMenuOpen(false); // Close menu on logout
+        setIsMobileMenuOpen(false);
         navigate('/'); 
     };
 
-    const closeMenu = () => setIsMobileMenuOpen(false); // Helper to close menu on link click
+    const closeMenu = () => setIsMobileMenuOpen(false);
 
     return (
         <nav className="navbar">
@@ -60,7 +58,6 @@ const Navbar = () => {
                     Career<span>Catalyst</span>
                 </Link>
                 
-                {/* 📱 Hamburger Button (Visible only on mobile) */}
                 <button 
                     className="mobile-menu-btn"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -68,18 +65,16 @@ const Navbar = () => {
                     {isMobileMenuOpen ? '✖' : '☰'}
                 </button>
                 
-                {/* Links Container (Toggles .active class on mobile) */}
                 <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
-                    <a href="/#full-bento-grid" onClick={closeMenu}>Features</a>
+                    {/* BUG FIXED: Changed <a> to <Link> for SPA routing */}
+                    <Link to="/features" onClick={closeMenu}>Features</Link>
                     
                     <Link to="/pricing" style={{ color: 'var(--accent-cyan)', fontWeight: '600' }} onClick={closeMenu}>
                         Pricing
                     </Link>
 
                     {user ? (
-                        /* --- IF LOGGED IN --- */
                         <div className="nav-action-group">
-                            {/* Token Balance */}
                             <button 
                                 onClick={() => { navigate('/pricing'); closeMenu(); }} 
                                 className="token-pill"
@@ -116,7 +111,6 @@ const Navbar = () => {
                             </button>
                         </div>
                     ) : (
-                        /* --- IF LOGGED OUT --- */
                         <div className="nav-action-group">
                             <button onClick={() => { navigate('/login'); closeMenu(); }} className="nav-cta-premium w-100">
                                 Launch App

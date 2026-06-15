@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import HomePage from "./pages/HomePage.jsx"; // Our JS homepage
+import HomePage from "./pages/HomePage.jsx";
 import AiToolsPage from "./pages/AiToolsPage.jsx";
 import ResumeFromScratchPage from "./pages/ResumeFromScratchPage";
 import AiTailorPage from './pages/AiTailorPage';
@@ -8,23 +8,51 @@ import CoverLetterGeneratorPage from './pages/CoverLetterGeneratorPage';
 import MockInterviewPage from './pages/MockInterviewPage';
 import LoginPage from './pages/LoginPage';
 import Pricing from './pages/Pricing';
+import FeaturesPage from './pages/FeaturesPage'; 
+import ProtectedRoute from './components/ProtectedRoute'; // <-- IMPORT THIS
 import "./App.css";
 
 function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Rule 1: When the URL is "/", show the HomePage */}
+        {/* Public Routes - Anyone can see these */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        {/* Rule 2: When the URL is "/resume-builder", show the ResumeBuilderPage */}
-        <Route path="/ai-tools" element={<AiToolsPage />} />
-        <Route path="/ResumeFromScratchPage" element={<ResumeFromScratchPage />} />
-        <Route path="/ai-tailor" element={<AiTailorPage />} />  {/* <-- ADD THIS ROUTE */}
-        <Route path="/ats-evaluator" element={<ResumeEvaluator />} />
-        <Route path="/cover-letter" element={<CoverLetterGeneratorPage />} />
-        <Route path="/mock-interview" element={<MockInterviewPage />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/features" element={<FeaturesPage />} />
+
+        {/* Protected Routes - Locked behind Auth */}
+        <Route path="/ai-tools" element={
+            <ProtectedRoute>
+                <AiToolsPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/ResumeFromScratchPage" element={
+            <ProtectedRoute>
+                <ResumeFromScratchPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/ai-tailor" element={
+            <ProtectedRoute>
+                <AiTailorPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/ats-evaluator" element={
+            <ProtectedRoute>
+                <ResumeEvaluator />
+            </ProtectedRoute>
+        } />
+        <Route path="/cover-letter" element={
+            <ProtectedRoute>
+                <CoverLetterGeneratorPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/mock-interview" element={
+            <ProtectedRoute>
+                <MockInterviewPage />
+            </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );
