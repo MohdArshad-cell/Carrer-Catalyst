@@ -80,35 +80,25 @@ const AiTailorPage: React.FC = () => {
         setMetrics(null);
         setLoadingStep(0);
 
+        let stepInterval: any = null; // Interval ko safely clear karne ke liye
+
         try {
             // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (!user) {
+            if (!user || !session) {
                 setError("You must be logged in to use this AI tool.");
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
             }
 
-            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
-            try {
-                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
-                    user_id: user.id 
-                });
-            } catch (tokenErr: any) {
-                if (tokenErr.response?.status === 403) {
-                    setError("🚫 Tokens Empty! Redirecting to Premium upgrade...");
-                    setIsLoading(false);
-                    setTimeout(() => navigate('/pricing'), 3000); 
-                    return;
-                }
-                throw tokenErr;
-            }
+            // ⚠️ DOUBLE DEDUCTION FIX: Yahan se manual "/api/deduct-token" hata diya gaya hai.
+            // Ab seedha AI route hit karenge, backend automatic token check aur deduct karega!
 
-            // ✅ TOLL PLAZA CROSSED! Ab AI apna jaadu chalayega...
-            const stepInterval = setInterval(() => {
+            // ✅ Start Loading Animation
+            stepInterval = setInterval(() => {
                 setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
             }, 4000);
 
@@ -117,8 +107,15 @@ const AiTailorPage: React.FC = () => {
                 job_description: jobDescription 
             };
             
-            const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload);
-            clearInterval(stepInterval); 
+            // ✅ API CALL WITH HEADERS (SECURITY GATEKEEPER KO TOKEN BHEJ RAHE HAIN)
+            const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`, // <--- YEH JAADU HAI
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (stepInterval) clearInterval(stepInterval); 
             
             if (response.data && response.data.latex_code && response.data.pdf_base64) {
                 setLatexCode(response.data.latex_code);
@@ -129,8 +126,17 @@ const AiTailorPage: React.FC = () => {
                 throw new Error("Invalid response format received from server.");
             }
         } catch (err: any) {
+            if (stepInterval) clearInterval(stepInterval);
             console.error("Error tailoring resume:", err);
             
+            // ✅ HANDLE EMPTY TOKENS OR EXPIRED SESSIONS (401/402/403)
+            if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
+                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                setIsLoading(false);
+                setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
             let finalErrorMessage = "Failed to tailor resume. Ensure backend is running.";
             
             try {
