@@ -5,7 +5,6 @@ import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import './FeaturesPage.css';
 
-// Upgraded Feature Data Array with Accents and Tags
 const featuresList = [
     {
         id: 'tailor',
@@ -16,7 +15,8 @@ const featuresList = [
         badge: 'Live',
         route: '/ai-tools',
         buttonText: 'Launch Tool 🚀',
-        accent: '#3b82f6', // Blue
+        accent: '#3b82f6', 
+        accentBg: 'rgba(59, 130, 246, 0.1)',
         tags: ['Gemini AI', 'LaTeX Export', 'ATS Optimized']
     },
     {
@@ -28,7 +28,8 @@ const featuresList = [
         badge: 'Live',
         route: '/ats-evaluator',
         buttonText: 'Scan Resume 🔍',
-        accent: '#ef4444', // Red
+        accent: '#ef4444', 
+        accentBg: 'rgba(239, 68, 68, 0.1)',
         tags: ['Harsh Truths', 'Score System', 'Auto-Rewrite']
     },
     {
@@ -40,7 +41,8 @@ const featuresList = [
         badge: 'Live',
         route: '/cover-letter',
         buttonText: 'Draft Letter ✍️',
-        accent: '#8b5cf6', // Purple
+        accent: '#8b5cf6', 
+        accentBg: 'rgba(139, 92, 246, 0.1)',
         tags: ['Hyper-Personalized', 'PDF Download']
     },
     {
@@ -49,10 +51,11 @@ const featuresList = [
         icon: '👁️',
         description: 'See your resume through the eyes of an ATS. Live split-screen keyword highlighting.',
         status: 'upcoming',
-        badge: '⚡ Beta',
+        badge: 'Beta',
         route: '#',
         buttonText: 'Join Early Access ⏳',
-        accent: '#10b981', // Emerald
+        accent: '#10b981', 
+        accentBg: 'rgba(16, 185, 129, 0.1)',
         tags: ['Live Highlighting', 'Visual Gap Analysis']
     },
     {
@@ -61,22 +64,24 @@ const featuresList = [
         icon: '🌐',
         description: 'Turn your generated resume into a stunning live webpage to share directly on LinkedIn.',
         status: 'upcoming',
-        badge: '🚀 Next Release',
+        badge: 'Next Release',
         route: '#',
         buttonText: 'Notify Me 🔔',
-        accent: '#06b6d4', // Cyan
-        tags: ['Custom Link', 'Analytics tracking']
+        accent: '#06b6d4', 
+        accentBg: 'rgba(6, 182, 212, 0.1)',
+        tags: ['Custom Link', 'Analytics Tracking']
     },
     {
         id: 'extension',
-        title: 'LinkedIn Chrome Extension',
+        title: 'Chrome Extension',
         icon: '🧩',
-        description: 'Auto-scrape Job Descriptions from LinkedIn/Naukri and tailor your resume without leaving the tab.',
+        description: 'Auto-scrape Job Descriptions from LinkedIn and tailor your resume without leaving the tab.',
         status: 'upcoming',
-        badge: '🛠️ In Lab',
+        badge: 'In Lab',
         route: '#',
         buttonText: 'Join Waitlist 🔔',
-        accent: '#f59e0b', // Amber
+        accent: '#f59e0b', 
+        accentBg: 'rgba(245, 158, 11, 0.1)',
         tags: ['1-Click Scrape', 'Browser Integration']
     }
 ];
@@ -97,78 +102,60 @@ const FeaturesPage: React.FC = () => {
             <Navbar />
 
             <div className="features-container">
-                {/* Mind-Blowing Header Section */}
                 <div className="studio-header text-center fade-in-up">
-                    <div className="hero-badge pulse-border">
-                        <span className="sparkle">⚡</span> The Ultimate Arsenal
-                    </div>
-                    <h1 className="animated-gradient-text title-massive">
-                        Everything You Need <br/> To Get Hired.
+                    <h1 className="title-massive">
+                        The Ultimate Arsenal.
                     </h1>
                     <p className="subtitle-text">
                         From bypassing ruthless ATS algorithms to crafting the perfect pitch, our AI tools are designed to give you an unfair, completely legal advantage.
                     </p>
                 </div>
 
-                {/* Premium Grid */}
-                <div className="features-grid">
+                <div className="sleek-features-grid">
                     {featuresList.map((feature, index) => (
                         <div 
                             key={feature.id} 
-                            className={`premium-feature-card glass-card ${feature.status === 'upcoming' ? 'card-upcoming' : ''}`}
-                            style={{ '--accent-color': feature.accent, animationDelay: `${index * 0.1}s` } as React.CSSProperties}
+                            className={`sleek-card ${feature.status === 'upcoming' ? 'card-dimmed' : ''}`}
+                            style={{ '--accent': feature.accent, animationDelay: `${index * 0.1}s` } as React.CSSProperties}
                         >
-                            {/* Accent Top Border */}
-                            <div className="card-top-glow"></div>
-
-                            <div className="card-header">
-                                <div className="icon-wrapper">
+                            {/* Top Row: Icon & Badge */}
+                            <div className="card-top-row">
+                                <div className="sleek-icon-box" style={{ backgroundColor: feature.accentBg, color: feature.accent, border: `1px solid ${feature.accent}40` }}>
                                     {feature.icon}
-                                    <div className="icon-glow"></div>
                                 </div>
-                                <div className={`smart-badge ${feature.status === 'live' ? 'badge-live' : 'badge-upcoming'}`}>
-                                    {feature.status === 'live' && <span className="live-dot"></span>}
+                                <div className={`sleek-badge ${feature.status === 'live' ? 'badge-live' : 'badge-upcoming'}`}>
+                                    {feature.status === 'live' && <span className="pulsing-dot"></span>}
                                     {feature.badge}
                                 </div>
                             </div>
 
-                            <h3 className="feature-title">{feature.title}</h3>
-                            <p className="feature-desc">{feature.description}</p>
+                            {/* Content */}
+                            <h3 className="sleek-title">{feature.title}</h3>
+                            <p className="sleek-desc">{feature.description}</p>
                             
-                            {/* Feature Tags */}
-                            <div className="tags-container">
+                            {/* Tiny Tech Pills */}
+                            <div className="sleek-tags">
                                 {feature.tags.map((tag, i) => (
-                                    <span key={i} className="tech-tag">{tag}</span>
+                                    <span key={i} className="tiny-pill">{tag}</span>
                                 ))}
                             </div>
                             
-                            <div className="card-action mt-auto">
-                                {feature.status === 'live' ? (
-                                    <button 
-                                        className="btn-premium w-100 action-btn" 
-                                        onClick={() => navigate(feature.route)}
-                                        style={{ background: `linear-gradient(135deg, ${feature.accent}, #000)` }}
-                                    >
-                                        {feature.buttonText}
-                                    </button>
-                                ) : (
-                                    <button 
-                                        className="btn-outline w-100 waitlist-btn" 
-                                        onClick={() => handleWaitlistClick(feature.title)}
-                                    >
-                                        {feature.buttonText}
-                                    </button>
-                                )}
+                            {/* Ghost Button */}
+                            <div className="mt-auto">
+                                <button 
+                                    className={`sleek-ghost-btn ${feature.status === 'live' ? 'btn-live' : 'btn-upcoming'}`}
+                                    onClick={() => feature.status === 'live' ? navigate(feature.route) : handleWaitlistClick(feature.title)}
+                                >
+                                    {feature.buttonText}
+                                </button>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Custom Toast Notification */}
-            <div className={`waitlist-toast ${toastMsg ? 'show' : ''}`}>
-                <span className="toast-icon">✨</span>
-                {toastMsg}
+            <div className={`sleek-toast ${toastMsg ? 'show' : ''}`}>
+                <span>{toastMsg}</span>
             </div>
 
             <Footer />
