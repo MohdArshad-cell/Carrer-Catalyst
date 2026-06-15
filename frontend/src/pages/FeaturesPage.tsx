@@ -1,49 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import './FeaturesPage.css';
 
-const featuresList = [
+// Strict TypeScript Interfaces enforced as per architecture plan
+interface Feature {
+    id: string;
+    title: string;
+    icon: string;
+    description: string;
+    status: 'live' | 'upcoming';
+    badge: string;
+    route: string;
+    buttonText: string;
+    accent: string;
+    tags: string[];
+}
+
+// Comprehensive Feature Data Array
+const featuresList: Feature[] = [
     {
         id: 'tailor',
         title: 'AI Resume Tailor',
         icon: '🧠',
-        description: 'Micro-tailor your resume for any Job Description in 10 seconds. Get a pixel-perfect LaTeX PDF.',
+        description: 'Micro-tailor your resume for any Job Description in 10 seconds. Output is a pixel-perfect LaTeX PDF.',
         status: 'live',
-        badge: 'Live',
+        badge: 'Live Now',
         route: '/ai-tools',
         buttonText: 'Launch Tool 🚀',
-        accent: '#3b82f6', 
-        accentBg: 'rgba(59, 130, 246, 0.1)',
-        tags: ['Gemini AI', 'LaTeX Export', 'ATS Optimized']
+        accent: '#3b82f6', // Electric Blue
+        tags: ['Gemini Pro', 'LaTeX Engine', 'ATS Bypass']
     },
     {
         id: 'evaluator',
         title: 'Brutal ATS Scanner',
         icon: '🔥',
-        description: 'Find out exactly why you are getting rejected. No sugarcoating. Fix weak bullets instantly.',
+        description: 'Find out exactly why you are getting rejected. Zero sugarcoating. Fix weak bullets instantly.',
         status: 'live',
-        badge: 'Live',
+        badge: 'Live Now',
         route: '/ats-evaluator',
         buttonText: 'Scan Resume 🔍',
-        accent: '#ef4444', 
-        accentBg: 'rgba(239, 68, 68, 0.1)',
-        tags: ['Harsh Truths', 'Score System', 'Auto-Rewrite']
+        accent: '#ef4444', // Crimson Red
+        tags: ['Harsh Feedback', 'Score System', 'Auto-Rewrite']
     },
     {
         id: 'cover-letter',
         title: 'Pitch-Perfect Cover Letter',
         icon: '✉️',
-        description: 'Hook recruiters instantly. Generate a highly targeted, no-BS cover letter in seconds.',
+        description: 'Hook recruiters instantly. Generate a highly targeted, hyper-personalized cover letter in seconds.',
         status: 'live',
-        badge: 'Live',
+        badge: 'Live Now',
         route: '/cover-letter',
         buttonText: 'Draft Letter ✍️',
-        accent: '#8b5cf6', 
-        accentBg: 'rgba(139, 92, 246, 0.1)',
-        tags: ['Hyper-Personalized', 'PDF Download']
+        accent: '#8b5cf6', // Deep Purple
+        tags: ['Context Aware', 'PDF Export']
     },
     {
         id: 'xray',
@@ -51,12 +63,11 @@ const featuresList = [
         icon: '👁️',
         description: 'See your resume through the eyes of an ATS. Live split-screen keyword highlighting.',
         status: 'upcoming',
-        badge: 'Beta',
+        badge: 'In Beta',
         route: '#',
         buttonText: 'Join Early Access ⏳',
-        accent: '#10b981', 
-        accentBg: 'rgba(16, 185, 129, 0.1)',
-        tags: ['Live Highlighting', 'Visual Gap Analysis']
+        accent: '#10b981', // Emerald Green
+        tags: ['Live Highlighting', 'Gap Analysis']
     },
     {
         id: 'portfolio',
@@ -67,95 +78,120 @@ const featuresList = [
         badge: 'Next Release',
         route: '#',
         buttonText: 'Notify Me 🔔',
-        accent: '#06b6d4', 
-        accentBg: 'rgba(6, 182, 212, 0.1)',
-        tags: ['Custom Link', 'Analytics Tracking']
+        accent: '#06b6d4', // Cyan
+        tags: ['Custom Link', 'Traffic Analytics']
     },
     {
         id: 'extension',
-        title: 'Chrome Extension',
+        title: 'Browser Extension',
         icon: '🧩',
-        description: 'Auto-scrape Job Descriptions from LinkedIn and tailor your resume without leaving the tab.',
+        description: 'Auto-scrape Job Descriptions from LinkedIn/Naukri and tailor your resume without leaving the tab.',
         status: 'upcoming',
         badge: 'In Lab',
         route: '#',
         buttonText: 'Join Waitlist 🔔',
-        accent: '#f59e0b', 
-        accentBg: 'rgba(245, 158, 11, 0.1)',
-        tags: ['1-Click Scrape', 'Browser Integration']
+        accent: '#f59e0b', // Amber
+        tags: ['1-Click Scrape', 'Seamless Integration']
     }
 ];
 
 const FeaturesPage: React.FC = () => {
     const navigate = useNavigate();
-    const [toastMsg, setToastMsg] = useState('');
+    const [toastMsg, setToastMsg] = useState<string>('');
 
+    // Feature Waitlist Handler
     const handleWaitlistClick = (featureName: string) => {
-        setToastMsg(`Awesome! You're on the VIP list for ${featureName}. We'll notify you first! 🎉`);
+        setToastMsg(`Status: VIP Access granted for ${featureName}. We will notify you upon deployment.`);
         setTimeout(() => setToastMsg(''), 4000);
     };
 
+    // Magnetic Spotlight Effect Handler
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        target.style.setProperty('--mouse-x', `${x}px`);
+        target.style.setProperty('--mouse-y', `${y}px`);
+    };
+
     return (
-        <div className="page-container">
+        <div className="page-wrapper">
             <ParticleBackground />
-            <div className="background-aurora"></div>
+            
+            {/* Dynamic ambient background glow */}
+            <div className="ambient-glow top-left"></div>
+            <div className="ambient-glow bottom-right"></div>
+            
             <Navbar />
 
-            <div className="features-container">
-                <div className="studio-header text-center fade-in-up">
-                    <h1 className="title-massive">
-                        The Ultimate Arsenal.
+            <main className="features-main-container">
+                {/* Hero Section */}
+                <header className="features-hero fade-in">
+                    <div className="status-pill pulse-border">
+                        <span className="live-indicator"></span> System Online
+                    </div>
+                    <h1 className="hero-title">
+                        The Ultimate <span className="text-gradient">Arsenal.</span>
                     </h1>
-                    <p className="subtitle-text">
-                        From bypassing ruthless ATS algorithms to crafting the perfect pitch, our AI tools are designed to give you an unfair, completely legal advantage.
+                    <p className="hero-subtitle">
+                        Stop guessing. Start dominating. Deploy our suite of AI tools to bypass ruthless ATS algorithms and force recruiters to pay attention.
                     </p>
-                </div>
+                </header>
 
-                <div className="sleek-features-grid">
+                {/* Interactive Grid */}
+                <div className="magnetic-grid">
                     {featuresList.map((feature, index) => (
                         <div 
                             key={feature.id} 
-                            className={`sleek-card ${feature.status === 'upcoming' ? 'card-dimmed' : ''}`}
-                            style={{ '--accent': feature.accent, animationDelay: `${index * 0.1}s` } as React.CSSProperties}
+                            className={`magnetic-card ${feature.status === 'upcoming' ? 'card-locked' : ''}`}
+                            style={{ '--card-accent': feature.accent, animationDelay: `${index * 0.05}s` } as React.CSSProperties}
+                            onMouseMove={handleMouseMove}
                         >
-                            {/* Top Row: Icon & Badge */}
-                            <div className="card-top-row">
-                                <div className="sleek-icon-box" style={{ backgroundColor: feature.accentBg, color: feature.accent, border: `1px solid ${feature.accent}40` }}>
-                                    {feature.icon}
+                            {/* Magnetic Spotlight Overlay */}
+                            <div className="spotlight-overlay"></div>
+                            
+                            <div className="card-content">
+                                <div className="card-header">
+                                    <div className="icon-container" style={{ background: `linear-gradient(135deg, ${feature.accent}20, transparent)` }}>
+                                        <span className="feature-icon">{feature.icon}</span>
+                                    </div>
+                                    <div className={`status-badge ${feature.status === 'live' ? 'status-live' : 'status-dev'}`}>
+                                        {feature.badge}
+                                    </div>
                                 </div>
-                                <div className={`sleek-badge ${feature.status === 'live' ? 'badge-live' : 'badge-upcoming'}`}>
-                                    {feature.status === 'live' && <span className="pulsing-dot"></span>}
-                                    {feature.badge}
-                                </div>
-                            </div>
 
-                            {/* Content */}
-                            <h3 className="sleek-title">{feature.title}</h3>
-                            <p className="sleek-desc">{feature.description}</p>
-                            
-                            {/* Tiny Tech Pills */}
-                            <div className="sleek-tags">
-                                {feature.tags.map((tag, i) => (
-                                    <span key={i} className="tiny-pill">{tag}</span>
-                                ))}
-                            </div>
-                            
-                            {/* Ghost Button */}
-                            <div className="mt-auto">
-                                <button 
-                                    className={`sleek-ghost-btn ${feature.status === 'live' ? 'btn-live' : 'btn-upcoming'}`}
-                                    onClick={() => feature.status === 'live' ? navigate(feature.route) : handleWaitlistClick(feature.title)}
-                                >
-                                    {feature.buttonText}
-                                </button>
+                                <h3 className="card-title">{feature.title}</h3>
+                                <p className="card-description">{feature.description}</p>
+                                
+                                <div className="tech-stack-tags">
+                                    {feature.tags.map((tag, i) => (
+                                        <span key={i} className="tech-badge">{tag}</span>
+                                    ))}
+                                </div>
+                                
+                                <div className="card-footer">
+                                    <button 
+                                        className={`action-button ${feature.status === 'live' ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => feature.status === 'live' ? navigate(feature.route) : handleWaitlistClick(feature.title)}
+                                        style={feature.status === 'live' ? { boxShadow: `0 0 20px ${feature.accent}40` } : {}}
+                                    >
+                                        {feature.buttonText}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
-            </div>
+            </main>
 
-            <div className={`sleek-toast ${toastMsg ? 'show' : ''}`}>
-                <span>{toastMsg}</span>
+            {/* Premium Toast Notification */}
+            <div className={`system-toast ${toastMsg ? 'toast-visible' : ''}`}>
+                <div className="toast-content">
+                    <span className="toast-icon">⚡</span>
+                    <p>{toastMsg}</p>
+                </div>
             </div>
 
             <Footer />
