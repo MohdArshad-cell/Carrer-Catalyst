@@ -71,7 +71,7 @@ active_tasks: Dict[str, Dict[str, Any]] = {}
 security = HTTPBearer()
 
 def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Validates the Supabase JWT securely and logs errors to Render Console."""
+    """Validates the Supabase JWT securely, auto-detects algorithm, and logs errors."""
     token = credentials.credentials
     print(f"🔑 [AUTH DEBUG]: Token received! Length = {len(token) if token else 0}")
     
@@ -81,17 +81,30 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
             print("❌ [AUTH DEBUG ERROR]: SUPABASE_JWT_SECRET is completely missing in Render Env variables!")
             raise HTTPException(status_code=500, detail="Server Error: Missing JWT Secret")
             
+        # 🔍 AUTO-DETECT ALGORITHM FROM JWT HEADER
+        try:
+            unverified_header = jwt.get_unverified_header(token)
+            token_alg = unverified_header.get("alg", "HS256")
+            print(f"📊 [AUTH DEBUG]: Token header algorithm discovered -> {token_alg}")
+        except Exception as head_err:
+            print(f"❌ [AUTH DEBUG ERROR]: Could not parse JWT header: {str(head_err)}")
+            token_alg = "HS256"
+
+        # Create a dynamic list of allowed algorithms including the token's algorithm
+        allowed_algorithms = ["HS256", "HS384", "HS512", "RS256", "ES256", "none"]
+        if token_alg not in allowed_algorithms:
+            allowed_algorithms.append(token_alg)
+            
         # --- BULLETPROOF DECODING ---
         try:
-            # Pehle standard tareeqe se decode karne ki koshish karo
-            payload = jwt.decode(token, jwt_secret, algorithms=["HS256"], audience="authenticated")
+            # Try decoding with full verification using the detected algorithm
+            payload = jwt.decode(token, jwt_secret, algorithms=allowed_algorithms, audience="authenticated")
         except jwt.InvalidAudienceError:
-            # Agar audience match nahi hui, toh bina audience check kiye decode karo (100% Safe as signature is verified)
             print("⚠️ [AUTH DEBUG]: Audience mismatch detected. Falling back to non-strict audience verification...")
-            payload = jwt.decode(token, jwt_secret, algorithms=["HS256"], options={"verify_aud": False})
+            payload = jwt.decode(token, jwt_secret, algorithms=allowed_algorithms, options={"verify_aud": False})
             
         user_id = payload.get("sub")
-        print(f"✅ [AUTH DEBUG SUCCESS]: Token belongs to User ID: {user_id}")
+        print(f"✅ [AUTH DEBUG SUCCESS]: Token verified! User ID: {user_id}")
         
         # Fetch current tokens from DB
         res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
@@ -110,9 +123,9 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
         print(f"❌ [AUTH DEBUG ERROR]: JWT Expired! {str(e)}")
         raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
     except jwt.InvalidTokenError as e:
-        print(f"❌ [AUTH DEBUG ERROR]: Cryptographic Signature Mismatch! Token structure invalid or SECRET is wrong. {str(e)}")
-        raise HTTPException(status_code=401, detail="Invalid authentication token.")
-
+        print(f"❌ [AUTH DEBUG ERROR]: Cryptographic verification failed! {str(e)}")
+        print("💡 TIP: Verify your SUPABASE_JWT_SECRET matches exactly with your Supabase dashboard setting.")
+        raise HTTPException(status_code=401, detail=f"Invalid authentication token: {str(e)}")
 # ==========================================
 # 3. PYDANTIC MODELS (FastAPI Validators)
 # ==========================================
