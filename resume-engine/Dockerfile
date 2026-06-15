@@ -1,42 +1,50 @@
-# Use a lightweight Python base image
-FROM python:3.10-slim
+# 1. Use a modern, slim Python base image for better performance
+FROM python:3.11-slim
 
-# Set environment variables
+# 2. Set environment variables to prevent Python from writing .pyc files & buffering stdout
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Change the cache directory to something inside the app folder, NOT /tmp
-# /tmp gets cleared. /app/tectonic_cache will be baked into the image.
-ENV TECTONIC_CACHE_DIR=/app/tectonic_cache
-
+# 3. Set the working directory
 WORKDIR /app
 
-# Install system dependencies
+# 4. Install Tectonic and its minimal dependencies (Goodbye 2GB TexLive bloat)
+# We use the official install script to automatically detect your CPU architecture (x86_64 vs arm64)
 RUN apt-get update && apt-get install -y \
-    fontconfig \
+    curl \
+    ca-certificates \
     libfontconfig1 \
+    libgraphite2-3 \
+    libharfbuzz0b \
+    --no-install-recommends \
+    && curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
+    && mv tectonic /usr/local/bin/ \
+    && apt-get remove -y curl \
+    && apt-get autoremove -y \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create cache directory and give it full read/write permissions
-RUN mkdir -p /app/tectonic_cache && chmod 777 /app/tectonic_cache
-
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# --- CRITICAL ADDITION: PRE-WARM TECTONIC CACHE ---
-# We create a dummy LaTeX file and compile it. 
-# This forces Tectonic to download the core bundles DURING the Docker build, 
-# so users don't have to wait for downloads at runtime.
+# Pre-cache Tectonic packages to speed up the first generation
+# This creates a dummy document and compiles it so Tectonic downloads necessary LaTeX packages during the build.
 RUN echo "\\documentclass{article}\\begin{document}Hello\\end{document}" > dummy.tex \
     && tectonic dummy.tex \
     && rm dummy.tex dummy.pdf
 
-# Copy the rest of the application
-COPY . .
+# 5. Copy and install Python requirements first (leverage Docker caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Expose port
-EXPOSE 8000
+# 6. Copy your application code
+COPY ./app ./app
 
-# Command to run
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 7. Create a non-root user for Enterprise Security
+# Cloud providers (like AWS/GCP/Render) will flag containers running as root.
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+# 8. Expose the port your app runs on
+EXPOSE 10000
+
+# 9. Command to run your application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
