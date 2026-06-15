@@ -89,13 +89,14 @@
 }
 
 /* =========================================================================
-   OP BENTO GRID & 3D CARDS
+   OP BENTO GRID & 3D CARDS (FIXED OVERLAP & 3 COLUMNS)
    ========================================================================= */
 .op-bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 24px;
-    perspective: 1500px; /* Crucial for 3D effect */
+    /* STRICT 3 COLUMNS: Yeh ensure karega ki cards overlap na hon */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px; 
+    perspective: 2000px; 
 }
 
 /* 3D Magnetic Container */
@@ -103,12 +104,11 @@
     position: relative;
     border-radius: 24px;
     transform-style: preserve-3d;
-    transition: transform 0.1s ease-out; /* Super fast follow for mouse */
+    transition: transform 0.1s ease-out; 
     opacity: 0;
     animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Apply the JS calculated tilt variables on hover */
 .op-feature-card:hover {
     transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y)) scale3d(1.02, 1.02, 1.02);
     z-index: 10;
@@ -145,10 +145,12 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
-    padding: 2.5rem;
+    padding: 2.2rem;
     height: 100%;
+    min-height: 400px; /* Minimum height for uniformity */
     display: flex;
     flex-direction: column;
+    justify-content: space-between; /* Keeps footer at the bottom */
     overflow: hidden;
     z-index: 2;
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -169,17 +171,20 @@
 }
 
 /* =========================================================================
-   CARD INNER CONTENT (Popping out in 3D)
+   CARD INNER CONTENT 
    ========================================================================= */
+/* Content sits safely inside the card */
 .card-top-row, .card-body, .card-bottom-row {
-    transform: translateZ(30px); /* Makes content float above the card background */
+    position: relative;
+    z-index: 5;
+    transform: translateZ(5px); /* Minimal pop, no overflow */
 }
 
 .card-top-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .icon-wrapper {
@@ -346,14 +351,20 @@
 }
 
 /* =========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (Fixed for Tablets & Mobiles)
    ========================================================================= */
+@media (max-width: 1024px) {
+    /* Tablet par 2 columns taaki narrow na lagein */
+    .op-bento-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
+    /* Mobile par 1 column */
     .features-main-container { padding-top: 120px; }
     .op-bento-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 2.8rem !important; }
     
-    /* Disable 3D tilt on mobile for better performance */
+    /* Disable 3D tilt on mobile for better performance & touch UX */
     .op-feature-card:hover {
         transform: translateY(-5px); 
     }
