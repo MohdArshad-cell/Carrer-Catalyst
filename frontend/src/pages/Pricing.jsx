@@ -8,7 +8,10 @@ import ParticleBackground from '../components/ParticleBackground';
 import './Pricing.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
-const STRIPE_PRICE_ID = process.env.REACT_APP_STRIPE_PRICE_ID;
+
+// Yahan tumhari .env file se Test ya Live dono IDs automatically aa jayengi
+const STRIPE_PRICE_ID = process.env.REACT_APP_STRIPE_PRICE_ID; 
+
 const Pricing = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -24,17 +27,23 @@ const Pricing = () => {
 
     const handleCheckout = async (priceId) => {
         if (!user) {
-            // Agar user logged in nahi hai, usko login pe bhejo
             navigate('/login');
             return;
         }
+
+        // Failsafe: Agar .env mein price ID miss ho jaye
+        if (!priceId) {
+            setError("Pricing configuration error. Please contact support.");
+            return;
+        }
+
         console.log("SENDING TO BACKEND:", { user_id: user.id, price_id: priceId });
         setLoadingPlan(priceId);
         setError('');
 
         try {
             const response = await axios.post(`${API_BASE_URL}/api/create-checkout-session`, {
-                user_id: user.id, // Supabase user ID bhej rahe hain
+                user_id: user.id, 
                 price_id: priceId
             });
             
@@ -118,11 +127,11 @@ const Pricing = () => {
                         <button 
                             className="btn-premium pulse-glow pricing-btn"
                             disabled={loadingPlan !== null}
-                            // 👇 YAHAN APNA STRIPE PRICE ID PASTE KARNA HAI 👇
                             onClick={() => handleCheckout(STRIPE_PRICE_ID)}
                             style={{ background: 'linear-gradient(135deg, #00e5ff, #8b5cf6)' }}
                         >
-                            {loadingPlan === 'YOUR_STRIPE_PRICE_ID_HERE' ? 'Redirecting to Stripe...' : 'Buy 10 Tokens Now'}
+                            {/* 👇 BUG FIXED YAHAN 👇 */}
+                            {loadingPlan === STRIPE_PRICE_ID ? 'Redirecting to Stripe...' : 'Buy 10 Tokens Now'}
                         </button>
                     </div>
 

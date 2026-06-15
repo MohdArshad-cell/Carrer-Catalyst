@@ -10,8 +10,11 @@ class PersonalInfo(BaseModel):
     fullName: Optional[str] = Field(None, validation_alias=AliasChoices('fullName', 'full_name'))
     email: Optional[str] = None
     phone: Optional[str] = None
-    linkedin: Optional[str] = None
-    github: Optional[str] = None
+    
+    # 👇 YAHAN FIX HAI: Ab backend linkedin_handle aur github_handle dono ko catch kar lega!
+    linkedin: Optional[str] = Field(None, validation_alias=AliasChoices('linkedin', 'linkedin_handle'))
+    github: Optional[str] = Field(None, validation_alias=AliasChoices('github', 'github_handle'))
+    
     address: Optional[str] = None
     portfolio_url: Optional[str] = Field(None, validation_alias=AliasChoices('portfolioUrl', 'portfolio_url'))
 
