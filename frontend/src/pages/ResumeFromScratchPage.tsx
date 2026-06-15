@@ -155,6 +155,7 @@ const ResumeFromScratchPage: React.FC = () => {
     };
 
     // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
+    // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
     const handleAction = async (isPreview: boolean) => {
         isPreview ? setIsPreviewLoading(true) : setIsGenerating(true);
         if (!isPreview) setDownloadLinks(null);
@@ -165,7 +166,7 @@ const ResumeFromScratchPage: React.FC = () => {
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (!user) {
+            if (!user || !session) { // Session bhi check karna zaroori hai header ke liye
                 setErrorMessage("You must be logged in to build your resume.");
                 isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
                 setTimeout(() => navigate('/login'), 2000);
@@ -175,11 +176,18 @@ const ResumeFromScratchPage: React.FC = () => {
             // 🛑 TOLL PLAZA CHECK 2: Token deduct karo (SIRF FINAL RESUME PAR)
             if (!isPreview) {
                 try {
-                    await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
-                        user_id: user.id 
-                    });
+                    // ✅ YAHAN HEADER ADD KIYA GAYA HAI
+                    await axios.post(`${API_BASE_URL}/api/deduct-token`, 
+                        { user_id: user.id },
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${session.access_token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
                 } catch (tokenErr: any) {
-                    if (tokenErr.response?.status === 403) {
+                    if (tokenErr.response?.status === 402 || tokenErr.response?.status === 403) {
                         setErrorMessage("🚫 Tokens Empty! Redirecting to Premium upgrade...");
                         isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
                         setTimeout(() => navigate('/pricing'), 3000);
@@ -188,14 +196,23 @@ const ResumeFromScratchPage: React.FC = () => {
                     throw tokenErr; 
                 }
             }
+            
             // ✅ TOLL PLAZA CROSSED! Ab PDF Engine start hoga...
             const payload = buildApiPayload(resumeData, selectedTemplate);
-            const startRes = await axios.post(`${API_BASE_URL}/generate/start`, payload);
+            
+            // Generate start call (Best practice to send token here too just in case)
+            const startRes = await axios.post(`${API_BASE_URL}/generate/start`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
             await pollTask(startRes.data.task_id, isPreview);
             
         } catch (e: any) {
             console.error("Error generating resume:", e);
-            setErrorMessage('Server connection refused. Check backend.');
+            setErrorMessage('Server connection refused or unauthorized. Check backend.');
             isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
         }
     };
