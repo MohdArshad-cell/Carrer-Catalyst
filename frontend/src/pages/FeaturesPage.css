@@ -89,7 +89,7 @@
 }
 
 /* =========================================================================
-   OP BENTO GRID & 3D CARDS (100% OVERLAP FIXED)
+   OP BENTO GRID & 3D CARDS (NEON GLOW EDITIONS)
    ========================================================================= */
 .op-bento-grid {
     display: grid;
@@ -98,7 +98,6 @@
     perspective: 2000px; 
 }
 
-/* 3D Magnetic Container */
 .op-feature-card {
     position: relative;
     border-radius: 24px;
@@ -106,8 +105,6 @@
     transition: transform 0.1s ease-out; 
     opacity: 0;
     animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    
-    /* NEW: Forces container to stretch */
     display: flex;
     flex-direction: column;
     height: 100%; 
@@ -118,7 +115,6 @@
     z-index: 10;
 }
 
-/* Spotlight that tracks mouse */
 .spotlight-overlay {
     position: absolute;
     top: 0;
@@ -128,8 +124,8 @@
     border-radius: 24px;
     background: radial-gradient(
         800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(255, 255, 255, 0.08),
-        transparent 40%
+        rgba(255, 255, 255, 0.15), /* Brightened spotlight */
+        transparent 50%
     );
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -141,46 +137,48 @@
     opacity: 1;
 }
 
-/* The actual Glass Card */
+/* 🌟 ALIVE EFFECT: Base glow added to the card so it doesn't look dead */
 .card-glass-panel {
     position: relative;
     background: rgba(15, 20, 30, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Brighter base border */
     border-radius: 24px;
     padding: 2.2rem;
-    
-    /* NEW: Forces glass panel to fill the card completely */
     flex: 1; 
     display: flex;
     flex-direction: column;
     min-height: 400px; 
     overflow: hidden;
     z-index: 2;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.5);
-    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    /* Base faint glow matching the accent color */
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 
+                0 10px 30px rgba(0, 0, 0, 0.6),
+                0 0 10px rgba(255,255,255,0.02); 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Extreme Glow on Hover */
 .op-feature-card:hover .card-glass-panel {
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 
-                0 20px 50px rgba(0, 0, 0, 0.8), 
-                0 0 40px calc(var(--card-accent) * 0.15);
+    border-color: var(--card-accent);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 
+                0 20px 50px rgba(0, 0, 0, 0.9), 
+                0 0 30px var(--card-accent); /* Super Glow */
 }
 
 .card-locked .card-glass-panel {
     background: rgba(10, 15, 20, 0.4);
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    opacity: 0.85;
 }
 
 /* =========================================================================
-   CARD INNER CONTENT (NO 3D TRANSLATE Z - OVERLAP PREVENTED)
+   CARD INNER CONTENT 
    ========================================================================= */
 .card-top-row, .card-body, .card-bottom-row {
     position: relative;
     z-index: 5;
-    /* REMOVED translateZ entirely */
 }
 
 .card-top-row {
@@ -190,20 +188,21 @@
     margin-bottom: 1.5rem;
 }
 
-/* NEW: Pushes the footer exactly to the bottom */
 .card-body {
     flex: 1; 
 }
 
 .icon-wrapper {
-    width: 56px;
-    height: 56px;
+    width: 60px; /* Slightly larger icon */
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 16px;
     font-size: 1.8rem;
-    box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    /* Icon base glow */
+    filter: drop-shadow(0 0 8px currentColor);
 }
 
 .op-status-badge {
@@ -231,7 +230,7 @@
 
 .op-card-desc {
     font-size: 1rem;
-    color: #94a3b8;
+    color: #cbd5e1; /* Brighter text so it's not dull */
     line-height: 1.6;
     margin-bottom: 1.8rem;
 }
@@ -244,9 +243,9 @@
 }
 
 .op-tag {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
     font-size: 0.75rem;
     font-weight: 600;
     padding: 6px 12px;
@@ -255,70 +254,86 @@
 
 .card-footer-divider {
     height: 1px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
-    margin: 1.5rem 0; /* Fixed margin */
+    background: linear-gradient(90deg, rgba(255,255,255,0.15), transparent);
+    margin: 1.5rem 0; 
 }
 
-/* Bottom Row & Stats */
+/* =========================================================================
+   BOTTOM ROW: STATS & BUTTONS (THE ALIGNMENT FIX)
+   ========================================================================= */
 .card-bottom-row {
     display: flex;
     justify-content: space-between;
-    align-items: center; /* Aligns stats and button vertically */
+    align-items: center; /* Locks vertical alignment to center */
+    width: 100%;
 }
 
 .op-stats {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.2rem;
+    /* 🔒 FIX: Ensures stats never wrap to a new line */
+    white-space: nowrap; 
+    flex-shrink: 0;
 }
 
 .stat-block {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* 🔒 FIX: Forces text to stay on single line */
+    white-space: nowrap; 
 }
 
 .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    color: #64748b;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    color: #94a3b8; /* Brighter label */
+    font-weight: 800;
+    letter-spacing: 0.8px;
 }
 
 .stat-value {
-    font-size: 1rem;
+    font-size: 1.1rem; /* Slightly larger for impact */
     color: #ffffff;
     font-weight: 800;
 }
 
 /* Action Buttons */
 .op-action-btn {
-    padding: 12px 24px;
+    padding: 12px 20px; /* Adjusted padding to ensure it fits with stats */
     border-radius: 12px;
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* 🔒 FIX: Ensures button text never wraps and button doesn't shrink awkwardly */
+    white-space: nowrap;
+    flex-shrink: 0; 
+    text-align: center;
 }
 
 .op-action-btn.primary {
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* 🌟 ALIVE EFFECT: Buttons have a permanent glow now */
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
 }
 
 .op-action-btn.primary:hover {
     filter: brightness(1.2);
     transform: translateY(-2px);
+    border-color: #fff;
 }
 
 .op-action-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
 }
 
 .op-action-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: #ffffff;
 }
 
@@ -369,9 +384,8 @@
     .op-bento-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 2.8rem !important; }
     
-    .op-feature-card:hover {
-        transform: translateY(-5px); 
-    }
+    .op-feature-card:hover { transform: translateY(-5px); }
+    
     .card-bottom-row {
         flex-direction: column;
         align-items: flex-start;
