@@ -1,5 +1,6 @@
-# 1. Use a modern, slim Python base image for better performance
-FROM python:3.11-slim
+# 1. Use 'bullseye' (Debian 11) instead of the default 'bookworm' (Debian 12)
+# The newer Debian 12 has a known C-pointer memory bug with Tectonic's font engine.
+FROM python:3.11-slim-bullseye
 
 # 2. Set environment variables to prevent Python from writing .pyc files & buffering stdout
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -8,8 +9,7 @@ ENV PYTHONUNBUFFERED=1
 # 3. Set the working directory
 WORKDIR /app
 
-# 4. Install Tectonic and its minimal dependencies (Goodbye 2GB TexLive bloat)
-# We use the official install script to automatically detect your CPU architecture (x86_64 vs arm64)
+# 4. Install Tectonic and its minimal dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
@@ -24,9 +24,6 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-cache Tectonic packages to speed up the first generation
-# This creates a dummy document and compiles it so Tectonic downloads necessary LaTeX packages during the build.
-# Pre-cache Tectonic packages to speed up the first generation
 # Pre-cache ALL heavy Tectonic packages used by templates to prevent runtime crashes
 RUN printf '%s\n' '\documentclass{article}\usepackage{fontawesome5}\usepackage{hyperref}\usepackage{titlesec}\usepackage{enumitem}\usepackage{geometry}\usepackage{tabularx}\usepackage{color}\usepackage{latexsym}\begin{document}\faGithub Hello\end{document}' > dummy.tex \
     && tectonic dummy.tex \
@@ -41,7 +38,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY ./app ./app
 
 # 7. Create a non-root user for Enterprise Security
-# Cloud providers (like AWS/GCP/Render) will flag containers running as root.
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
