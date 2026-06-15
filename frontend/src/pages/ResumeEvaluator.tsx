@@ -82,43 +82,39 @@ const AtsEvaluatorPage: React.FC = () => {
         setEvaluationResult(null);
         setLoadingStep(0);
 
+        let stepInterval: any = null; // ✅ Safe interval initialization
+
         try {
             // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (!user) {
+            if (!user || !session) {
                 setError("You must be logged in to use this AI tool.");
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
             }
 
-            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
-            try {
-                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
-                    user_id: user.id 
-                });
-            } catch (tokenErr: any) {
-                // Agar 403 error aaya, matlab tokens khatam
-                if (tokenErr.response?.status === 403) {
-                    setError("🚫 Tokens Empty! Redirecting to Premium upgrade...");
-                    setIsLoading(false);
-                    setTimeout(() => navigate('/pricing'), 3000);
-                    return;
-                }
-                throw tokenErr;
-            }
+            // ⚠️ DOUBLE DEDUCTION FIX: Yahan se manual "/api/deduct-token" hata diya gaya hai.
+            // Backend khud 1 token deduct karega agar ATS evaluation successful raha.
 
-            // ✅ TOLL PLAZA CROSSED! Ab AI apna jaadu chalayega...
-            const stepInterval = setInterval(() => {
+            // ✅ Start Loading Animation
+            stepInterval = setInterval(() => {
                 setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
             }, 3000);
 
             const payload = { resume_text: resumeText, job_description: jobDescription };
-            const response = await axios.post(`${API_BASE_URL}/api/ai/evaluate`, payload);
             
-            clearInterval(stepInterval); // Loading rok do
+            // ✅ API CALL WITH HEADERS: Gatekeeper ko token bhej rahe hain
+            const response = await axios.post(`${API_BASE_URL}/api/ai/evaluate`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (stepInterval) clearInterval(stepInterval); // Loading rok do
             
             if (response.data && response.data.evaluation_result) {
                 setEvaluationResult(response.data.evaluation_result);
@@ -126,7 +122,17 @@ const AtsEvaluatorPage: React.FC = () => {
                 throw new Error("Invalid JSON format received from server.");
             }
         } catch (err: any) {
+            if (stepInterval) clearInterval(stepInterval); // Error aane par loading roko
             console.error("Error evaluating resume:", err);
+            
+            // ✅ HANDLE EMPTY TOKENS OR EXPIRED SESSIONS (401/402/403)
+            if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
+                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                setIsLoading(false);
+                setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
             setError(err.response?.data?.detail || 'Failed to evaluate resume. Ensure backend is running.');
         } finally {
             setIsLoading(false);

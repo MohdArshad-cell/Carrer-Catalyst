@@ -67,43 +67,39 @@ const CoverLetterGeneratorPage: React.FC = () => {
         setCopyButtonText('📋 Copy Text');
         setLoadingStep(0);
 
+        let stepInterval: any = null; // Initialize safely so it can be cleared on error
+
         try {
-            // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
+            // 🛑 TOLL PLAZA CHECK 1: Ensure User is Logged In
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (!user) {
+            if (!user || !session) {
                 setError("You must be logged in to use this AI tool.");
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
             }
 
-            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo!
-            try {
-                await axios.post(`${API_BASE_URL}/api/deduct-token`, { 
-                    user_id: user.id 
-                });
-            } catch (tokenErr: any) {
-                // Agar 403 error aaya, matlab tokens khatam
-                if (tokenErr.response?.status === 403) {
-                    setError("🚫 Tokens Empty! Redirecting to Premium upgrade...");
-                    setIsLoading(false);
-                    setTimeout(() => navigate('/pricing'), 3000);
-                    return;
-                }
-                throw tokenErr;
-            }
+            // ⚠️ DOUBLE DEDUCTION FIX: Manual /api/deduct-token call removed.
+            // Backend gatekeeper will automatically check balance and deduct exactly 1 token upon success.
 
-            // ✅ TOLL PLAZA CROSSED! Ab AI apna jaadu chalayega...
-            const stepInterval = setInterval(() => {
+            // ✅ Start Loading Animation
+            stepInterval = setInterval(() => {
                 setLoadingStep(prev => prev < 2 ? prev + 1 : prev);
             }, 3000);
 
             const payload = { resume_text: resumeText, job_description: jobDescription };
-            const response = await axios.post(`${API_BASE_URL}/api/ai/coverletter`, payload);
             
-            clearInterval(stepInterval); // Loading rok do
+            // ✅ API CALL WITH HEADERS: Sending the session token to the FastAPI Gatekeeper
+            const response = await axios.post(`${API_BASE_URL}/api/ai/coverletter`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (stepInterval) clearInterval(stepInterval); 
             
             if (response.data && response.data.cover_letter) {
                 setGeneratedCoverLetter(response.data.cover_letter);
@@ -111,7 +107,17 @@ const CoverLetterGeneratorPage: React.FC = () => {
                 throw new Error("Invalid response format received from server.");
             }
         } catch (err: any) {
+            if (stepInterval) clearInterval(stepInterval); // Prevent infinite loading loop on failure
             console.error("Error generating cover letter:", err);
+            
+            // ✅ HANDLE EMPTY TOKENS OR UNAUTHORIZED SESSIONS
+            if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
+                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                setIsLoading(false);
+                setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
             setError(err.response?.data?.detail || 'Failed to generate cover letter. Ensure backend is running.');
         } finally {
             setIsLoading(false);
