@@ -5,7 +5,6 @@ import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import './FeaturesPage.css';
 
-// Strict TypeScript Interfaces enforced as per architecture plan
 interface Feature {
     id: string;
     title: string;
@@ -19,7 +18,6 @@ interface Feature {
     tags: string[];
 }
 
-// Comprehensive Feature Data Array
 const featuresList: Feature[] = [
     {
         id: 'tailor',
@@ -30,7 +28,7 @@ const featuresList: Feature[] = [
         badge: 'Live Now',
         route: '/ai-tools',
         buttonText: 'Launch Tool 🚀',
-        accent: '#3b82f6', // Electric Blue
+        accent: '#3b82f6', // Bright Blue
         tags: ['Gemini Pro', 'LaTeX Engine', 'ATS Bypass']
     },
     {
@@ -42,7 +40,7 @@ const featuresList: Feature[] = [
         badge: 'Live Now',
         route: '/ats-evaluator',
         buttonText: 'Scan Resume 🔍',
-        accent: '#ef4444', // Crimson Red
+        accent: '#ef4444', // Neon Red
         tags: ['Harsh Feedback', 'Score System', 'Auto-Rewrite']
     },
     {
@@ -54,7 +52,7 @@ const featuresList: Feature[] = [
         badge: 'Live Now',
         route: '/cover-letter',
         buttonText: 'Draft Letter ✍️',
-        accent: '#8b5cf6', // Deep Purple
+        accent: '#8b5cf6', // Vivid Purple
         tags: ['Context Aware', 'PDF Export']
     },
     {
@@ -66,7 +64,7 @@ const featuresList: Feature[] = [
         badge: 'In Beta',
         route: '#',
         buttonText: 'Join Early Access ⏳',
-        accent: '#10b981', // Emerald Green
+        accent: '#10b981', // Glowing Emerald
         tags: ['Live Highlighting', 'Gap Analysis']
     },
     {
@@ -78,7 +76,7 @@ const featuresList: Feature[] = [
         badge: 'Next Release',
         route: '#',
         buttonText: 'Notify Me 🔔',
-        accent: '#06b6d4', // Cyan
+        accent: '#06b6d4', // Cyan Glow
         tags: ['Custom Link', 'Traffic Analytics']
     },
     {
@@ -90,7 +88,7 @@ const featuresList: Feature[] = [
         badge: 'In Lab',
         route: '#',
         buttonText: 'Join Waitlist 🔔',
-        accent: '#f59e0b', // Amber
+        accent: '#f59e0b', // Bright Amber
         tags: ['1-Click Scrape', 'Seamless Integration']
     }
 ];
@@ -99,13 +97,11 @@ const FeaturesPage: React.FC = () => {
     const navigate = useNavigate();
     const [toastMsg, setToastMsg] = useState<string>('');
 
-    // Feature Waitlist Handler
     const handleWaitlistClick = (featureName: string) => {
-        setToastMsg(`Status: VIP Access granted for ${featureName}. We will notify you upon deployment.`);
+        setToastMsg(`VIP Access granted for ${featureName}. We'll notify you! 🎉`);
         setTimeout(() => setToastMsg(''), 4000);
     };
 
-    // Magnetic Spotlight Effect Handler
     const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
         const rect = target.getBoundingClientRect();
@@ -117,13 +113,9 @@ const FeaturesPage: React.FC = () => {
     };
 
     return (
-        <div className="page-wrapper">
+        <div className="page-container">
             <ParticleBackground />
-            
-            {/* Dynamic ambient background glow */}
-            <div className="ambient-glow top-left"></div>
-            <div className="ambient-glow bottom-right"></div>
-            
+            <div className="background-aurora"></div>
             <Navbar />
 
             <main className="features-main-container">
@@ -149,12 +141,11 @@ const FeaturesPage: React.FC = () => {
                             style={{ '--card-accent': feature.accent, animationDelay: `${index * 0.05}s` } as React.CSSProperties}
                             onMouseMove={handleMouseMove}
                         >
-                            {/* Magnetic Spotlight Overlay */}
                             <div className="spotlight-overlay"></div>
                             
                             <div className="card-content">
                                 <div className="card-header">
-                                    <div className="icon-container" style={{ background: `linear-gradient(135deg, ${feature.accent}20, transparent)` }}>
+                                    <div className="icon-container" style={{ background: `${feature.accent}25`, borderColor: `${feature.accent}50`, color: feature.accent, textShadow: `0 0 15px ${feature.accent}` }}>
                                         <span className="feature-icon">{feature.icon}</span>
                                     </div>
                                     <div className={`status-badge ${feature.status === 'live' ? 'status-live' : 'status-dev'}`}>
@@ -175,7 +166,7 @@ const FeaturesPage: React.FC = () => {
                                     <button 
                                         className={`action-button ${feature.status === 'live' ? 'btn-primary' : 'btn-secondary'}`}
                                         onClick={() => feature.status === 'live' ? navigate(feature.route) : handleWaitlistClick(feature.title)}
-                                        style={feature.status === 'live' ? { boxShadow: `0 0 20px ${feature.accent}40` } : {}}
+                                        style={feature.status === 'live' ? { background: `linear-gradient(135deg, ${feature.accent}, #000)`, boxShadow: `0 4px 15px ${feature.accent}60` } : {}}
                                     >
                                         {feature.buttonText}
                                     </button>
@@ -186,7 +177,6 @@ const FeaturesPage: React.FC = () => {
                 </div>
             </main>
 
-            {/* Premium Toast Notification */}
             <div className={`system-toast ${toastMsg ? 'toast-visible' : ''}`}>
                 <div className="toast-content">
                     <span className="toast-icon">⚡</span>
