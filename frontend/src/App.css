@@ -144,12 +144,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative; /* Added for mobile absolute positioning */
 }
 
 .nav-logo {
     font-size: 1.8rem;
     font-weight: 800; /* Font thoda bold kiya */
-    color: var(--text-primary);
+    color: var(--text-primary, #fff);
     text-decoration: none;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
@@ -159,7 +160,7 @@ body {
 
 /* Logo ke 'Catalyst' part mein Gradient aur Glow */
 .nav-logo span {
-    background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+    background: linear-gradient(to right, var(--accent-cyan, #00e5ff), var(--accent-purple, #8b5cf6));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-left: 2px;
@@ -177,7 +178,7 @@ body {
 }
 
 .nav-links a {
-    color: var(--text-secondary);
+    color: var(--text-secondary, #94a3b8);
     text-decoration: none;
     font-weight: 500;
     font-size: 1.05rem;
@@ -187,7 +188,7 @@ body {
 }
 
 .nav-links a:hover {
-    color: var(--text-primary); /* Hover par ekdum bright white hoga */
+    color: var(--text-primary, #fff); /* Hover par ekdum bright white hoga */
 }
 
 /* Links ke niche Animated Gradient Line */
@@ -198,11 +199,11 @@ body {
     height: 2px;
     bottom: 0;
     left: 50%;
-    background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+    background: linear-gradient(to right, var(--accent-cyan, #00e5ff), var(--accent-purple, #8b5cf6));
     transition: all 0.3s ease;
     transform: translateX(-50%);
     border-radius: 2px;
-    box-shadow: 0 0 10px var(--accent-cyan); /* Line par halka sa glow */
+    box-shadow: 0 0 10px var(--accent-cyan, #00e5ff); /* Line par halka sa glow */
 }
 
 .nav-links a:hover::after {
@@ -211,8 +212,8 @@ body {
 
 /* Glowing Solid CTA Button */
 .nav-cta-premium {
-    background: linear-gradient(135deg, var(--accent-purple), #4f46e5);
-    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--accent-purple, #8b5cf6), #4f46e5);
+    color: #fff;
     border: none;
     padding: 0.6rem 1.6rem;
     border-radius: 8px;
@@ -226,7 +227,96 @@ body {
 .nav-cta-premium:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(98, 72, 255, 0.6), 0 0 10px rgba(0, 246, 255, 0.2);
-    background: linear-gradient(135deg, #7c3aed, var(--accent-purple));
+    background: linear-gradient(135deg, #7c3aed, var(--accent-purple, #8b5cf6));
+}
+
+/* === NEW DESKTOP HELPER CLASSES === */
+.nav-action-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.mobile-menu-btn {
+    display: none; /* Hidden on Desktop */
+}
+
+.logout-btn {
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ==================================================== */
+/* 📱 MOBILE RESPONSIVE DESIGN (HAMBURGER MENU)         */
+/* ==================================================== */
+@media screen and (max-width: 768px) {
+    .navbar {
+        padding: 1rem 0;
+    }
+
+    /* Show Hamburger Menu Button */
+    .mobile-menu-btn {
+        display: block;
+        background: transparent;
+        border: none;
+        color: var(--text-primary, #fff);
+        font-size: 1.8rem;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    /* Transform nav-links into a vertical dropdown menu */
+    .nav-links {
+        position: absolute;
+        top: 100%; /* Navbar ke just neeche */
+        left: 0;
+        width: 100%;
+        background: rgba(10, 15, 30, 0.95); /* Thoda dark taaki background text mix na ho */
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        flex-direction: column;
+        padding: 2rem 0;
+        gap: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        
+        /* Smooth Slide-in Animation Magic */
+        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+        transition: clip-path 0.4s ease-in-out;
+    }
+
+    /* Jab React state 'active' class add karega, menu neeche aayega */
+    .nav-links.active {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Stack buttons properly */
+    .nav-action-group {
+        flex-direction: column;
+        width: 90%; /* Center the buttons */
+        gap: 12px;
+    }
+
+    /* Make buttons full width on mobile for easier tapping */
+    .nav-action-group button, 
+    .nav-action-group a, 
+    .token-pill {
+        width: 100% !important; 
+        text-align: center;
+        padding: 14px 12px !important;
+        display: flex;
+        justify-content: center;
+        font-size: 1.05rem !important;
+    }
+
+    /* Keep the gradient underline centered on mobile */
+    .nav-links a::after {
+        bottom: -5px;
+    }
 }
 
 /* === 5. Premium Footer === */
