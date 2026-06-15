@@ -15,7 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
-import jwt  # Needs: pip install PyJWT
+import jwt
+from jwt import PyJWKClient  # <--- YEH IMPORT ADD KARO
 
 # Environment Variables
 from dotenv import load_dotenv
@@ -43,13 +44,23 @@ load_dotenv()
 # Stripe Setup
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-# Supabase Setup (Service Role Key for Admin Access)
+# --- YAHAN PAR PASTE KIYA HAI ---
+# Supabase Setup
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+# JWKS Client setup for Asymmetric ES256 Verification
+jwk_client = None
+if supabase_url:
+    clean_url = supabase_url.rstrip("/")
+    jwks_url = f"{clean_url}/auth/v1/.well-known/jwks.json"
+    jwk_client = PyJWKClient(jwks_url)
+# --------------------------------
+
 # FastAPI App Setup
 app = FastAPI(title="Core AI & Resume Engine")
+
 
 # CORS Middleware - Dynamically uses frontend URL
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
@@ -71,61 +82,69 @@ active_tasks: Dict[str, Dict[str, Any]] = {}
 security = HTTPBearer()
 
 def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Validates the Supabase JWT securely, auto-detects algorithm, and logs errors."""
+    """Validates the Supabase JWT securely, handles asymmetric JWKS and falls back to symmetric secret."""
     token = credentials.credentials
     print(f"🔑 [AUTH DEBUG]: Token received! Length = {len(token) if token else 0}")
     
-    try:
+    payload = None
+    
+    # 🌟 METHOD 1: Try Asymmetric JWKS verification (For new Supabase ES256 tokens)
+    if jwk_client:
+        try:
+            print("🌐 [AUTH DEBUG]: Fetching public key from Supabase JWKS endpoint...")
+            signing_key = jwk_client.get_signing_key_from_jwt(token)
+            unverified_header = jwt.get_unverified_header(token)
+            token_alg = unverified_header.get("alg", "ES256")
+            
+            try:
+                payload = jwt.decode(token, signing_key.key, algorithms=[token_alg], audience="authenticated")
+            except jwt.InvalidAudienceError:
+                print("⚠️ [AUTH DEBUG]: Audience mismatch, bypassing audience validation strictly.")
+                payload = jwt.decode(token, signing_key.key, algorithms=[token_alg], options={"verify_aud": False})
+            print("✅ [AUTH DEBUG SUCCESS]: Token verified perfectly via Supabase JWKS cryptographic handshake!")
+        except Exception as jwks_err:
+            print(f"⚠️ [AUTH DEBUG INFO]: JWKS verification skipped/failed: {str(jwks_err)}. Trying symmetric fallback...")
+
+    # 🌟 METHOD 2: Fallback to Symmetric Verification (For legacy HS256 tokens)
+    if not payload:
         jwt_secret = os.getenv("SUPABASE_JWT_SECRET")
         if not jwt_secret:
-            print("❌ [AUTH DEBUG ERROR]: SUPABASE_JWT_SECRET is completely missing in Render Env variables!")
-            raise HTTPException(status_code=500, detail="Server Error: Missing JWT Secret")
-            
-        # 🔍 AUTO-DETECT ALGORITHM FROM JWT HEADER
+            print("❌ [AUTH DEBUG ERROR]: SUPABASE_JWT_SECRET is missing in Render Env variables!")
+            raise HTTPException(status_code=500, detail="Server Error: Missing JWT Secret configuration.")
+        
         try:
             unverified_header = jwt.get_unverified_header(token)
             token_alg = unverified_header.get("alg", "HS256")
-            print(f"📊 [AUTH DEBUG]: Token header algorithm discovered -> {token_alg}")
-        except Exception as head_err:
-            print(f"❌ [AUTH DEBUG ERROR]: Could not parse JWT header: {str(head_err)}")
-            token_alg = "HS256"
+            try:
+                payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], audience="authenticated")
+            except jwt.InvalidAudienceError:
+                payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], options={"verify_aud": False})
+            print("✅ [AUTH DEBUG SUCCESS]: Token verified via legacy symmetric JWT Secret!")
+        except Exception as sym_err:
+            print(f"❌ [AUTH DEBUG ERROR]: Both security layers failed to verify token! Error: {str(sym_err)}")
+            raise HTTPException(status_code=401, detail="Invalid authentication token signature.")
 
-        # Create a dynamic list of allowed algorithms including the token's algorithm
-        allowed_algorithms = ["HS256", "HS384", "HS512", "RS256", "ES256", "none"]
-        if token_alg not in allowed_algorithms:
-            allowed_algorithms.append(token_alg)
-            
-        # --- BULLETPROOF DECODING ---
-        try:
-            # Try decoding with full verification using the detected algorithm
-            payload = jwt.decode(token, jwt_secret, algorithms=allowed_algorithms, audience="authenticated")
-        except jwt.InvalidAudienceError:
-            print("⚠️ [AUTH DEBUG]: Audience mismatch detected. Falling back to non-strict audience verification...")
-            payload = jwt.decode(token, jwt_secret, algorithms=allowed_algorithms, options={"verify_aud": False})
-            
-        user_id = payload.get("sub")
-        print(f"✅ [AUTH DEBUG SUCCESS]: Token verified! User ID: {user_id}")
-        
-        # Fetch current tokens from DB
+    # 🌟 DATABASE LOGIC (Token balance check)
+    user_id = payload.get("sub")
+    try:
         res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
         if not res.data or len(res.data) == 0:
-            print(f"❌ [AUTH DEBUG ERROR]: User {user_id} authenticated but not found in 'profiles' table.")
+            print(f"❌ [AUTH DEBUG ERROR]: User {user_id} not found in database profiles.")
             raise HTTPException(status_code=404, detail="User profile not found.")
             
         current_tokens = res.data[0]["tokens"]
         if current_tokens <= 0:
             print(f"🚫 [AUTH DEBUG ERROR]: User {user_id} has 0 tokens left.")
-            raise HTTPException(status_code=402, detail="Insufficient tokens.")
+            raise HTTPException(status_code=402, detail="Insufficient tokens. Please buy more.")
             
         return {"user_id": user_id, "current_tokens": current_tokens}
-        
-    except jwt.ExpiredSignatureError as e:
-        print(f"❌ [AUTH DEBUG ERROR]: JWT Expired! {str(e)}")
-        raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
-    except jwt.InvalidTokenError as e:
-        print(f"❌ [AUTH DEBUG ERROR]: Cryptographic verification failed! {str(e)}")
-        print("💡 TIP: Verify your SUPABASE_JWT_SECRET matches exactly with your Supabase dashboard setting.")
-        raise HTTPException(status_code=401, detail=f"Invalid authentication token: {str(e)}")
+    except Exception as db_err:
+        if isinstance(db_err, HTTPException):
+            raise db_err
+        raise HTTPException(status_code=500, detail=f"Database check error: {str(db_err)}")
+    
+
+
 # ==========================================
 # 3. PYDANTIC MODELS (FastAPI Validators)
 # ==========================================
@@ -336,10 +355,22 @@ async def stripe_webhook(request: Request):
 
     return {"status": "success"}
 
-# Kept this route active to prevent old frontend code from crashing if it calls it, 
-# but it now enforces security.
+# ==========================================
+# 8. TOKEN MANAGEMENT ROUTE (FOR NON-AI GENERATION)
+# ==========================================
 @app.post("/api/deduct-token")
 def deduct_token(request: DeductTokenRequest, user_auth: dict = Depends(verify_user_and_tokens)):
-    # Tokens are now deducted automatically by the AI endpoints above. 
-    # This route is kept for backward compatibility with your frontend.
-    return {"status": "success", "message": "Tokens are now handled by AI routes directly."}
+    try:
+        user_id = user_auth["user_id"]
+        current_tokens = user_auth["current_tokens"]
+        
+        # ACTUALLY Deduct 1 Token
+        new_tokens = current_tokens - 1
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
+        
+        print(f"📉 TOKEN DEDUCTED SECURELY: User {user_id} used 1 token. Tokens left: {new_tokens}")
+        return {"status": "success", "tokens_left": new_tokens}
+        
+    except Exception as e:
+        print("❌ ERROR DEDUCTING TOKEN:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
