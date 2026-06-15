@@ -89,11 +89,10 @@
 }
 
 /* =========================================================================
-   OP BENTO GRID & 3D CARDS (FIXED OVERLAP & 3 COLUMNS)
+   OP BENTO GRID & 3D CARDS (100% OVERLAP FIXED)
    ========================================================================= */
 .op-bento-grid {
     display: grid;
-    /* STRICT 3 COLUMNS: Yeh ensure karega ki cards overlap na hon */
     grid-template-columns: repeat(3, 1fr); 
     gap: 30px; 
     perspective: 2000px; 
@@ -107,6 +106,11 @@
     transition: transform 0.1s ease-out; 
     opacity: 0;
     animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    
+    /* NEW: Forces container to stretch */
+    display: flex;
+    flex-direction: column;
+    height: 100%; 
 }
 
 .op-feature-card:hover {
@@ -146,11 +150,12 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     padding: 2.2rem;
-    height: 100%;
-    min-height: 400px; /* Minimum height for uniformity */
+    
+    /* NEW: Forces glass panel to fill the card completely */
+    flex: 1; 
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Keeps footer at the bottom */
+    min-height: 400px; 
     overflow: hidden;
     z-index: 2;
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -164,20 +169,18 @@
                 0 0 40px calc(var(--card-accent) * 0.15);
 }
 
-/* Lock state for upcoming features */
 .card-locked .card-glass-panel {
     background: rgba(10, 15, 20, 0.4);
     border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 /* =========================================================================
-   CARD INNER CONTENT 
+   CARD INNER CONTENT (NO 3D TRANSLATE Z - OVERLAP PREVENTED)
    ========================================================================= */
-/* Content sits safely inside the card */
 .card-top-row, .card-body, .card-bottom-row {
     position: relative;
     z-index: 5;
-    transform: translateZ(5px); /* Minimal pop, no overflow */
+    /* REMOVED translateZ entirely */
 }
 
 .card-top-row {
@@ -185,6 +188,11 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 1.5rem;
+}
+
+/* NEW: Pushes the footer exactly to the bottom */
+.card-body {
+    flex: 1; 
 }
 
 .icon-wrapper {
@@ -228,7 +236,6 @@
     margin-bottom: 1.8rem;
 }
 
-/* Neon Tags */
 .op-tags-row {
     display: flex;
     flex-wrap: wrap;
@@ -249,14 +256,14 @@
 .card-footer-divider {
     height: 1px;
     background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
-    margin: auto 0 1.5rem 0;
+    margin: 1.5rem 0; /* Fixed margin */
 }
 
 /* Bottom Row & Stats */
 .card-bottom-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center; /* Aligns stats and button vertically */
 }
 
 .op-stats {
@@ -351,25 +358,19 @@
 }
 
 /* =========================================================================
-   RESPONSIVE DESIGN (Fixed for Tablets & Mobiles)
+   RESPONSIVE DESIGN 
    ========================================================================= */
 @media (max-width: 1024px) {
-    /* Tablet par 2 columns taaki narrow na lagein */
     .op-bento-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-    /* Mobile par 1 column */
     .features-main-container { padding-top: 120px; }
     .op-bento-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 2.8rem !important; }
     
-    /* Disable 3D tilt on mobile for better performance & touch UX */
     .op-feature-card:hover {
         transform: translateY(-5px); 
-    }
-    .card-top-row, .card-body, .card-bottom-row {
-        transform: translateZ(0); 
     }
     .card-bottom-row {
         flex-direction: column;
