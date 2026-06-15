@@ -5,7 +5,7 @@ import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import './FeaturesPage.css';
 
-// Feature Data Array for easy management
+// Upgraded Feature Data Array with Accents and Tags
 const featuresList = [
     {
         id: 'tailor',
@@ -13,9 +13,11 @@ const featuresList = [
         icon: '🧠',
         description: 'Micro-tailor your resume for any Job Description in 10 seconds. Get a pixel-perfect LaTeX PDF.',
         status: 'live',
-        badge: '🟢 Live',
-        route: '/ai-tools', // Change this to your actual Tailor route
-        buttonText: 'Launch Tool 🚀'
+        badge: 'Live',
+        route: '/ai-tools',
+        buttonText: 'Launch Tool 🚀',
+        accent: '#3b82f6', // Blue
+        tags: ['Gemini AI', 'LaTeX Export', 'ATS Optimized']
     },
     {
         id: 'evaluator',
@@ -23,9 +25,11 @@ const featuresList = [
         icon: '🔥',
         description: 'Find out exactly why you are getting rejected. No sugarcoating. Fix weak bullets instantly.',
         status: 'live',
-        badge: '🟢 Live',
-        route: '/ats-evaluator', // Change to actual Evaluator route
-        buttonText: 'Scan Resume 🔍'
+        badge: 'Live',
+        route: '/ats-evaluator',
+        buttonText: 'Scan Resume 🔍',
+        accent: '#ef4444', // Red
+        tags: ['Harsh Truths', 'Score System', 'Auto-Rewrite']
     },
     {
         id: 'cover-letter',
@@ -33,9 +37,11 @@ const featuresList = [
         icon: '✉️',
         description: 'Hook recruiters instantly. Generate a highly targeted, no-BS cover letter in seconds.',
         status: 'live',
-        badge: '🟢 Live',
-        route: '/cover-letter', // Change to actual Cover Letter route
-        buttonText: 'Draft Letter ✍️'
+        badge: 'Live',
+        route: '/cover-letter',
+        buttonText: 'Draft Letter ✍️',
+        accent: '#8b5cf6', // Purple
+        tags: ['Hyper-Personalized', 'PDF Download']
     },
     {
         id: 'xray',
@@ -45,7 +51,9 @@ const featuresList = [
         status: 'upcoming',
         badge: '⚡ Beta',
         route: '#',
-        buttonText: 'Join Early Access ⏳'
+        buttonText: 'Join Early Access ⏳',
+        accent: '#10b981', // Emerald
+        tags: ['Live Highlighting', 'Visual Gap Analysis']
     },
     {
         id: 'portfolio',
@@ -53,9 +61,11 @@ const featuresList = [
         icon: '🌐',
         description: 'Turn your generated resume into a stunning live webpage to share directly on LinkedIn.',
         status: 'upcoming',
-        badge: '🚀 Coming Soon',
+        badge: '🚀 Next Release',
         route: '#',
-        buttonText: 'Notify Me 🔔'
+        buttonText: 'Notify Me 🔔',
+        accent: '#06b6d4', // Cyan
+        tags: ['Custom Link', 'Analytics tracking']
     },
     {
         id: 'extension',
@@ -63,9 +73,11 @@ const featuresList = [
         icon: '🧩',
         description: 'Auto-scrape Job Descriptions from LinkedIn/Naukri and tailor your resume without leaving the tab.',
         status: 'upcoming',
-        badge: '🛠️ In Development',
+        badge: '🛠️ In Lab',
         route: '#',
-        buttonText: 'Join Waitlist 🔔'
+        buttonText: 'Join Waitlist 🔔',
+        accent: '#f59e0b', // Amber
+        tags: ['1-Click Scrape', 'Browser Integration']
     }
 ];
 
@@ -74,8 +86,8 @@ const FeaturesPage: React.FC = () => {
     const [toastMsg, setToastMsg] = useState('');
 
     const handleWaitlistClick = (featureName: string) => {
-        setToastMsg(`Awesome! You are on the waitlist for ${featureName}. We'll email you when it's ready! 🎉`);
-        setTimeout(() => setToastMsg(''), 4000); // Hide after 4 seconds
+        setToastMsg(`Awesome! You're on the VIP list for ${featureName}. We'll notify you first! 🎉`);
+        setTimeout(() => setToastMsg(''), 4000);
     };
 
     return (
@@ -85,36 +97,57 @@ const FeaturesPage: React.FC = () => {
             <Navbar />
 
             <div className="features-container">
-                <div className="studio-header text-center">
-                    <div className="hero-badge" style={{ borderColor: '#3b82f6', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }}>
+                {/* Mind-Blowing Header Section */}
+                <div className="studio-header text-center fade-in-up">
+                    <div className="hero-badge pulse-border">
                         <span className="sparkle">⚡</span> The Ultimate Arsenal
                     </div>
-                    <h1 className="animated-gradient-text" style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>
-                        Everything You Need to Get Hired.
+                    <h1 className="animated-gradient-text title-massive">
+                        Everything You Need <br/> To Get Hired.
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '700px', margin: '0 auto' }}>
-                        From bypassing ruthless ATS algorithms to crafting the perfect pitch, our AI tools are designed to give you an unfair advantage.
+                    <p className="subtitle-text">
+                        From bypassing ruthless ATS algorithms to crafting the perfect pitch, our AI tools are designed to give you an unfair, completely legal advantage.
                     </p>
                 </div>
 
-                {/* Features Grid */}
+                {/* Premium Grid */}
                 <div className="features-grid">
-                    {featuresList.map((feature) => (
-                        <div key={feature.id} className={`feature-card glass-card ${feature.status === 'upcoming' ? 'upcoming-card' : ''}`}>
+                    {featuresList.map((feature, index) => (
+                        <div 
+                            key={feature.id} 
+                            className={`premium-feature-card glass-card ${feature.status === 'upcoming' ? 'card-upcoming' : ''}`}
+                            style={{ '--accent-color': feature.accent, animationDelay: `${index * 0.1}s` } as React.CSSProperties}
+                        >
+                            {/* Accent Top Border */}
+                            <div className="card-top-glow"></div>
+
                             <div className="card-header">
-                                <div className="feature-icon">{feature.icon}</div>
-                                <div className={`status-badge ${feature.status === 'live' ? 'badge-live' : 'badge-upcoming'}`}>
+                                <div className="icon-wrapper">
+                                    {feature.icon}
+                                    <div className="icon-glow"></div>
+                                </div>
+                                <div className={`smart-badge ${feature.status === 'live' ? 'badge-live' : 'badge-upcoming'}`}>
+                                    {feature.status === 'live' && <span className="live-dot"></span>}
                                     {feature.badge}
                                 </div>
                             </div>
+
                             <h3 className="feature-title">{feature.title}</h3>
                             <p className="feature-desc">{feature.description}</p>
                             
-                            <div className="card-action">
+                            {/* Feature Tags */}
+                            <div className="tags-container">
+                                {feature.tags.map((tag, i) => (
+                                    <span key={i} className="tech-tag">{tag}</span>
+                                ))}
+                            </div>
+                            
+                            <div className="card-action mt-auto">
                                 {feature.status === 'live' ? (
                                     <button 
-                                        className="btn-premium w-100" 
+                                        className="btn-premium w-100 action-btn" 
                                         onClick={() => navigate(feature.route)}
+                                        style={{ background: `linear-gradient(135deg, ${feature.accent}, #000)` }}
                                     >
                                         {feature.buttonText}
                                     </button>
@@ -134,6 +167,7 @@ const FeaturesPage: React.FC = () => {
 
             {/* Custom Toast Notification */}
             <div className={`waitlist-toast ${toastMsg ? 'show' : ''}`}>
+                <span className="toast-icon">✨</span>
                 {toastMsg}
             </div>
 
