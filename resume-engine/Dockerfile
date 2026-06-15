@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y \
 # Pre-cache Tectonic packages to speed up the first generation
 # This creates a dummy document and compiles it so Tectonic downloads necessary LaTeX packages during the build.
 # Pre-cache Tectonic packages to speed up the first generation
-RUN printf '%s\n' '\documentclass{article}\begin{document}Hello\end{document}' > dummy.tex \
+# Pre-cache ALL heavy Tectonic packages used by templates to prevent runtime crashes
+RUN printf '%s\n' '\documentclass{article}\usepackage{fontawesome5}\usepackage{hyperref}\usepackage{titlesec}\usepackage{enumitem}\usepackage{geometry}\usepackage{tabularx}\usepackage{color}\usepackage{latexsym}\begin{document}\faGithub Hello\end{document}' > dummy.tex \
     && tectonic dummy.tex \
     && rm dummy.tex dummy.pdf
 
