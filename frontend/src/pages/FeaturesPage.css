@@ -1,37 +1,59 @@
 /* =========================================================================
-   BASE LAYOUT & HERO
+   BASE LAYOUT & ANIMATIONS
    ========================================================================= */
+.features-page {
+    position: relative;
+    overflow-x: hidden;
+}
+
 .features-main-container {
     position: relative;
     z-index: 10;
-    max-width: 1250px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 140px 24px 80px 24px;
+    padding: 140px 24px 100px 24px;
 }
 
+@keyframes fadeUpIn {
+    0% { opacity: 0; transform: translateY(40px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 229, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); }
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeUpIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* =========================================================================
+   HERO SECTION
+   ========================================================================= */
 .features-hero {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-bottom: 4rem;
-    opacity: 0;
-    animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    margin-bottom: 5rem;
 }
 
 .hero-badge {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
     padding: 8px 24px;
     border-radius: 50px;
     border: 1px solid;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-bottom: 2rem;
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+    backdrop-filter: blur(10px);
 }
 
 .live-indicator {
@@ -39,135 +61,155 @@
     height: 8px;
     background-color: currentColor;
     border-radius: 50%;
-    animation: blink-indicator 1.5s infinite;
-}
-
-@keyframes blink-indicator {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    animation: pulse-glow 2s infinite;
 }
 
 .hero-title {
-    font-size: clamp(3rem, 6vw, 4.5rem);
+    font-size: clamp(3rem, 6vw, 4.8rem);
     font-weight: 900;
-    letter-spacing: -1px;
+    letter-spacing: -1.5px;
     line-height: 1.1;
     margin-bottom: 1.5rem;
     color: #ffffff;
+    text-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 
 .text-gradient {
-    background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+    background: linear-gradient(135deg, #00e5ff 0%, #8b5cf6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.3));
 }
 
 .hero-subtitle {
     font-size: 1.25rem;
     line-height: 1.6;
-    color: #a1a1aa;
+    color: #94a3b8;
     max-width: 750px;
 }
 
 /* =========================================================================
-   OP BENTO GRID & 3D MAGNETIC TILT (THE MAGIC)
+   OP BENTO GRID & 3D CARDS (NEON GLOW EDITIONS)
    ========================================================================= */
 .op-bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px; 
+    perspective: 2000px; 
 }
 
-/* The invisible container creating the 3D space */
 .op-feature-card {
     position: relative;
-    perspective: 1200px; /* Creates the 3D viewing distance */
+    border-radius: 24px;
     transform-style: preserve-3d;
+    transition: transform 0.1s ease-out; 
     opacity: 0;
     animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* The actual visual glass panel that tilts */
-.card-glass-panel {
-    position: relative;
-    height: 100%;
-    background: rgba(20, 20, 28, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    padding: 2.2rem;
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    /* Apply the mathematical tilt from React state */
-    transform: rotateX(var(--rotate-x, 0deg)) rotateY(var(--rotate-y, 0deg));
-    transition: transform 0.1s linear, box-shadow 0.3s ease, border-color 0.3s ease;
-    transform-style: preserve-3d; /* Allows children to pop out */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
+    height: 100%; 
 }
 
-.op-feature-card:hover .card-glass-panel {
-    border-color: var(--card-accent);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px calc(var(--card-accent) * 0.15);
+.op-feature-card:hover {
+    transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y)) scale3d(1.02, 1.02, 1.02);
+    z-index: 10;
 }
 
-/* Magnetic Spotlight Overlay */
 .spotlight-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    border-radius: 24px;
     background: radial-gradient(
-        700px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        calc(var(--card-accent) * 0.2), 
-        transparent 40%
+        800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.15), /* Brightened spotlight */
+        transparent 50%
     );
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
-    z-index: 1;
+    z-index: 3;
 }
 
 .op-feature-card:hover .spotlight-overlay {
     opacity: 1;
 }
 
-/* 🚀 TRUE 3D POP-OUT EFFECT */
-/* Items with this class will literally lift off the card when tilted */
-.pop-out-layer {
-    transform: translateZ(30px);
-    transition: transform 0.1s linear;
+/* 🌟 ALIVE EFFECT: Base glow added to the card so it doesn't look dead */
+.card-glass-panel {
+    position: relative;
+    background: rgba(15, 20, 30, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Brighter base border */
+    border-radius: 24px;
+    padding: 2.2rem;
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    min-height: 400px; 
+    overflow: hidden;
+    z-index: 2;
+    /* Base faint glow matching the accent color */
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 
+                0 10px 30px rgba(0, 0, 0, 0.6),
+                0 0 10px rgba(255,255,255,0.02); 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Extreme Glow on Hover */
+.op-feature-card:hover .card-glass-panel {
+    border-color: var(--card-accent);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 
+                0 20px 50px rgba(0, 0, 0, 0.9), 
+                0 0 30px var(--card-accent); /* Super Glow */
+}
+
+.card-locked .card-glass-panel {
+    background: rgba(10, 15, 20, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    opacity: 0.85;
 }
 
 /* =========================================================================
-   CARD INNER CONTENT
+   CARD INNER CONTENT 
    ========================================================================= */
+.card-top-row, .card-body, .card-bottom-row {
+    position: relative;
+    z-index: 5;
+}
+
 .card-top-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2rem;
-    z-index: 2;
+    margin-bottom: 1.5rem;
+}
+
+.card-body {
+    flex: 1; 
 }
 
 .icon-wrapper {
-    width: 65px;
-    height: 65px;
+    width: 60px; /* Slightly larger icon */
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2rem;
-    border-radius: 18px;
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    font-size: 1.8rem;
+    box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    /* Icon base glow */
+    filter: drop-shadow(0 0 8px currentColor);
 }
 
 .op-status-badge {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.5px;
-    padding: 6px 16px;
+    padding: 6px 14px;
     border-radius: 50px;
     text-transform: uppercase;
 }
@@ -178,23 +220,19 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.card-body {
-    flex-grow: 1;
-    z-index: 2;
-}
-
 .op-card-title {
     font-size: 1.5rem;
     font-weight: 800;
     color: #ffffff;
-    margin: 0 0 1rem 0;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.5px;
 }
 
 .op-card-desc {
-    color: #cbd5e1;
-    font-size: 1.05rem;
+    font-size: 1rem;
+    color: #cbd5e1; /* Brighter text so it's not dull */
     line-height: 1.6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
 }
 
 .op-tags-row {
@@ -205,98 +243,110 @@
 }
 
 .op-tag {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: #e2e8f0;
-    padding: 6px 12px;
-    border-radius: 8px;
     font-size: 0.75rem;
     font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
 }
 
 .card-footer-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    margin-bottom: 1.5rem;
-    z-index: 2;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15), transparent);
+    margin: 1.5rem 0; 
 }
 
 /* =========================================================================
-   STATS ROW & BUTTON (OP ADDITION)
+   BOTTOM ROW: STATS & BUTTONS (THE ALIGNMENT FIX)
    ========================================================================= */
 .card-bottom-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    z-index: 2;
+    align-items: center; /* Locks vertical alignment to center */
+    width: 100%;
 }
 
 .op-stats {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.2rem;
+    /* 🔒 FIX: Ensures stats never wrap to a new line */
+    white-space: nowrap; 
+    flex-shrink: 0;
 }
 
 .stat-block {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* 🔒 FIX: Forces text to stay on single line */
+    white-space: nowrap; 
 }
 
 .stat-label {
-    font-size: 0.7rem;
-    color: #94a3b8;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    color: #94a3b8; /* Brighter label */
+    font-weight: 800;
+    letter-spacing: 0.8px;
 }
 
 .stat-value {
-    font-size: 1rem;
+    font-size: 1.1rem; /* Slightly larger for impact */
     color: #ffffff;
     font-weight: 800;
 }
 
+/* Action Buttons */
 .op-action-btn {
-    padding: 12px 24px;
+    padding: 12px 20px; /* Adjusted padding to ensure it fits with stats */
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* 🔒 FIX: Ensures button text never wraps and button doesn't shrink awkwardly */
+    white-space: nowrap;
+    flex-shrink: 0; 
+    text-align: center;
 }
 
 .op-action-btn.primary {
     color: #ffffff;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* 🌟 ALIVE EFFECT: Buttons have a permanent glow now */
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
 }
 
 .op-action-btn.primary:hover {
     filter: brightness(1.2);
-    transform: scale(1.05);
+    transform: translateY(-2px);
+    border-color: #fff;
 }
 
 .op-action-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
 }
 
 .op-action-btn.secondary:hover {
     background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
 }
 
 /* =========================================================================
-   TOAST NOTIFICATION
+   SYSTEM TOAST NOTIFICATION
    ========================================================================= */
 .op-toast {
     position: fixed;
     bottom: -100px;
     left: 50%;
     transform: translateX(-50%);
-    transition: bottom 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    z-index: 1000;
-    pointer-events: none;
+    z-index: 2000;
+    transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .op-toast.visible {
@@ -307,13 +357,13 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(10, 10, 15, 0.9);
+    background: rgba(10, 15, 30, 0.8);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
     color: #ffffff;
-    padding: 12px 28px;
     border-radius: 50px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1);
+    padding: 12px 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .toast-glass p {
@@ -322,19 +372,26 @@
     font-size: 0.95rem;
 }
 
-/* Keyframes */
-@keyframes fadeUpIn {
-    0% { opacity: 0; transform: translateY(30px); }
-    100% { opacity: 1; transform: translateY(0); }
+/* =========================================================================
+   RESPONSIVE DESIGN 
+   ========================================================================= */
+@media (max-width: 1024px) {
+    .op-bento-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-    .features-main-container { padding-top: 100px; }
+    .features-main-container { padding-top: 120px; }
     .op-bento-grid { grid-template-columns: 1fr; }
-    .hero-title { font-size: 2.5rem !important; }
+    .hero-title { font-size: 2.8rem !important; }
     
-    /* Disable 3D tilt on mobile for better touch experience */
-    .card-glass-panel {
-        transform: none !important;
+    .op-feature-card:hover { transform: translateY(-5px); }
+    
+    .card-bottom-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+    .op-action-btn {
+        width: 100%;
     }
 }
