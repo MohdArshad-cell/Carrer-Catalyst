@@ -35,7 +35,7 @@ const featuresList: Feature[] = [
         route: '/ai-tools',
         buttonText: 'Launch Engine 🚀',
         accent: '#00e5ff', // Neon Cyan
-        tags: ['Gemini 1.5', 'LaTeX Core', 'ATS Bypass'],
+        tags: ['Gemini Pro', 'LaTeX Core', 'ATS Bypass'],
         stats: [{ label: 'Speed', value: '< 12s' }, { label: 'Cost', value: '1 Token' }]
     },
     {
@@ -92,9 +92,9 @@ const featuresList: Feature[] = [
     },
     {
         id: 'extension',
-        title: 'LinkedIn X-Ray Extension',
+        title: 'LinkedIn X-Ray',
         icon: '🧩',
-        description: 'Auto-scrape Job Descriptions from LinkedIn or Naukri and tailor your resume in 1-click without ever leaving the tab.',
+        description: 'Auto-scrape Job Descriptions from LinkedIn or Naukri and tailor your resume in 1-click without leaving the tab.',
         status: 'upcoming',
         badge: 'Concept',
         route: '#',
@@ -123,11 +123,11 @@ const FeaturesPage: React.FC = () => {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // 3D Tilt calculation
+        // 3D Tilt calculation (The Magic Math)
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -8; // Max tilt 8 deg
-        const rotateY = ((x - centerX) / centerX) * 8;
+        const rotateX = ((y - centerY) / centerY) * -10; // Increased to 10 deg for better 3D
+        const rotateY = ((x - centerX) / centerX) * 10;
 
         target.style.setProperty('--mouse-x', `${x}px`);
         target.style.setProperty('--mouse-y', `${y}px`);
@@ -150,7 +150,7 @@ const FeaturesPage: React.FC = () => {
             <main className="features-main-container">
                 {/* Hero Section */}
                 <header className="features-hero fade-in">
-                    <div className="hero-badge pulse-glow" style={{ borderColor: 'rgba(0, 229, 255, 0.5)', color: '#00e5ff', background: 'rgba(0, 229, 255, 0.1)' }}>
+                    <div className="hero-badge pulse-glow" style={{ borderColor: 'rgba(0, 229, 255, 0.4)', color: '#00e5ff', background: 'rgba(0, 229, 255, 0.1)' }}>
                         <span className="live-indicator"></span> Core Modules Online
                     </div>
                     <h1 className="hero-title">
@@ -171,10 +171,11 @@ const FeaturesPage: React.FC = () => {
                             onMouseMove={handleMouseMove}
                             onMouseLeave={handleMouseLeave}
                         >
-                            <div className="spotlight-overlay"></div>
+                            {/* The physical card that tilts */}
                             <div className="card-glass-panel">
+                                <div className="spotlight-overlay"></div>
                                 
-                                <div className="card-top-row">
+                                <div className="card-top-row pop-out-layer">
                                     <div className="icon-wrapper" style={{ background: `${feature.accent}15`, border: `1px solid ${feature.accent}40`, color: feature.accent, textShadow: `0 0 20px ${feature.accent}` }}>
                                         {feature.icon}
                                     </div>
@@ -184,10 +185,10 @@ const FeaturesPage: React.FC = () => {
                                 </div>
 
                                 <div className="card-body">
-                                    <h3 className="op-card-title">{feature.title}</h3>
+                                    <h3 className="op-card-title pop-out-layer">{feature.title}</h3>
                                     <p className="op-card-desc">{feature.description}</p>
                                     
-                                    <div className="op-tags-row">
+                                    <div className="op-tags-row pop-out-layer">
                                         {feature.tags.map((tag, i) => (
                                             <span key={i} className="op-tag">{tag}</span>
                                         ))}
@@ -197,7 +198,7 @@ const FeaturesPage: React.FC = () => {
                                 <div className="card-footer-divider"></div>
                                 
                                 <div className="card-bottom-row">
-                                    <div className="op-stats">
+                                    <div className="op-stats pop-out-layer">
                                         {feature.stats.map((stat, i) => (
                                             <div key={i} className="stat-block">
                                                 <span className="stat-label">{stat.label}</span>
@@ -206,14 +207,13 @@ const FeaturesPage: React.FC = () => {
                                         ))}
                                     </div>
                                     <button 
-                                        className={`op-action-btn ${feature.status === 'live' ? 'primary' : 'secondary'}`}
+                                        className={`op-action-btn ${feature.status === 'live' ? 'primary' : 'secondary'} pop-out-layer`}
                                         onClick={() => feature.status === 'live' ? navigate(feature.route) : handleWaitlistClick(feature.title)}
-                                        style={feature.status === 'live' ? { background: `linear-gradient(135deg, ${feature.accent}, #000)`, boxShadow: `0 4px 15px ${feature.accent}40` } : {}}
+                                        style={feature.status === 'live' ? { background: `linear-gradient(135deg, ${feature.accent}, #000)`, boxShadow: `0 8px 25px ${feature.accent}40` } : {}}
                                     >
                                         {feature.buttonText}
                                     </button>
                                 </div>
-
                             </div>
                         </div>
                     ))}

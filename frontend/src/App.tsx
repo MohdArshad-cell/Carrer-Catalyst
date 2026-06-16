@@ -9,20 +9,26 @@ import MockInterviewPage from './pages/MockInterviewPage';
 import LoginPage from './pages/LoginPage';
 import Pricing from './pages/Pricing';
 import FeaturesPage from './pages/FeaturesPage'; 
-import ProtectedRoute from './components/ProtectedRoute'; // <-- IMPORT THIS
+import ProtectedRoute from './components/ProtectedRoute'; 
+import AtsXrayPage from './pages/AtsXrayPage';
 import "./App.css";
 
 function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Public Routes - Anyone can see these */}
+        {/* =========================================
+            Public Routes - Free Tools & Landing Pages
+            ========================================= */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/ats-xray" element={<AtsXrayPage />} /> {/* <-- ATS X-RAY ADDED HERE */}
 
-        {/* Protected Routes - Locked behind Auth */}
+        {/* =========================================
+            Protected Routes - Premium SaaS Tools
+            ========================================= */}
         <Route path="/ai-tools" element={
             <ProtectedRoute>
                 <AiToolsPage />
