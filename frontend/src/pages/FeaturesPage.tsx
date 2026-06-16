@@ -52,6 +52,19 @@ const featuresList: Feature[] = [
         stats: [{ label: 'Accuracy', value: '99%' }, { label: 'Cost', value: '1 Token' }]
     },
     {
+        id: 'xray',
+        title: 'ATS X-Ray Vision',
+        icon: '👁️',
+        description: 'See your resume through the eyes of an ATS. Live split-screen keyword highlighting.',
+        status: 'live',             // <-- Ise 'upcoming' se 'live' kar do
+        badge: 'Live Now',          // <-- Ise 'Beta' se 'Live Now' kar do
+        route: '/ats-xray',         // <-- '#' hata kar '/ats-xray' daal do
+        buttonText: 'Try for Free 🚀',
+        accent: '#10b981', 
+        tags: ['Live Highlighting', 'Gap Analysis'],
+        stats: [{ label: 'Accuracy', value: '99%' }, { label: 'Cost', value: '1 Token' }]
+    },
+    {
         id: 'networking',
         title: 'Cold Outreach AI',
         icon: '⚡',

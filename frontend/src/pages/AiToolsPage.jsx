@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone } from "react-icons/fa6";
+// Added FaEye for the ATS X-Ray Vision icon
+import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone, FaEye } from "react-icons/fa6";
 import ParticleBackground from '../components/ParticleBackground';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -77,13 +78,26 @@ const AiToolsPage = () => {
                             <div className="tool-icon-wrapper">
                                 <FaFileLines className="premium-icon" />
                             </div>
-                            <h3>ATS Score & Checker</h3>
+                            <h3>Brutal ATS Scanner</h3>
                             <p>Analyze your resume's compatibility with automated screening software (ATS).</p>
                             <div className="tool-cta">Analyze Now <span className="arrow">→</span></div>
                         </div>
                     </div>
 
-                    {/* Tool 4: AI Cover Letter Writer */}
+                    {/* Tool 4: ATS X-Ray Vision (NEW ADDITION) */}
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-xray')}>
+                        <div className="bento-glow"></div>
+                        <div className="bento-content">
+                            <div className="tool-icon-wrapper" style={{ color: '#10b981' }}>
+                                <FaEye className="premium-icon" />
+                            </div>
+                            <h3>ATS X-Ray Vision <span style={{fontSize: '0.7rem', background: '#10b98120', color: '#10b981', padding: '2px 8px', borderRadius: '10px', marginLeft: '5px', verticalAlign: 'middle'}}>FREE</span></h3>
+                            <p>See your resume through the eyes of an ATS. Live split-screen keyword highlighting.</p>
+                            <div className="tool-cta" style={{ color: '#10b981' }}>Launch X-Ray <span className="arrow">→</span></div>
+                        </div>
+                    </div>
+
+                    {/* Tool 5: AI Cover Letter Writer */}
                     <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cover-letter')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
@@ -96,7 +110,7 @@ const AiToolsPage = () => {
                         </div>
                     </div>
 
-                    {/* Tool 5: AI Mock Interview Simulator */}
+                    {/* Tool 6: AI Mock Interview Simulator */}
                     <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
@@ -108,6 +122,7 @@ const AiToolsPage = () => {
                             <div className="tool-cta">Start Practice <span className="arrow">→</span></div>
                         </div>
                     </div>
+
                 </div>
 
                 {/* PREMIUM "HOW IT WORKS" SECTION */}
