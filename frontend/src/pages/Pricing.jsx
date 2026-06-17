@@ -92,7 +92,7 @@ const Pricing = () => {
                         <p className="tier-desc">Perfect to test out the platform and build a basic resume.</p>
                         
                         <div className="tier-features">
-                            <div className="feature-item">✔️ 3 Free AI Tokens on Sign up</div>
+                            <div className="feature-item">✔️ 10 Free AI Tokens on Sign up</div>
                             <div className="feature-item">✔️ Basic Resume Builder</div>
                             <div className="feature-item">✔️ PDF & JSON Export</div>
                             <div className="feature-item" style={{ color: 'var(--text-secondary)' }}>❌ Advanced AI Tailoring</div>
