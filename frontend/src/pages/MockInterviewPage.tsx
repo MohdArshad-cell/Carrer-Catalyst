@@ -130,7 +130,8 @@ const MockInterviewPage: React.FC = () => {
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             disabled={isLoading}
-                            style={{ minHeight: '200px' }}
+                            // Increased height to 350px, forced full width, and allowed vertical resizing
+                            style={{ minHeight: '350px', width: '100%', resize: 'vertical' }} 
                         />
                     </div>
                 </div>
