@@ -16,7 +16,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 import jwt
-from jwt import PyJWKClient  # <--- YEH IMPORT ADD KARO
+from jwt import PyJWKClient
 
 # Environment Variables
 from dotenv import load_dotenv
@@ -44,7 +44,6 @@ load_dotenv()
 # Stripe Setup
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-# --- YAHAN PAR PASTE KIYA HAI ---
 # Supabase Setup
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
@@ -56,17 +55,23 @@ if supabase_url:
     clean_url = supabase_url.rstrip("/")
     jwks_url = f"{clean_url}/auth/v1/.well-known/jwks.json"
     jwk_client = PyJWKClient(jwks_url)
-# --------------------------------
 
 # FastAPI App Setup
-app = FastAPI(title="Core AI & Resume Engine")
+app = FastAPI(title="HireEase Core AI & Resume Engine")
 
+# CORS Middleware Setup
+raw_origins = os.getenv("FRONTEND_URLS", "http://localhost:3000")
+allowed_origins = [
+    url.strip().rstrip("/") 
+    for url in raw_origins.split(",") 
+    if url.strip()
+]
+if not allowed_origins:
+    allowed_origins = ["http://localhost:3000"]
 
-# CORS Middleware - Dynamically uses frontend URL
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", frontend_url], # Allows local and deployed frontend
+    allow_origins=allowed_origins, # Explicit list, strictly NO WILDCARDS
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,67 +87,58 @@ active_tasks: Dict[str, Dict[str, Any]] = {}
 security = HTTPBearer()
 
 def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Validates the Supabase JWT securely, handles asymmetric JWKS and falls back to symmetric secret."""
+    """Validates the Supabase JWT securely and checks token balance."""
     token = credentials.credentials
-    print(f"🔑 [AUTH DEBUG]: Token received! Length = {len(token) if token else 0}")
-    
     payload = None
-    
-    # 🌟 METHOD 1: Try Asymmetric JWKS verification (For new Supabase ES256 tokens)
+
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+        token_alg = unverified_header.get("alg", "HS256")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Malformed authorization token.")
+
+    # Try Asymmetric JWKS Verification
     if jwk_client:
         try:
-            print("🌐 [AUTH DEBUG]: Fetching public key from Supabase JWKS endpoint...")
             signing_key = jwk_client.get_signing_key_from_jwt(token)
-            unverified_header = jwt.get_unverified_header(token)
-            token_alg = unverified_header.get("alg", "ES256")
-            
-            try:
-                payload = jwt.decode(token, signing_key.key, algorithms=[token_alg], audience="authenticated")
-            except jwt.InvalidAudienceError:
-                print("⚠️ [AUTH DEBUG]: Audience mismatch, bypassing audience validation strictly.")
-                payload = jwt.decode(token, signing_key.key, algorithms=[token_alg], options={"verify_aud": False})
-            print("✅ [AUTH DEBUG SUCCESS]: Token verified perfectly via Supabase JWKS cryptographic handshake!")
+            payload = jwt.decode(token, signing_key.key, algorithms=[token_alg], audience="authenticated")
         except Exception as jwks_err:
-            print(f"⚠️ [AUTH DEBUG INFO]: JWKS verification skipped/failed: {str(jwks_err)}. Trying symmetric fallback...")
+            print(f"⚠️ [AUTH DEBUG]: JWKS verification failed ({str(jwks_err)}). Trying fallback...")
 
-    # 🌟 METHOD 2: Fallback to Symmetric Verification (For legacy HS256 tokens)
+    # Fallback to Symmetric Verification
     if not payload:
         jwt_secret = os.getenv("SUPABASE_JWT_SECRET")
         if not jwt_secret:
-            print("❌ [AUTH DEBUG ERROR]: SUPABASE_JWT_SECRET is missing in Render Env variables!")
             raise HTTPException(status_code=500, detail="Server Error: Missing JWT Secret configuration.")
         
         try:
-            unverified_header = jwt.get_unverified_header(token)
-            token_alg = unverified_header.get("alg", "HS256")
-            try:
-                payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], audience="authenticated")
-            except jwt.InvalidAudienceError:
-                payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], options={"verify_aud": False})
-            print("✅ [AUTH DEBUG SUCCESS]: Token verified via legacy symmetric JWT Secret!")
-        except Exception as sym_err:
-            print(f"❌ [AUTH DEBUG ERROR]: Both security layers failed to verify token! Error: {str(sym_err)}")
-            raise HTTPException(status_code=401, detail="Invalid authentication token signature.")
+            payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], audience="authenticated")
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid authentication token signature or audience.")
 
-    # 🌟 DATABASE LOGIC (Token balance check)
     user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload: Missing user subject.")
+
+    # Database Logic: Token Balance Check
     try:
         res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
-        if not res.data or len(res.data) == 0:
-            print(f"❌ [AUTH DEBUG ERROR]: User {user_id} not found in database profiles.")
-            raise HTTPException(status_code=404, detail="User profile not found.")
+        
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User profile not found in database.")
             
-        current_tokens = res.data[0]["tokens"]
+        current_tokens = res.data[0].get("tokens", 0)
+        
         if current_tokens <= 0:
-            print(f"🚫 [AUTH DEBUG ERROR]: User {user_id} has 0 tokens left.")
-            raise HTTPException(status_code=402, detail="Insufficient tokens. Please buy more.")
+            raise HTTPException(status_code=402, detail="Insufficient tokens. Please purchase more.")
             
         return {"user_id": user_id, "current_tokens": current_tokens}
+        
+    except HTTPException:
+        raise
     except Exception as db_err:
-        if isinstance(db_err, HTTPException):
-            raise db_err
-        raise HTTPException(status_code=500, detail=f"Database check error: {str(db_err)}")
-    
+        print(f"❌ [DB ERROR]: Failed to fetch tokens for user {user_id}: {str(db_err)}")
+        raise HTTPException(status_code=500, detail="Internal server error during token validation.")
 
 
 # ==========================================
@@ -155,9 +151,7 @@ class CheckoutRequest(BaseModel):
     user_id: str
     price_id: str
 
-class DeductTokenRequest(BaseModel):
-    user_id: str
-
+# DeductTokenRequest removed. It is unnecessary since we pull user_id from the JWT.
 
 # ==========================================
 # 4. HELPER FUNCTIONS
@@ -176,7 +170,8 @@ def process_resume_background(task_id: str, template_name: str, resume_data: dic
 
 def cleanup_session_and_task(task_id: str, session_dir: str):
     """Deletes the files AND removes the task from memory after download."""
-    shutil.rmtree(session_dir, ignore_errors=True)
+    if session_dir and os.path.exists(session_dir):
+        shutil.rmtree(session_dir, ignore_errors=True)
     if task_id in active_tasks: 
         del active_tasks[task_id]
 
@@ -232,7 +227,7 @@ async def download_files(task_id: str, background_tasks: BackgroundTasks):
 
 
 # ==========================================
-# 6. AI TOOL ROUTES (NOW SECURED!)
+# 6. AI TOOL ROUTES (SECURED & TRANSACTIONAL)
 # ==========================================
 @app.post("/api/ai/compile-only")
 async def compile_latex_only(request: CompileRequest):
@@ -252,49 +247,87 @@ async def compile_latex_only(request: CompileRequest):
 
             return {"pdf_base64": pdf_b64}
 
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         raise HTTPException(status_code=400, detail="LaTeX Compilation Error: Check your syntax.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
 
-# NOTE: user_auth = Depends(verify_user_and_tokens) ensures the AI only runs if they have tokens
 @app.post("/api/ai/tailor")
 async def tailor(request: TailorRequest, background_tasks: BackgroundTasks, user_auth: dict = Depends(verify_user_and_tokens)): 
-    result = execute_tailor_chain(request.resume_text, request.job_description)
-    background_tasks.add_task(cleanup_session_and_task, "tailor_task", result.get("session_dir", ""))
-    
-    if "session_dir" in result:
-        del result["session_dir"]
+    # 1. Execute AI Logic FIRST
+    try:
+        result = execute_tailor_chain(request.resume_text, request.job_description)
+    except Exception as ai_error:
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+
+    # Handle ephemeral directory cleanup cleanly
+    session_dir = result.pop("session_dir", None)
+    if session_dir:
+        background_tasks.add_task(cleanup_session_and_task, "ephemeral_tailor_task", session_dir)
         
-    # Auto-deduct 1 token safely on the backend after successful generation
-    new_tokens = user_auth["current_tokens"] - 1
-    supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    # 2. Deduct Token SECOND
+    try:
+        new_tokens = user_auth["current_tokens"] - 1
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    except Exception as db_error:
+        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
         
     return result
 
 @app.post("/api/ai/evaluate")
 def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
-    # Auto-deduct token
-    new_tokens = user_auth["current_tokens"] - 1
-    supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    # 1. Execute AI Logic FIRST
+    try:
+        result = execute_evaluate_chain(request.resume_text, request.job_description)
+    except Exception as ai_error:
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+
+    # 2. Deduct Token SECOND
+    try:
+        new_tokens = user_auth["current_tokens"] - 1
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    except Exception as db_error:
+        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
     
-    return {"evaluation_result": execute_evaluate_chain(request.resume_text, request.job_description)}
+    return {"evaluation_result": result}
 
 @app.post("/api/ai/coverletter")
 def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
-    # Auto-deduct token
-    new_tokens = user_auth["current_tokens"] - 1
-    supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    # 1. Execute AI Logic FIRST
+    try:
+        result = execute_cover_letter_chain(request.resume_text, request.job_description)
+    except Exception as ai_error:
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+
+    # 2. Deduct Token SECOND
+    try:
+        new_tokens = user_auth["current_tokens"] - 1
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    except Exception as db_error:
+        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
     
-    return {"cover_letter": execute_cover_letter_chain(request.resume_text, request.job_description)}
+    return {"cover_letter": result}
 
 @app.post("/api/ai/interview")
 def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
-    # Auto-deduct token
-    new_tokens = user_auth["current_tokens"] - 1
-    supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    # 1. Execute AI Logic FIRST
+    try:
+        result = execute_interview_chain(request.job_description)
+    except Exception as ai_error:
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+
+    # 2. Deduct Token SECOND
+    try:
+        new_tokens = user_auth["current_tokens"] - 1
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
+    except Exception as db_error:
+        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
     
-    return {"interview_data": execute_interview_chain(request.job_description)}
+    return {"interview_data": result}
 
 
 # ==========================================
@@ -303,7 +336,8 @@ def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_a
 @app.post("/api/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        # Fallback to the first allowed origin if FRONTEND_URL is explicitly missing
+        frontend_url = allowed_origins[0] 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{'price': request.price_id, 'quantity': 1}],
@@ -327,9 +361,9 @@ async def stripe_webhook(request: Request):
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-    except ValueError as e:
+    except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid payload"})
-    except stripe.error.SignatureVerificationError as e:
+    except stripe.error.SignatureVerificationError:
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -337,11 +371,7 @@ async def stripe_webhook(request: Request):
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
         
-        user_id = None
-        try:
-            user_id = session["metadata"]["user_id"]
-        except Exception as e:
-            print(f"⚠️ WARNING: Could not extract user_id.")
+        user_id = session.get("metadata", {}).get("user_id")
 
         if user_id:
             try:
@@ -352,6 +382,8 @@ async def stripe_webhook(request: Request):
                     supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
             except Exception as e:
                 print("❌ SUPABASE UPDATE ERROR:", str(e))
+                # FORCE STRIPE TO RETRY LATER
+                return JSONResponse(status_code=500, content={"error": "Database update failed, retry later"})
 
     return {"status": "success"}
 
@@ -359,12 +391,12 @@ async def stripe_webhook(request: Request):
 # 8. TOKEN MANAGEMENT ROUTE (FOR NON-AI GENERATION)
 # ==========================================
 @app.post("/api/deduct-token")
-def deduct_token(request: DeductTokenRequest, user_auth: dict = Depends(verify_user_and_tokens)):
+def deduct_token(user_auth: dict = Depends(verify_user_and_tokens)):
+    # Note: No JSON body required. The JWT proves who they are.
     try:
         user_id = user_auth["user_id"]
         current_tokens = user_auth["current_tokens"]
         
-        # ACTUALLY Deduct 1 Token
         new_tokens = current_tokens - 1
         supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
         
