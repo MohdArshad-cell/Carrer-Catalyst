@@ -179,7 +179,7 @@ def cleanup_session_and_task(task_id: str, session_dir: str):
 # ==========================================
 # 5. CORE RESUME ENGINE ROUTES
 # ==========================================
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {"status": "ok", "message": "HireEase Resume Engine is running!"}
 
