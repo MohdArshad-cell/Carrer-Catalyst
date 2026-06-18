@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
-import { supabase } from '../supabaseClient';   // ✅ Added Supabase
-import { ResumeData } from '../types';
+import { useNavigate } from 'react-router-dom'; 
+import { supabase } from '../supabaseClient';   
 
 import TemplateSelection from '../forms/TemplateSelection';
 import ProfileForm from '../forms/ProfileForm';
@@ -18,6 +17,13 @@ import './ResumeFromScratchPage.css';
 import ParticleBackground from '../components/ParticleBackground';
 import Navbar from '../components/Navbar'; 
 import Footer from '../components/Footer'; 
+import { ResumeData } from '../types';
+
+interface LocalDownloadLinks {
+    pdfUrl: string;
+    latexUrl: string;
+    jsonUrl: string;
+}
 
 const initialResumeData: ResumeData = {
     personal_info: { full_name: '', address: '', email: '', phone: '', github_handle: '', linkedin_handle: '', portfolio_url: '' },
@@ -29,6 +35,16 @@ const initialResumeData: ResumeData = {
 
 const navItems = ['Templates', 'Profile', 'Education', 'Work', 'Projects', 'Skills', 'Achievements', 'Certifications'];
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
+
+// 🛡️ DEFENSIVE CORE: Sanitizes bullet points to block raw pasting of glyphs (•, -, *) that break LaTeX compilers
+const cleanDescriptionPoints = (rawText: string): string[] => {
+    if (!rawText) return [];
+    return rawText
+        .split('\n')
+        .map(pt => pt.trim())
+        .map(pt => pt.replace(/^[•\-\*]\s?/, '')) 
+        .filter(pt => pt !== '');
+};
 
 const buildApiPayload = (data: ResumeData, template: string) => ({
     template_name: template.toLowerCase().replace(/ /g, '_'),
@@ -55,18 +71,14 @@ const buildApiPayload = (data: ResumeData, template: string) => ({
             location: e.location, 
             start_date: e.start_date, 
             end_date: e.end_date, 
-            description_points: e.description_points 
-                ? e.description_points.split('\n').map(pt => pt.trim()).filter(pt => pt !== '') 
-                : [] 
+            description_points: cleanDescriptionPoints(e.description_points)
         })),
         projects: data.projects.filter(p => p.project_name).map(p => ({ 
             project_name: p.project_name, 
             tech_stack: p.tech_stack, 
             start_date: p.start_date, 
             end_date: p.end_date, 
-            description_points: p.description_points 
-                ? p.description_points.split('\n').map(pt => pt.trim()).filter(pt => pt !== '') 
-                : [] 
+            description_points: cleanDescriptionPoints(p.description_points)
         })),
         skills: data.skills.filter(s => s.name).map(s => ({ 
             name: s.name, 
@@ -83,14 +95,8 @@ const buildApiPayload = (data: ResumeData, template: string) => ({
     }
 });
 
-interface LocalDownloadLinks {
-    pdfUrl: string;
-    latexUrl: string;
-    jsonUrl: string;
-}
-
 const ResumeFromScratchPage: React.FC = () => {
-    const navigate = useNavigate(); // ✅ Hook added for redirection
+    const navigate = useNavigate(); 
 
     const [activeSection, setActiveSection] = useState('Templates');
     const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
@@ -102,8 +108,49 @@ const ResumeFromScratchPage: React.FC = () => {
     
     const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+    
+    // 1. ADDED: State to track if auto-preview has fired
+    const [hasAutoPreviewed, setHasAutoPreviewed] = useState(false);
 
-    // Converts base64 string to a Browser Blob
+    // 🛡️ MEMORY MANAGEMENT: Explicit lifecycle cleanup to prevent long-running browser memory leaks
+    useEffect(() => {
+        return () => {
+            if (downloadLinks) {
+                URL.revokeObjectURL(downloadLinks.pdfUrl);
+                URL.revokeObjectURL(downloadLinks.latexUrl);
+                URL.revokeObjectURL(downloadLinks.jsonUrl);
+            }
+        };
+    }, [downloadLinks]);
+
+    useEffect(() => {
+        return () => {
+            if (previewPdfUrl) {
+                URL.revokeObjectURL(previewPdfUrl);
+            }
+        };
+    }, [previewPdfUrl]);
+
+    // 2. ADDED: Single-Fire Debounced Auto-Preview Engine
+    useEffect(() => {
+        if (hasAutoPreviewed || isPreviewLoading || isGenerating) return;
+
+        const hasMeaningfulInput = 
+            (resumeData.personal_info.full_name?.length || 0) > 3 || 
+            (resumeData.work_experience[0]?.job_title?.length || 0) > 3;
+
+        if (hasMeaningfulInput) {
+            const timer = setTimeout(() => {
+                console.log("🚀 Triggering Initial Auto-Preview...");
+                setHasAutoPreviewed(true); 
+                handleAction(true); 
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [resumeData, hasAutoPreviewed]); 
+
     const b64toBlob = (b64Data: string, contentType = '') => {
         const byteCharacters = atob(b64Data);
         const byteNumbers = new Array(byteCharacters.length);
@@ -148,35 +195,30 @@ const ResumeFromScratchPage: React.FC = () => {
                 }
             } catch (e) {
                 clearInterval(interval);
-                setErrorMessage('Connection error. Server might be down.');
+                setErrorMessage('Connection error during backend build execution pipeline.');
                 isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
             }
         }, 2000);
     };
 
-    // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
-    // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
     const handleAction = async (isPreview: boolean) => {
         isPreview ? setIsPreviewLoading(true) : setIsGenerating(true);
         if (!isPreview) setDownloadLinks(null);
         setErrorMessage('');
         
         try {
-            // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (!user || !session) { // Session bhi check karna zaroori hai header ke liye
+            if (!user || !session) { 
                 setErrorMessage("You must be logged in to build your resume.");
                 isPreview ? setIsPreviewLoading(false) : setIsGenerating(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
             }
 
-            // 🛑 TOLL PLAZA CHECK 2: Token deduct karo (SIRF FINAL RESUME PAR)
             if (!isPreview) {
                 try {
-                    // ✅ YAHAN HEADER ADD KIYA GAYA HAI
                     await axios.post(`${API_BASE_URL}/api/deduct-token`, 
                         { user_id: user.id },
                         {
@@ -197,10 +239,8 @@ const ResumeFromScratchPage: React.FC = () => {
                 }
             }
             
-            // ✅ TOLL PLAZA CROSSED! Ab PDF Engine start hoga...
             const payload = buildApiPayload(resumeData, selectedTemplate);
             
-            // Generate start call (Best practice to send token here too just in case)
             const startRes = await axios.post(`${API_BASE_URL}/generate/start`, payload, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
@@ -237,20 +277,19 @@ const ResumeFromScratchPage: React.FC = () => {
             <div className="background-aurora"></div>
             <Navbar />
 
-            <div className="scratch-studio-container" style={{ paddingTop: '100px', paddingBottom: '3rem' }}>
+            <div className="scratch-studio-container">
                 
-                {/* Premium Studio Header */}
-                <div className="studio-header text-center" style={{ marginBottom: '2rem' }}>
+                <div className="studio-header text-center">
                     <div className="hero-badge">
                         <span className="sparkle">⚙️</span> Workspace
                     </div>
-                    <h1 className="animated-gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Resume Studio</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Craft your professional narrative, real-time.</p>
+                    <h1 className="animated-gradient-text">Resume Studio</h1>
+                    <p className="studio-subtitle">Craft your professional narrative, real-time.</p>
                 </div>
 
                 <div className="scratch-builder-layout">
                     
-                    {/* Sidebar Navigation */}
+                    {/* Sidebar Navigation Workspace */}
                     <aside className="scratch-sidebar glass-card">
                         <nav className="sidebar-nav">
                             {navItems.map(item => (
@@ -259,14 +298,17 @@ const ResumeFromScratchPage: React.FC = () => {
                                 </div>
                             ))}
                         </nav>
-                        <div className="sidebar-action">
-                            <button className="btn-premium pulse-glow w-100" onClick={() => handleAction(false)} disabled={isGenerating}>
-                                {isGenerating ? 'Generating...' : 'MAKE RESUME'}
+                        <div className="sidebar-action-group">
+                            <button className="btn-outline w-100 preview-sidebar-btn" onClick={() => handleAction(true)} disabled={isPreviewLoading || isGenerating}>
+                                {isPreviewLoading ? 'Updating Preview...' : 'Preview Changes ↻'}
+                            </button>
+                            <button className="btn-premium pulse-glow w-100 generate-sidebar-btn" onClick={() => handleAction(false)} disabled={isGenerating || isPreviewLoading}>
+                                {isGenerating ? 'Generating Pipeline...' : 'MAKE RESUME 🚀'}
                             </button>
                         </div>
                     </aside>
 
-                    {/* Main Forms Area */}
+                    {/* Main Forms Input Dashboard */}
                     <main className="scratch-main-panel glass-card">
                         <div className="scratch-forms-area">
                             <h2 className="form-section-title">{activeSection}</h2>
@@ -274,37 +316,37 @@ const ResumeFromScratchPage: React.FC = () => {
                         </div>
                     </main>
 
-                    {/* Live Preview Area */}
+                    {/* Live Preview Visualization Engine */}
                     <div className="scratch-preview-panel glass-card">
                         <div className="scratch-preview-sticky">
                             <div className="preview-header">
                                 <h3 className="preview-title">Live Preview</h3>
-                                <button className="btn-outline preview-refresh-btn" onClick={() => handleAction(true)} disabled={isPreviewLoading}>
+                                <button className="btn-outline preview-refresh-btn" onClick={() => handleAction(true)} disabled={isPreviewLoading || isGenerating}>
                                     {isPreviewLoading ? 'Updating...' : '↻ Refresh'}
                                 </button>
                             </div>
                             
-                            {isGenerating && <div className="preview-status info-status">Processing request securely...</div>}
-                            {isPreviewLoading && !isGenerating && <div className="preview-status info-status">Updating preview...</div>}
+                            {isGenerating && <div className="preview-status info-status">Processing build sequence securely...</div>}
+                            {isPreviewLoading && !isGenerating && <div className="preview-status info-status">Rendering canvas canvas frame...</div>}
                             {errorMessage && <div className="preview-status error-status">{errorMessage}</div>}
 
-                            {/* Premium Download Buttons */}
+                            {/* Premium Structural Downloads */}
                             {downloadLinks && (
                                 <div className="download-links-grid">
-                                    <a href={downloadLinks.pdfUrl} download="Resume.pdf" className="premium-download-btn pdf-btn">📄 PDF</a>
-                                    <a href={downloadLinks.latexUrl} download="Resume.tex" className="premium-download-btn latex-btn">💻 LaTeX</a>
-                                    <a href={downloadLinks.jsonUrl} download="Resume.json" className="premium-download-btn json-btn">⚙️ JSON</a>
+                                    <a href={downloadLinks.pdfUrl} download="Tailored_Resume.pdf" className="premium-download-btn pdf-btn">📄 PDF</a>
+                                    <a href={downloadLinks.latexUrl} download="Tailored_Resume.tex" className="premium-download-btn latex-btn">💻 LaTeX</a>
+                                    <a href={downloadLinks.jsonUrl} download="Tailored_Resume.json" className="premium-download-btn json-btn">⚙️ JSON</a>
                                 </div>
                             )}
 
-                            {/* PDF Viewer */}
+                            {/* PDF Sandbox Frame */}
                             <div className="pdf-viewer-container">
                                 {previewPdfUrl ? (
-                                    <object data={previewPdfUrl} type="application/pdf" className="pdf-preview-object" aria-label="Resume Preview" />
+                                    <object data={previewPdfUrl} type="application/pdf" className="pdf-preview-object" aria-label="Resume Studio Realtime Canvas" />
                                 ) : (
                                     <div className="pdf-preview-placeholder">
                                         <div className="placeholder-icon">📄</div>
-                                        <p>{isPreviewLoading ? 'Rendering your resume...' : 'Fill out your details and click Refresh Preview to see the magic.'}</p>
+                                        <p>{isPreviewLoading ? 'Compiling systemic document markup...' : 'Populate workspace inputs and click Preview to render.'}</p>
                                     </div>
                                 )}
                             </div>

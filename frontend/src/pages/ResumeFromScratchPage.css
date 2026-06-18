@@ -1,25 +1,26 @@
 /* === Main Layout Structure === */
 .scratch-studio-container {
-    /* Changed from 1600px to 96% to utilize almost the entire screen */
     max-width: 96%; 
     margin: 0 auto;
     width: 100%;
     color: var(--text-primary);
+    padding-top: 100px;
+    padding-bottom: 3rem;
 }
 
 .scratch-builder-layout {
     display: grid;
-    /* 
-      Sidebar: Fixed at 250px.
-      Form: Flexible (1fr), min 400px.
-      Preview: Flexible (1.3fr) -> Gets the most leftover space for the PDF.
-    */
-    grid-template-columns: 250px minmax(400px, 1fr) minmax(500px, 1.3fr);
-    gap: 2rem; /* Increased gap to let the columns breathe */
+    /* Forgiving grid: Sidebar (220px), Form (min 350px), Preview (min 400px) */
+    grid-template-columns: 220px minmax(350px, 1fr) minmax(400px, 1.2fr);
+    gap: 2rem; 
     align-items: start;
 }
 
-/* === Universal Glassmorphism Component === */
+/* === Universal Utilities === */
+.w-100 {
+    width: 100%;
+}
+
 .glass-card {
     background: rgba(13, 17, 28, 0.6);
     backdrop-filter: blur(16px);
@@ -31,6 +32,14 @@
 }
 
 /* === Studio Header === */
+.studio-header {
+    margin-bottom: 2rem;
+}
+
+.studio-subtitle {
+    color: var(--text-secondary);
+}
+
 .hero-badge {
     display: inline-flex;
     align-items: center;
@@ -55,7 +64,7 @@
 .scratch-sidebar {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 140px); /* Fixed height based on viewport */
+    height: calc(100vh - 140px);
     position: sticky;
     top: 100px;
 }
@@ -63,7 +72,6 @@
 .sidebar-nav {
     flex-grow: 1;
     overflow-y: auto;
-    /* Hide Scrollbar */
     scrollbar-width: none;
 }
 .sidebar-nav::-webkit-scrollbar { display: none; }
@@ -92,9 +100,18 @@
     font-weight: 600;
 }
 
-.sidebar-action {
-    margin-top: 1rem;
+/* 🔒 FIX: Added missing sidebar action group styles */
+.sidebar-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.preview-sidebar-btn { padding: 0.8rem; font-size: 0.9rem; }
+.generate-sidebar-btn { padding: 1rem; font-size: 1rem; }
 
 /* === Main Forms Area === */
 .scratch-main-panel {
@@ -188,6 +205,7 @@ textarea {
     width: 100%;
     height: 100%;
     display: block;
+    background: #ffffff;
 }
 
 .pdf-preview-placeholder {
@@ -232,11 +250,9 @@ textarea {
     background: transparent;
     color: var(--text-secondary);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.4rem 0.8rem;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.85rem;
 }
 
 .btn-outline:hover {
@@ -264,111 +280,82 @@ textarea {
     transition: all 0.2s ease;
 }
 
-.pdf-btn { 
-    background: rgba(239, 68, 68, 0.1); 
-    color: #ef4444; 
-    border: 1px solid rgba(239, 68, 68, 0.2); 
-}
-.pdf-btn:hover { 
-    background: rgba(239, 68, 68, 0.2); 
-    border-color: #ef4444;
-}
+.pdf-btn { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.pdf-btn:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
 
-.latex-btn { 
-    background: rgba(59, 130, 246, 0.1); 
-    color: #3b82f6; 
-    border: 1px solid rgba(59, 130, 246, 0.2); 
-}
-.latex-btn:hover { 
-    background: rgba(59, 130, 246, 0.2); 
-    border-color: #3b82f6;
-}
+.latex-btn { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.latex-btn:hover { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
 
-.json-btn { 
-    background: rgba(16, 185, 129, 0.1); 
-    color: #10b981; 
-    border: 1px solid rgba(16, 185, 129, 0.2); 
-}
-.json-btn:hover { 
-    background: rgba(16, 185, 129, 0.2); 
-    border-color: #10b981;
-}
+.json-btn { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.json-btn:hover { background: rgba(16, 185, 129, 0.2); border-color: #10b981; }
 
-/* === Template Gallery === */
-.template-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-}
-
-.template-card {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.template-card:hover {
-    border-color: rgba(0, 246, 255, 0.5);
-    transform: translateY(-4px);
-}
-
-.template-card.active {
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 20px rgba(0, 246, 255, 0.2);
-}
-
-.template-preview-container {
-    background-color: #ffffff;
-    padding: 1rem;
-    aspect-ratio: 8.5 / 11;
-}
-
-.template-preview-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: top;
-}
-
-.template-card p {
-    font-weight: 600;
-    padding: 1rem;
-    margin: 0;
-    text-align: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* === Responsive Design === */
-@media (max-width: 1200px) {
+/* === Responsive Design (The Fix) === */
+@media (max-width: 1080px) {
+    /* 🔒 FIX: On tablets/laptops, turn sidebar into a top nav, keep Form & PDF side-by-side */
     .scratch-builder-layout {
-        /* On smaller screens, stack the forms and preview, keep sidebar fixed */
-        grid-template-columns: 200px 1fr;
+        grid-template-columns: 1fr 1fr; 
     }
-    .scratch-preview-panel {
-        grid-column: 1 / -1;
-        height: 600px; /* Give it a fixed height when stacked */
+    
+    .scratch-sidebar {
+        grid-column: 1 / -1; /* Spans full width */
+        height: auto;
         position: static;
+        flex-direction: row;
+        align-items: center;
+        padding: 1rem;
     }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 10px;
+    }
+
+    .sidebar-item { margin: 0; }
+
+    .sidebar-action-group {
+        flex-direction: row;
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+        border-left: 1px solid rgba(255,255,255,0.1);
+        padding-left: 1rem;
+        margin-left: 1rem;
+    }
+
+    .preview-sidebar-btn, .generate-sidebar-btn { width: auto; }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 768px) {
+    /* Everything stacks on mobile */
     .scratch-builder-layout {
         grid-template-columns: 1fr;
     }
+    
     .scratch-sidebar {
-        height: auto;
-        position: static;
+        flex-direction: column;
+        align-items: stretch;
     }
+
+    .sidebar-action-group {
+        flex-direction: column;
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
     .scratch-main-panel {
         height: auto;
         overflow-y: visible;
     }
-    .template-grid {
-        grid-template-columns: 1fr;
+
+    .scratch-preview-panel {
+        height: 600px;
+        position: static;
     }
 }
