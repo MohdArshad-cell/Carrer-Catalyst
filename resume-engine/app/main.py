@@ -60,7 +60,7 @@ if supabase_url:
 app = FastAPI(title="HireEase Core AI & Resume Engine")
 
 # CORS Middleware Setup
-raw_origins = os.getenv("FRONTEND_URLS", "http://localhost:3000")
+raw_origins = os.getenv("FRONTEND_URL", "http://localhost:3000")
 allowed_origins = [
     url.strip().rstrip("/") 
     for url in raw_origins.split(",") 
