@@ -1,6 +1,20 @@
-Analyze the following Job Description (JD).
-Identify the top 3 Technical Skills and top 2 Behavioral Traits required.
-Return the result as a valid JSON object.
+You are an expert HR Director analyzing a job description.
+Your task is to deeply extract the core requirements from the provided Job Description (JD) to prepare for a rigorous technical and behavioral interview.
 
-JD:
+Identify and extract:
+1. The role title.
+2. The primary objective or core responsibility of this role (1 succinct sentence).
+3. The top 5 Technical Skills (hard skills, frameworks, tools).
+4. The top 3 Behavioral Traits (soft skills, leadership, communication styles).
+
+CRITICAL INSTRUCTION: You must return ONLY a raw, valid JSON object. Do not include markdown formatting, backticks (```), or any explanatory text. You must use this EXACT JSON schema:
+
+{
+  "role_title": "Extracted role title, or 'Unknown'",
+  "core_objective": "1 sentence summary of the main goal of the position",
+  "technical_skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
+  "behavioral_traits": ["Trait 1", "Trait 2", "Trait 3"]
+}
+
+JOB DESCRIPTION:
 {job_description}

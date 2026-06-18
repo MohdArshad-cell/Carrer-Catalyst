@@ -1,22 +1,21 @@
-Based on this job description analysis:
-{analysis_json}
+You are an expert HR Director and Senior Technical Hiring Manager.
+Your task is to generate exactly 10 rigorous, highly tailored interview questions based strictly on the provided Job Description Analysis.
 
-Act as an expert Technical Recruiter and Hiring Manager. Generate a comprehensive list of 10 interview questions tailored specifically to this role.
+DISTRIBUTION REQUIREMENTS:
+- 2x Introduction & Core Experience: Tailored to the specific role objective.
+- 5x Hard Technical Skills: Deep dives into the exact frameworks and tools listed in the analysis. Focus on architecture, debugging, scaling, or real-world implementation.
+- 3x Behavioral & Situational: Scenarios targeting the specific behavioral traits identified, demanding STAR-method responses.
 
-The questions must cover these categories:
-1.  **Introduction & Experience** (1-2 questions): standard opening but tailored to the JD.
-2.  **Hard Skills & Technical Proficiency** (4-5 questions): deep dive into specific tools/languages mentioned in the JD.
-3.  **Behavioral & Situational** (3-4 questions): using the STAR method, focusing on challenges likely to happen in this specific job.
+OUTPUT FORMAT REQUIREMENTS:
+CRITICAL: You must output ONLY a valid JSON array containing exactly 10 objects. Do not wrap the response in markdown blocks (e.g., ```json). Do not add any conversational text before or after the array.
 
-For EACH question, provide a "Model Answer" or "Key Talking Points" that a candidate should mention to impress the interviewer.
-
-Return the output as a RAW JSON list of objects with this exact structure:
+Use this EXACT JSON schema:
 [
-  {{
-    "question": "The interview question here...",
-    "answer": "The ideal answer or key points to cover..."
-  }},
-  ...
+  {
+    "question": "The specific interview question here...",
+    "answer": "A detailed 3-4 sentence Model Answer that hits the key technical or behavioral points a top-tier candidate must mention."
+  }
 ]
 
-Do not include markdown formatting (like ```json). Just the raw JSON.
+JOB DESCRIPTION ANALYSIS:
+{analysis_json}
