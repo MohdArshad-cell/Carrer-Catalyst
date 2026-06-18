@@ -91,9 +91,9 @@ const AiToolsPage = () => {
                             <div className="tool-icon-wrapper" style={{ color: '#10b981' }}>
                                 <FaEye className="premium-icon" />
                             </div>
-                            <h3>ATS X-Ray Vision <span style={{fontSize: '0.7rem', background: '#10b98120', color: '#10b981', padding: '2px 8px', borderRadius: '10px', marginLeft: '5px', verticalAlign: 'middle'}}>FREE</span></h3>
+                            <h3>ATS X-Ray Vision</h3>
                             <p>See your resume through the eyes of an ATS. Live split-screen keyword highlighting.</p>
-                            <div className="tool-cta" style={{ color: '#10b981' }}>Launch X-Ray <span className="arrow">→</span></div>
+                            <div className="tool-cta">Launch X-Ray <span className="arrow">→</span></div>
                         </div>
                     </div>
 
