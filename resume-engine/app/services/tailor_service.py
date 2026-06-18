@@ -1,30 +1,44 @@
 import os
 import json
 import re
-import ast
 from pathlib import Path
 import google.generativeai as genai
-from rapidfuzz import fuzz
 from dotenv import load_dotenv
-from app.generator import ResumeGenerator
 import base64
-from app.models import ResumeData
-import time
 
+from app.generator import ResumeGenerator
+from app.models import ResumeData
+
+# ==========================================
+# 1. INITIALIZATION & API KEY ROTATION
+# ==========================================
 load_dotenv()
 
-API_KEY = os.getenv("GOOGLE_API_KEY") 
-MODEL_NAME = "gemini-3.1-flash-lite" 
+# Load multiple keys for hot-swapping
+raw_keys = os.getenv("GOOGLE_API_KEYS", "")
+API_KEYS = [k.strip() for k in raw_keys.split(",") if k.strip()]
 
-if not API_KEY:
-    raise ValueError("CRITICAL: GOOGLE_API_KEY environment variable is not set.")
+if not API_KEYS:
+    # Fallback if the user is still using the old single-key variable
+    single_key = os.getenv("GOOGLE_API_KEY")
+    if not single_key:
+        raise ValueError("CRITICAL: GOOGLE_API_KEYS or GOOGLE_API_KEY environment variable is not set.")
+    API_KEYS = [single_key]
 
-genai.configure(api_key=API_KEY)
+current_key_idx = 0
+genai.configure(api_key=API_KEYS[current_key_idx])
+
+# Using a valid, production-ready model
+MODEL_NAME = "gemini-2.0-flash" 
 model = genai.GenerativeModel(model_name=MODEL_NAME)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TAILOR_PROMPTS_DIR = BASE_DIR / "prompts" / "tailor"
 
+
+# ==========================================
+# 2. CORE UTILITIES
+# ==========================================
 def load_file(filename: str) -> str:
     file_path = TAILOR_PROMPTS_DIR / filename
     if not file_path.exists():
@@ -32,72 +46,52 @@ def load_file(filename: str) -> str:
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
-def call_gemini_api(prompt: str, force_json: bool = False, retries=3) -> str:
+def call_gemini_api(prompt: str, force_json: bool = True, max_retries: int = 3) -> str:
+    """Calls Gemini and hot-swaps API keys instantly if rate limited."""
+    global current_key_idx, model
+    
     config = {
         "max_output_tokens": 8192,
         "temperature": 0.2, 
     }
-    
     if force_json:
         config["response_mime_type"] = "application/json"
         
-    for i in range(retries):
+    for attempt in range(max_retries):
         try:
             return model.generate_content(prompt, generation_config=config).text
         except Exception as e:
-            if "429" in str(e) and i < retries - 1:
-                print(f"⚠️ Rate limit hit. Retrying in {10 * (i+1)} seconds...")
-                time.sleep(10 * (i+1))
-                continue
-            raise e
+            error_msg = str(e).lower()
+            
+            # Catch Rate Limits (429) or Quota Exhaustion
+            if "429" in error_msg or "quota" in error_msg:
+                print(f"⚠️ Key {current_key_idx + 1} exhausted/limited. Hot-swapping to next key...")
+                current_key_idx = (current_key_idx + 1) % len(API_KEYS)
+                genai.configure(api_key=API_KEYS[current_key_idx])
+                model = genai.GenerativeModel(model_name=MODEL_NAME)
+                continue # Retry immediately with the new key
+            
+            print(f"❌ Gemini API Error: {str(e)}")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Gemini API failed permanently after {max_retries} attempts.") from e
+                
+    raise RuntimeError("Gemini API call failed.")
 
 def extract_and_parse_ai_json(raw_text: str) -> dict:
-    """Intelligently extracts and parses JSON, ignoring AI trailing garbage."""
-    # Step 1: Direct Parse Attempt
+    """Strictly parses JSON. Fails fast if the AI hallucinates bad structures."""
     try:
-        return json.loads(raw_text, strict=False)
-    except Exception:
-        pass
-
-    # Step 2: Strip Markdown Blocks
-    clean_text = raw_text.replace("```json", "").replace("```", "").strip()
-    try:
-        return json.loads(clean_text, strict=False)
-    except Exception:
-        pass
-
-    # Step 3: THE MAGIC BULLET (raw_decode)
-    # Extracts the first valid JSON object and ignores ANY trailing extra data/brackets
-    start_idx = clean_text.find('{')
-    if start_idx != -1:
+        return json.loads(raw_text)
+    except json.JSONDecodeError:
+        # Strip Markdown Blocks if Gemini ignored the mime-type directive
+        clean_text = re.sub(r'```(?:json)?', '', raw_text).replace('```', '').strip()
         try:
-            decoder = json.JSONDecoder(strict=False)
-            # raw_decode returns the parsed object and the index where it stopped
-            parsed_obj, _ = decoder.raw_decode(clean_text[start_idx:])
-            return parsed_obj
-        except Exception:
-            pass
-
-    # Step 4: Fallback Precise Bracket Extraction
-    start_idx = raw_text.find('{')
-    end_idx = raw_text.rfind('}')
-    
-    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-        json_str = raw_text[start_idx:end_idx+1]
-        try:
-            return json.loads(json_str, strict=False)
-        except json.JSONDecodeError:
-            # Step 5: AST Fallback
-            try:
-                safe_str = json_str.replace('null', 'None').replace('true', 'True').replace('false', 'False')
-                return ast.literal_eval(safe_str)
-            except Exception as e:
-                print(f"❌ FATAL JSON ERROR: {json_str[:200]}")
-                raise RuntimeError("CRITICAL: JSON Parser failed. Ensure AI output is strictly JSON.") from e
-                
-    raise ValueError("No JSON structure found in AI response.")
+            return json.loads(clean_text)
+        except json.JSONDecodeError as e:
+            print(f"❌ FATAL JSON ERROR. Raw Output:\n{raw_text[:300]}")
+            raise RuntimeError("CRITICAL: AI returned malformed JSON. Validation shield triggered.") from e
 
 def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
+    """Uses exact word boundaries, stopping the AI from hallucinating partial matches."""
     missing = []
     resume_lower = resume_string.lower()
     
@@ -106,10 +100,15 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
                     jd_data.get("good_to_have_skills", [])
     
     for skill in all_jd_skills:
-        skill_str = str(skill).lower()
-        if skill_str in resume_lower: continue
-        if fuzz.partial_ratio(skill_str, resume_lower) < 80: missing.append(str(skill))
-        
+        skill_str = str(skill).lower().strip()
+        if not skill_str:
+            continue
+            
+        # \b ensures exact match (e.g., "C" won't match "Action")
+        pattern = r'\b' + re.escape(skill_str) + r'\b'
+        if not re.search(pattern, resume_lower):
+            missing.append(str(skill))
+            
     return missing[:6] 
 
 def sanitize_for_latex(data):
@@ -125,17 +124,26 @@ def sanitize_for_latex(data):
     return data
 
 def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
-    baseline_numbers = set(re.findall(r'\d+', baseline_text))
+    """Drops hallucinated bullets instead of ruining the PDF with redaction tags."""
+    baseline_numbers = set(re.findall(r'\b\d+\b', baseline_text))
     
     exp_list = tailored_data.get('experience', [])
     for exp in exp_list:
         bullets = exp.get('descriptionPoints', [])
-        for i, bullet in enumerate(bullets):
-            bullet_nums = set(re.findall(r'\d+', str(bullet)))
-            if not bullet_nums.issubset(baseline_numbers):
-                print(f"⚠️ Hallucination Detected (Number Lock Triggered): {bullet}")
-                bullets[i] = re.sub(r'\d+', '[REDACTED_AI_METRIC]', bullet)
+        valid_bullets = []
+        
+        for bullet in bullets:
+            bullet_nums = set(re.findall(r'\b\d+\b', str(bullet)))
+            
+            # Ignore single digit numbers (often used for structure, e.g., "1 team")
+            suspicious_nums = {n for n in bullet_nums if len(n) > 1 and n not in baseline_numbers}
+            
+            if suspicious_nums:
+                print(f"⚠️ Hallucination Dropped (Metric: {suspicious_nums}): {bullet[:50]}...")
+            else:
+                valid_bullets.append(bullet)
                 
+        exp['descriptionPoints'] = valid_bullets
     return tailored_data
 
 def normalize_ai_data(data: dict) -> dict:
@@ -174,7 +182,10 @@ def remove_none_and_newlines(data):
         return cleaned
     return "" if data is None else data
 
-# 🚨 STEP 0 HELPER: Converts Raw Text or LaTeX into structured JSON
+
+# ==========================================
+# 3. CORE EXECUTION CHAINS
+# ==========================================
 def parse_raw_text_to_json(raw_text: str) -> str:
     print("--- 🔍 Step 0: Parsing Raw Input to JSON ---")
     prompt0_template = load_file('prompt_step0_parser.txt')
@@ -184,7 +195,6 @@ def parse_raw_text_to_json(raw_text: str) -> str:
     parsed_dict = extract_and_parse_ai_json(raw_ai_response)
     return json.dumps(parsed_dict)
 
-# 🚨 UNIVERSAL CHAIN: Accepts raw text, LaTeX, or JSON string seamlessly
 def execute_tailor_chain(resume_input: str, job_description: str, template_name: str = "base_template") -> dict:
     try:
         # 0. SMART INPUT HANDLER
@@ -192,7 +202,6 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
             full_resume_data = json.loads(resume_input)
             print("--- 🧠 Input is already valid JSON ---")
         except json.JSONDecodeError:
-            # Agar direct JSON nahi hai, toh Step 0 call karo
             resume_json_str = parse_raw_text_to_json(resume_input)
             full_resume_data = json.loads(resume_json_str)
 
@@ -226,7 +235,7 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         missing_skills_str = ", ".join(missing_skills) if missing_skills else "None"
         print(f"🎯 Target Title: {target_title} | 🛠️ Missing Skills: {missing_skills_str}")
 
-        print("--- ⚙️ Tailoring Step 2: Surgical Injection (Shield Active) ---")
+        print("--- ⚙️ Tailoring Step 2: Surgical Injection ---")
         prompt2_template = load_file('prompt_step2_planning.txt') 
         prompt2 = prompt2_template.replace('{target_job_title}', target_title) \
                                   .replace('{missing_skills}', missing_skills_str) \
@@ -244,12 +253,13 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         print("--- 🛡️ Merging Shielded Data & Validating ---")
         cleaned_ai_data.update(immutables)
 
+        # 🚨 STRICT VALIDATION: Do not bypass Pydantic anymore.
         try:
             validated_resume = ResumeData(**cleaned_ai_data)
             clean_data = validated_resume.model_dump()
         except Exception as pydantic_err:
             print(f"❌ Pydantic Validation Error: {pydantic_err}")
-            clean_data = cleaned_ai_data 
+            raise RuntimeError("Data Shield failure: The AI generated an incompatible resume structure.") from pydantic_err
 
         clean_data = remove_none_and_newlines(clean_data)
 
@@ -263,8 +273,10 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         pdf_path = gen_result["pdf_path"]
         tex_path = pdf_path.replace(".pdf", ".tex")
 
-        with open(pdf_path, "rb") as f: pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
-        with open(tex_path, "r", encoding="utf-8") as f: tex_content = f.read()
+        with open(pdf_path, "rb") as f: 
+            pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+        with open(tex_path, "r", encoding="utf-8") as f: 
+            tex_content = f.read()
 
         return { 
             "latex_code": tex_content, 
@@ -274,4 +286,4 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         }
 
     except Exception as e:
-        raise RuntimeError(f"Tailoring failed: {str(e)}") from e
+        raise RuntimeError(f"Tailoring Chain failed: {str(e)}") from e
