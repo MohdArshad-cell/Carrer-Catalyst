@@ -29,7 +29,7 @@ current_key_idx = 0
 genai.configure(api_key=API_KEYS[current_key_idx])
 
 # Using a valid, production-ready model
-MODEL_NAME = "gemini-2.0-flash" 
+MODEL_NAME = "gemini-3.1-flash-lite" 
 model = genai.GenerativeModel(model_name=MODEL_NAME)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
