@@ -26,6 +26,19 @@ interface Feature {
 
 const featuresList: Feature[] = [
     {
+        id: 'builder',
+        title: 'Create From Scratch',
+        icon: '📝',
+        description: 'A step-by-step builder to craft a new, professional resume from the ground up.',
+        status: 'live',
+        badge: 'Live Now',
+        route: '/resume-builder', // Make sure this matches your App.tsx route
+        buttonText: 'Start Building ➔',
+        accent: '#06b6d4', // Cyan matching your screenshot's CTA text
+        tags: ['Step-by-Step', 'Auto-Format', 'LaTeX Export'],
+        stats: [{ label: 'Templates', value: 'ATS Pro' }, { label: 'Cost', value: 'Free' }]
+    },
+    {
         id: 'tailor',
         title: 'AI Resume Tailor',
         icon: '🎯',

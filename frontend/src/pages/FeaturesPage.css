@@ -300,7 +300,13 @@
 
 /* Action Buttons */
 .op-action-btn {
-    padding: 12px 20px; /* Adjusted padding to ensure it fits with stats */
+    height: 48px; /* 🔒 FIX: Forces identical height across all cards */
+    min-width: 190px; /* 🔒 FIX: Forces identical width across all cards */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    
     border-radius: 12px;
     font-size: 0.95rem;
     font-weight: 700;
@@ -308,10 +314,8 @@
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
     
-    /* 🔒 FIX: Ensures button text never wraps and button doesn't shrink awkwardly */
     white-space: nowrap;
     flex-shrink: 0; 
-    text-align: center;
 }
 
 .op-action-btn.primary {
