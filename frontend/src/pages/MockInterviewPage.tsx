@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import { supabase } from '../supabaseClient';
-import '../pages/AiTailorPage.css'; // Utilizing the premium Tailor CSS
+import './AiTailorPage.css';  // Utilizing the premium Tailor CSS
 
 interface InterviewItem {
   question: string;
