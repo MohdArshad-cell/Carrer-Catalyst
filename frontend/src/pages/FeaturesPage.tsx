@@ -35,7 +35,7 @@ const featuresList: Feature[] = [
         route: '/ai-tools',
         buttonText: 'Launch Engine 🚀',
         accent: '#00e5ff', // Neon Cyan
-        tags: ['Gemini 1.5', 'LaTeX Core', 'ATS Bypass'],
+        tags: ['Gemini 2.0', 'LaTeX Core', 'ATS Bypass'],
         stats: [{ label: 'Speed', value: '< 12s' }, { label: 'Cost', value: '1 Token' }]
     },
     {
@@ -52,17 +52,43 @@ const featuresList: Feature[] = [
         stats: [{ label: 'Accuracy', value: '99%' }, { label: 'Cost', value: '1 Token' }]
     },
     {
+        id: 'cover-letter',
+        title: 'Pitch-Perfect Cover Letter',
+        icon: '✉️',
+        description: 'Hook recruiters instantly. Generate a highly targeted, hyper-personalized cover letter mapped perfectly to the JD.',
+        status: 'live',
+        badge: 'Live Now',
+        route: '/cover-letter',
+        buttonText: 'Draft Letter ✍️',
+        accent: '#8b5cf6', // Vivid Purple
+        tags: ['Context Aware', 'Hyper-Targeted'],
+        stats: [{ label: 'Words', value: '~300' }, { label: 'Cost', value: '1 Token' }]
+    },
+    {
+        id: 'mock-interview',
+        title: 'AI Mock Interview',
+        icon: '🎙️',
+        description: 'Practice with an AI hiring manager. Generate rigorous, JD-specific technical and behavioral questions with ideal answers.',
+        status: 'live', // UNLOCKED: You built this, let people use it.
+        badge: 'Live Now',
+        route: '/mock-interview', // Ensure this matches your App.tsx route
+        buttonText: 'Start Interview 🎤',
+        accent: '#a855f7', // Purple to match the mic icon on the actual page
+        tags: ['Behavioral', 'Technical', 'STAR Method'],
+        stats: [{ label: 'Questions', value: '10' }, { label: 'Cost', value: '1 Token' }]
+    },
+    {
         id: 'xray',
         title: 'ATS X-Ray Vision',
         icon: '👁️',
         description: 'See your resume through the eyes of an ATS. Live split-screen keyword highlighting.',
-        status: 'live',             // <-- Ise 'upcoming' se 'live' kar do
-        badge: 'Live Now',          // <-- Ise 'Beta' se 'Live Now' kar do
-        route: '/ats-xray',         // <-- '#' hata kar '/ats-xray' daal do
+        status: 'live',            
+        badge: 'Live Now',          
+        route: '/ats-xray',         
         buttonText: 'Try for Free 🚀',
         accent: '#10b981', 
         tags: ['Live Highlighting', 'Gap Analysis'],
-        stats: [{ label: 'Accuracy', value: '99%' }, { label: 'Cost', value: '1 Token' }]
+        stats: [{ label: 'Accuracy', value: '99%' }, { label: 'Cost', value: 'Free' }]
     },
     {
         id: 'networking',
@@ -76,32 +102,6 @@ const featuresList: Feature[] = [
         accent: '#f59e0b', // Amber/Gold
         tags: ['Hook Generation', 'Follow-ups', 'Direct DM'],
         stats: [{ label: 'Reply Rate', value: '+40%' }, { label: 'Status', value: 'In Lab' }]
-    },
-    {
-        id: 'cover-letter',
-        title: 'Pitch-Perfect Cover Letter',
-        icon: '✉️',
-        description: 'Hook recruiters instantly. Generate a highly targeted, hyper-personalized cover letter mapped perfectly to the JD.',
-        status: 'live',
-        badge: 'Live Now',
-        route: '/cover-letter',
-        buttonText: 'Draft Letter ✍️',
-        accent: '#8b5cf6', // Vivid Purple
-        tags: ['Context Aware', 'PDF Export'],
-        stats: [{ label: 'Words', value: '~300' }, { label: 'Cost', value: '1 Token' }]
-    },
-    {
-        id: 'mock-interview',
-        title: 'Voice AI Interviewer',
-        icon: '🎙️',
-        description: 'Practice with an AI hiring manager. Get real-time feedback on your tone, technical accuracy, and confidence.',
-        status: 'upcoming',
-        badge: 'In Beta',
-        route: '#',
-        buttonText: 'Notify Me 🔔',
-        accent: '#10b981', // Glowing Emerald
-        tags: ['Speech-to-Text', 'Behavioral', 'Tech'],
-        stats: [{ label: 'Engine', value: 'Whisper AI' }, { label: 'Status', value: 'Testing' }]
     },
     {
         id: 'extension',
@@ -127,7 +127,7 @@ const FeaturesPage: React.FC = () => {
         setTimeout(() => setToastMsg(''), 4000);
     };
 
-    // 🚀 OP LEVEL: 3D Magnetic Tilt Logic
+    // OP LEVEL: 3D Magnetic Tilt Logic
     const handleMouseMove = useCallback((e: MouseEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
         const rect = target.getBoundingClientRect();
@@ -164,13 +164,13 @@ const FeaturesPage: React.FC = () => {
                 {/* Hero Section */}
                 <header className="features-hero fade-in">
                     <div className="hero-badge pulse-glow" style={{ borderColor: 'rgba(0, 229, 255, 0.5)', color: '#00e5ff', background: 'rgba(0, 229, 255, 0.1)' }}>
-                        <span className="live-indicator"></span> Core Modules Online
+                        <span className="live-indicator"></span> 5 Core Modules Online
                     </div>
                     <h1 className="hero-title">
                         The Ultimate <span className="text-gradient">Arsenal.</span>
                     </h1>
                     <p className="hero-subtitle">
-                        Stop guessing. Start dominating. Deploy our suite of AI tools to bypass ruthless ATS algorithms, write killer cold emails, and force recruiters to pay attention.
+                        Stop guessing. Start dominating. Deploy our suite of AI tools to bypass ruthless ATS algorithms, write killer cover letters, and crush your interviews.
                     </p>
                 </header>
 
@@ -214,7 +214,7 @@ const FeaturesPage: React.FC = () => {
                                         {feature.stats.map((stat, i) => (
                                             <div key={i} className="stat-block">
                                                 <span className="stat-label">{stat.label}</span>
-                                                <span className="stat-value">{stat.value}</span>
+                                                <span className="stat-value" style={{ color: stat.label === 'Cost' && stat.value === 'Free' ? '#10b981' : 'var(--text-primary)' }}>{stat.value}</span>
                                             </div>
                                         ))}
                                     </div>
