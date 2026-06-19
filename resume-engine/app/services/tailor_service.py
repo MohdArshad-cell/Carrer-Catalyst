@@ -47,20 +47,20 @@ def load_file(filename: str) -> str:
         return f.read()
 
 def call_gemini_api(prompt: str, force_json: bool = True, max_retries: int = 3) -> str:
-    """Calls Gemini with an extended token limit for massive JSON payloads."""
+    """Calls Gemini with strict GenerationConfig to prevent token exhaustion."""
     global current_key_idx, model
     
-    # 🔒 THE FIX: Forcing the 8192 token limit so the AI doesn't cut off mid-sentence
-    config = {
-        "max_output_tokens": 8192,
-        "temperature": 0.2, 
-    }
-    if force_json:
-        config["response_mime_type"] = "application/json"
+    # 🔒 THE FIX: Strictly typing the config object so the SDK cannot ignore it
+    strict_config = genai.types.GenerationConfig(
+        max_output_tokens=8192,
+        temperature=0.2,
+        response_mime_type="application/json" if force_json else "text/plain"
+    )
         
     for attempt in range(max_retries):
         try:
-            return model.generate_content(prompt, generation_config=config).text
+            response = model.generate_content(prompt, generation_config=strict_config)
+            return response.text
         except Exception as e:
             error_msg = str(e).lower()
             
@@ -70,7 +70,7 @@ def call_gemini_api(prompt: str, force_json: bool = True, max_retries: int = 3) 
                 current_key_idx = (current_key_idx + 1) % len(API_KEYS)
                 genai.configure(api_key=API_KEYS[current_key_idx])
                 model = genai.GenerativeModel(model_name=MODEL_NAME)
-                continue # Retry immediately with the new key
+                continue 
             
             print(f"❌ Gemini API Error: {str(e)}")
             if attempt == max_retries - 1:
