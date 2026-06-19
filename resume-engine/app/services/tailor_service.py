@@ -47,9 +47,10 @@ def load_file(filename: str) -> str:
         return f.read()
 
 def call_gemini_api(prompt: str, force_json: bool = True, max_retries: int = 3) -> str:
-    """Calls Gemini and hot-swaps API keys instantly if rate limited."""
+    """Calls Gemini with an extended token limit for massive JSON payloads."""
     global current_key_idx, model
     
+    # 🔒 THE FIX: Forcing the 8192 token limit so the AI doesn't cut off mid-sentence
     config = {
         "max_output_tokens": 8192,
         "temperature": 0.2, 
