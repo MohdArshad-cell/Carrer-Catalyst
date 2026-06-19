@@ -123,7 +123,7 @@ const Pricing = () => {
                         Simple, Transparent Pricing
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-                        Get the exact tools you need to land your dream job faster. New users get <b>3 free tokens</b> on signup to test the engine.
+                        Get the exact tools you need to land your dream job faster. New users get <b>10 free tokens</b> on signup to test the engine.
                     </p>
                 </div>
 
