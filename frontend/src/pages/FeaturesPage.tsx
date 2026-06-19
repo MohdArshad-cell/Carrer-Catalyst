@@ -48,7 +48,7 @@ const featuresList: Feature[] = [
         route: '/ai-tools',
         buttonText: 'Launch Engine 🚀',
         accent: '#00e5ff', // Neon Cyan
-        tags: ['Gemini 2.0', 'LaTeX Core', 'ATS Bypass'],
+        tags: ['Gemini 3.1', 'LaTeX Core', 'ATS Bypass'],
         stats: [{ label: 'Speed', value: '< 12s' }, { label: 'Cost', value: '1 Token' }]
     },
     {
