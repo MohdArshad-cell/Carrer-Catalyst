@@ -9,16 +9,12 @@ import './Pricing.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
 
-// Yahan tumhari .env file se Test ya Live dono IDs automatically aa jayengi
-const STRIPE_PRICE_ID = process.env.REACT_APP_STRIPE_PRICE_ID; 
-
 const Pricing = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loadingPlan, setLoadingPlan] = useState(null);
     const [error, setError] = useState('');
 
-    // Check if user is logged in
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
@@ -31,13 +27,11 @@ const Pricing = () => {
             return;
         }
 
-        // Failsafe: Agar .env mein price ID miss ho jaye
         if (!priceId) {
-            setError("Pricing configuration error. Please contact support.");
+            setError("Pricing configuration error. Stripe Price ID is missing.");
             return;
         }
 
-        console.log("SENDING TO BACKEND:", { user_id: user.id, price_id: priceId });
         setLoadingPlan(priceId);
         setError('');
 
@@ -47,7 +41,6 @@ const Pricing = () => {
                 price_id: priceId
             });
             
-            // Redirect to Stripe Checkout page
             if (response.data && response.data.url) {
                 window.location.href = response.data.url;
             } else {
@@ -60,6 +53,61 @@ const Pricing = () => {
         }
     };
 
+    // Logical Pricing Structure 
+    const pricingPlans = [
+        {
+            id: 'starter',
+            name: 'Desperate Retry',
+            price: '99',
+            tokens: 10,
+            desc: 'Skip one coffee. Land an interview instead.',
+            stripeId: process.env.REACT_APP_STRIPE_PRICE_99,
+            features: [
+                '✔️ 10 Premium AI Tokens',
+                '✔️ Resume Tailor (Beat the ATS)',
+                '❌ Advanced Cover Letters',
+                '❌ Priority Support'
+            ],
+            isPopular: false,
+            buttonText: 'Buy 10 Tokens',
+            theme: '#10b981' // Green
+        },
+        {
+            id: 'pro',
+            name: 'Serious Hunter',
+            price: '199',
+            tokens: 30,
+            desc: '3x the power for just ₹100 more. Best value.',
+            stripeId: process.env.REACT_APP_STRIPE_PRICE_199,
+            features: [
+                '✨ 30 Premium AI Tokens',
+                '🚀 Resume Tailor (Beat the ATS)',
+                '🔥 Brutal ATS Evaluator',
+                '✉️ Cover Letter Generator'
+            ],
+            isPopular: true, // The Decoy Effect target
+            buttonText: 'Buy 30 Tokens',
+            theme: 'linear-gradient(135deg, #00e5ff, #8b5cf6)' // Cyan/Purple
+        },
+        {
+            id: 'elite',
+            name: 'Career Dominator',
+            price: '499',
+            tokens: 100,
+            desc: 'For mass-appliers. Never run out of tokens.',
+            stripeId: process.env.REACT_APP_STRIPE_PRICE_499,
+            features: [
+                '💎 100 Premium AI Tokens',
+                '🚀 Unrestricted Tool Access',
+                '🎤 AI Mock Interview Data',
+                '⚡ Priority Generation Speed'
+            ],
+            isPopular: false,
+            buttonText: 'Buy 100 Tokens',
+            theme: '#f59e0b' // Gold
+        }
+    ];
+
     return (
         <div className="page-container">
             <ParticleBackground />
@@ -69,79 +117,57 @@ const Pricing = () => {
             <div className="pricing-container">
                 <div className="pricing-header text-center">
                     <div className="hero-badge" style={{ borderColor: '#10b981', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
-                        <span className="sparkle">💎</span> Upgrade Your Engine
+                        <span className="sparkle">💎</span> Invest In Your Career
                     </div>
                     <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '1rem' }}>
                         Simple, Transparent Pricing
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-                        Get the exact tools you need to land your dream job faster. No hidden fees. Pay only for the AI power you use.
+                        Get the exact tools you need to land your dream job faster. New users get <b>3 free tokens</b> on signup to test the engine.
                     </p>
                 </div>
 
-                {error && <div className="pricing-error">{error}</div>}
+                {error && <div className="pricing-error" style={{ color: '#ef4444', textAlign: 'center', marginBottom: '1rem' }}>{error}</div>}
 
                 <div className="pricing-grid">
-                    
-                    {/* TIER 1: FREE FOREVER */}
-                    <div className="pricing-card glass-card">
-                        <div className="tier-name">Starter</div>
-                        <div className="tier-price">
-                            <span className="currency">$</span>0
-                        </div>
-                        <p className="tier-desc">Perfect to test out the platform and build a basic resume.</p>
-                        
-                        <div className="tier-features">
-                            <div className="feature-item">✔️ 10 Free AI Tokens on Sign up</div>
-                            <div className="feature-item">✔️ Basic Resume Builder</div>
-                            <div className="feature-item">✔️ PDF & JSON Export</div>
-                            <div className="feature-item" style={{ color: 'var(--text-secondary)' }}>❌ Advanced AI Tailoring</div>
-                            <div className="feature-item" style={{ color: 'var(--text-secondary)' }}>❌ ATS Evaluation</div>
-                        </div>
-
-                        <button 
-                            className="btn-outline pricing-btn" 
-                            onClick={() => user ? navigate('/ai-tools') : navigate('/login')}
+                    {pricingPlans.map((plan) => (
+                        <div 
+                            key={plan.id} 
+                            className={`pricing-card glass-card ${plan.isPopular ? 'pro-tier' : ''}`}
+                            style={plan.isPopular ? { transform: 'scale(1.05)', border: '1px solid #00e5ff' } : {}}
                         >
-                            {user ? 'Go to Dashboard' : 'Sign Up Free'}
-                        </button>
-                    </div>
+                            {plan.isPopular && <div className="pro-badge">Most Popular</div>}
+                            <div className="tier-name" style={{ color: plan.isPopular ? '#00e5ff' : 'var(--text-primary)' }}>
+                                {plan.name}
+                            </div>
+                            
+                            <div className="tier-price">
+                                <span className="currency">₹</span>{plan.price}
+                            </div>
+                            <p className="tier-desc">{plan.desc}</p>
+                            
+                            <div className="tier-features">
+                                {plan.features.map((feature, index) => (
+                                    <div key={index} className="feature-item" dangerouslySetInnerHTML={{ __html: feature }}></div>
+                                ))}
+                            </div>
 
-                    {/* TIER 2: PREMIUM (PRO) */}
-                    <div className="pricing-card glass-card pro-tier">
-                        <div className="pro-badge">Most Popular</div>
-                        <div className="tier-name" style={{ color: '#00e5ff' }}>Premium Powerpack</div>
-                        <div className="tier-price">
-                            <span className="currency">$</span>5<span className="billing-cycle">/one-time</span>
+                            <button 
+                                className={`pricing-btn ${plan.isPopular ? 'btn-premium pulse-glow' : 'btn-outline'}`}
+                                disabled={loadingPlan !== null}
+                                onClick={() => handleCheckout(plan.stripeId)}
+                                style={plan.isPopular ? { background: plan.theme } : { borderColor: plan.theme, color: plan.theme }}
+                            >
+                                {loadingPlan === plan.stripeId ? 'Processing...' : plan.buttonText}
+                            </button>
                         </div>
-                        <p className="tier-desc">Unlock full AI capabilities to tailor your resume for every application.</p>
-                        
-                        <div className="tier-features">
-                            <div className="feature-item">✨ <b>10 Premium AI Tokens</b></div>
-                            <div className="feature-item">🚀 <b>Resume Tailor (Beat the ATS)</b></div>
-                            <div className="feature-item">🔥 Brutal ATS Evaluator</div>
-                            <div className="feature-item">✉️ Cover Letter Generator</div>
-                            <div className="feature-item">🎤 AI Mock Interview Data</div>
-                        </div>
-
-                        <button 
-                            className="btn-premium pulse-glow pricing-btn"
-                            disabled={loadingPlan !== null}
-                            onClick={() => handleCheckout(STRIPE_PRICE_ID)}
-                            style={{ background: 'linear-gradient(135deg, #00e5ff, #8b5cf6)' }}
-                        >
-                            {/* 👇 BUG FIXED YAHAN 👇 */}
-                            {loadingPlan === STRIPE_PRICE_ID ? 'Redirecting to Stripe...' : 'Buy 10 Tokens Now'}
-                        </button>
-                    </div>
-
+                    ))}
                 </div>
 
-                {/* FAQ / Trust section below */}
-                <div className="pricing-faq text-center">
+                <div className="pricing-faq text-center" style={{ marginTop: '3rem' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                        Payments are securely processed by <strong>Stripe</strong>. <br/>
-                        1 Token = 1 AI Request (Tailor, Evaluate, Cover Letter, etc.)
+                        Payments are securely processed by <strong>Stripe (UPI, Cards & Netbanking Supported)</strong>. <br/>
+                        1 Token = 1 AI Request (Tailor, Evaluate, or Cover Letter).
                     </p>
                 </div>
             </div>
