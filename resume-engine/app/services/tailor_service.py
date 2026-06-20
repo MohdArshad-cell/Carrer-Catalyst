@@ -64,6 +64,21 @@ def load_file(filename: str) -> str:
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
+
+
+def strip_defaults(d):
+    """Recursively removes 'default' keys from a dictionary to prevent Gemini API crashes."""
+    if isinstance(d, dict):
+        d.pop("default", None)
+        for k, v in d.items():
+            strip_defaults(v)
+    elif isinstance(d, list):
+        for i in d:
+            strip_defaults(i)
+    return d
+
+
+
 def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retries: int = 3) -> str:
     config_kwargs = {
         "max_output_tokens": 8192,
@@ -72,7 +87,12 @@ def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retr
     
     if schema:
         config_kwargs["response_mime_type"] = "application/json"
-        config_kwargs["response_schema"] = schema
+        
+        # Convert Pydantic class to dict, strip "default" keys, and pass to Gemini
+        schema_dict = schema.model_json_schema()
+        clean_schema = strip_defaults(schema_dict)
+        config_kwargs["response_schema"] = clean_schema
+        
     elif force_json:
         config_kwargs["response_mime_type"] = "application/json"
         
