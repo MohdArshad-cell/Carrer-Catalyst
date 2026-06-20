@@ -161,10 +161,20 @@ def sanitize_for_latex(data):
     if isinstance(data, dict): return {k: sanitize_for_latex(v) for k, v in data.items()}
     elif isinstance(data, list): return [sanitize_for_latex(v) for v in data]
     elif isinstance(data, str):
-        sanitized = re.sub(r'(?<!\\)&', r'\&', data)
-        sanitized = re.sub(r'(?<!\\)%', r'\%', sanitized)
-        sanitized = re.sub(r'(?<!\\)\$', r'\$', sanitized)
-        return sanitized
+        # Escape core LaTeX breaking characters
+        s = re.sub(r'(?<!\\)&', r'\&', data)
+        s = re.sub(r'(?<!\\)%', r'\%', s)
+        s = re.sub(r'(?<!\\)\$', r'\$', s)
+        s = re.sub(r'(?<!\\)#', r'\#', s)   # Prevents "C#" from crashing LaTeX
+        s = re.sub(r'(?<!\\)_', r'\_', s)   # Prevents math-mode crashes
+        
+        # Strip LLM typography that breaks Tectonic fonts
+        s = s.replace('”', '"').replace('“', '"')
+        s = s.replace('’', "'").replace('‘', "'")
+        s = s.replace('—', '---').replace('–', '--')
+        s = s.replace('\u2022', '-') # Convert rogue bullet points to standard dashes
+        
+        return s
     return data
 
 
