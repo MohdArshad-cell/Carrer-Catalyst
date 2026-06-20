@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 # Third Party
 import stripe
+import redis
 from supabase import create_client, Client
 
 # Local Imports
@@ -48,6 +49,13 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
+
+# Redis Setup (Replaces the broken active_tasks memory dictionary)
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"), 
+    port=int(os.getenv("REDIS_PORT", 6379)), 
+    decode_responses=True
+)
 
 # JWKS Client setup for Asymmetric ES256 Verification
 jwk_client = None
@@ -79,10 +87,9 @@ app.add_middleware(
 
 # Global Variables
 generator = ResumeGenerator()
-active_tasks: Dict[str, Dict[str, Any]] = {}
 
 # ==========================================
-# 2. FASTAPI GATEKEEPER (SECURITY & TOKENS)
+# 2. FASTAPI GATEKEEPER & LEDGER LOGIC
 # ==========================================
 security = HTTPBearer()
 
@@ -141,6 +148,29 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
         raise HTTPException(status_code=500, detail="Internal server error during token validation.")
 
 
+def deduct_token_and_log(user_id: str, current_tokens: int, action_name: str):
+    """Safely deducts a token and writes to the immutable ledger to prevent abuse/disputes."""
+    try:
+        new_tokens = current_tokens - 1
+        
+        # 1. Update the profile number
+        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
+        
+        # 2. Write to the ledger
+        ledger_entry = {
+            "user_id": user_id,
+            "transaction_type": "deduction",
+            "amount": -1,
+            "action": action_name
+        }
+        supabase.table("token_ledger").insert(ledger_entry).execute()
+        return new_tokens
+        
+    except Exception as db_error:
+        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct/log token for {user_id}. Error: {str(db_error)}")
+        raise HTTPException(status_code=500, detail="Database ledger error during token deduction.")
+
+
 # ==========================================
 # 3. PYDANTIC MODELS (FastAPI Validators)
 # ==========================================
@@ -151,29 +181,34 @@ class CheckoutRequest(BaseModel):
     user_id: str
     price_id: str
 
-# DeductTokenRequest removed. It is unnecessary since we pull user_id from the JWT.
 
 # ==========================================
-# 4. HELPER FUNCTIONS
+# 4. HELPER FUNCTIONS (REDIS BACKED)
 # ==========================================
 def process_resume_background(task_id: str, template_name: str, resume_data: dict):
     try:
+        # Save processing state to Redis
+        redis_client.setex(f"task:{task_id}", 3600, json.dumps({"status": "processing"}))
+        
         result = generator.generate(template_name, resume_data)
-        active_tasks[task_id].update({
+        
+        # Save completed state to Redis (Expires in 1 hour)
+        completed_data = {
             "status": "completed", 
             "pdf_path": result["pdf_path"], 
             "session_dir": result["session_dir"],
             "raw_json": resume_data  
-        })
+        }
+        redis_client.setex(f"task:{task_id}", 3600, json.dumps(completed_data))
+        
     except Exception as e:
-        active_tasks[task_id].update({"status": "failed", "error": str(e)})
+        redis_client.setex(f"task:{task_id}", 3600, json.dumps({"status": "failed", "error": str(e)}))
 
 def cleanup_session_and_task(task_id: str, session_dir: str):
-    """Deletes the files AND removes the task from memory after download."""
+    """Deletes the files AND removes the task from Redis memory after download."""
     if session_dir and os.path.exists(session_dir):
         shutil.rmtree(session_dir, ignore_errors=True)
-    if task_id in active_tasks: 
-        del active_tasks[task_id]
+    redis_client.delete(f"task:{task_id}")
 
 
 # ==========================================
@@ -186,21 +221,31 @@ def read_root():
 @app.post("/generate/start")
 async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):
     task_id = str(uuid.uuid4())
-    active_tasks[task_id] = {"status": "processing"}
+    
+    # Initialize task in Redis
+    redis_client.setex(f"task:{task_id}", 3600, json.dumps({"status": "processing"}))
+    
     background_tasks.add_task(process_resume_background, task_id, request.template_name, request.resume_data.dict())
     return {"task_id": task_id}
 
 @app.get("/generate/status/{task_id}")
 async def check_status(task_id: str):
-    if task_id not in active_tasks: 
-        raise HTTPException(status_code=404, detail="Task not found")
-    return {"status": active_tasks[task_id]["status"], "error": active_tasks[task_id].get("error")}
+    task_data = redis_client.get(f"task:{task_id}")
+    if not task_data: 
+        raise HTTPException(status_code=404, detail="Task not found or expired")
+    
+    task = json.loads(task_data)
+    return {"status": task.get("status"), "error": task.get("error")}
 
 @app.get("/generate/download/{task_id}")
 async def download_files(task_id: str, background_tasks: BackgroundTasks):
-    task = active_tasks.get(task_id)
-    if not task or task["status"] != "completed": 
-        raise HTTPException(status_code=400, detail="Not ready")
+    task_data = redis_client.get(f"task:{task_id}")
+    if not task_data: 
+        raise HTTPException(status_code=404, detail="Task not found or expired")
+        
+    task = json.loads(task_data)
+    if task.get("status") != "completed": 
+        raise HTTPException(status_code=400, detail="Files not ready for download")
     
     pdf_path = task["pdf_path"]
     tex_path = pdf_path.replace(".pdf", ".tex") 
@@ -217,7 +262,8 @@ async def download_files(task_id: str, background_tasks: BackgroundTasks):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading generated files: {str(e)}")
 
-    background_tasks.add_task(cleanup_session_and_task, task_id, task["session_dir"])
+    # Clean up files and Redis key
+    background_tasks.add_task(cleanup_session_and_task, task_id, task.get("session_dir", ""))
     
     return JSONResponse({
         "pdf_base64": pdf_b64,
@@ -266,13 +312,8 @@ async def tailor(request: TailorRequest, background_tasks: BackgroundTasks, user
     if session_dir:
         background_tasks.add_task(cleanup_session_and_task, "ephemeral_tailor_task", session_dir)
         
-    # 2. Deduct Token SECOND
-    try:
-        new_tokens = user_auth["current_tokens"] - 1
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
-    except Exception as db_error:
-        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
-        
+    # 2. Deduct Token and Log SECOND
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_tailor")
     return result
 
 @app.post("/api/ai/evaluate")
@@ -284,13 +325,8 @@ def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
-    # 2. Deduct Token SECOND
-    try:
-        new_tokens = user_auth["current_tokens"] - 1
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
-    except Exception as db_error:
-        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
-    
+    # 2. Deduct Token and Log SECOND
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_evaluate")
     return {"evaluation_result": result}
 
 @app.post("/api/ai/coverletter")
@@ -302,13 +338,8 @@ def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_us
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
-    # 2. Deduct Token SECOND
-    try:
-        new_tokens = user_auth["current_tokens"] - 1
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
-    except Exception as db_error:
-        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
-    
+    # 2. Deduct Token and Log SECOND
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_coverletter")
     return {"cover_letter": result}
 
 @app.post("/api/ai/interview")
@@ -320,13 +351,8 @@ def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_a
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
-    # 2. Deduct Token SECOND
-    try:
-        new_tokens = user_auth["current_tokens"] - 1
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_auth["user_id"]).execute()
-    except Exception as db_error:
-        print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct token for user {user_auth['user_id']}. Error: {str(db_error)}")
-    
+    # 2. Deduct Token and Log SECOND
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_interview")
     return {"interview_data": result}
 
 
@@ -378,8 +404,19 @@ async def stripe_webhook(request: Request):
                 res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
                 if res.data and len(res.data) > 0:
                     current_tokens = res.data[0]["tokens"]
-                    new_tokens = current_tokens + 10
+                    new_tokens = current_tokens + 10 # Adjust quantity based on your pricing
+                    
+                    # 1. Update Profile Balance
                     supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
+                    
+                    # 2. Write to Immutable Ledger
+                    supabase.table("token_ledger").insert({
+                        "user_id": user_id,
+                        "transaction_type": "purchase",
+                        "amount": 10,
+                        "action": "stripe_checkout"
+                    }).execute()
+                    
             except Exception as e:
                 print("❌ SUPABASE UPDATE ERROR:", str(e))
                 # FORCE STRIPE TO RETRY LATER
@@ -393,16 +430,6 @@ async def stripe_webhook(request: Request):
 @app.post("/api/deduct-token")
 def deduct_token(user_auth: dict = Depends(verify_user_and_tokens)):
     # Note: No JSON body required. The JWT proves who they are.
-    try:
-        user_id = user_auth["user_id"]
-        current_tokens = user_auth["current_tokens"]
-        
-        new_tokens = current_tokens - 1
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
-        
-        print(f"📉 TOKEN DEDUCTED SECURELY: User {user_id} used 1 token. Tokens left: {new_tokens}")
-        return {"status": "success", "tokens_left": new_tokens}
-        
-    except Exception as e:
-        print("❌ ERROR DEDUCTING TOKEN:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+    new_tokens = deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "manual_generation")
+    print(f"📉 TOKEN DEDUCTED SECURELY: User {user_auth['user_id']} used 1 token. Tokens left: {new_tokens}")
+    return {"status": "success", "tokens_left": new_tokens}

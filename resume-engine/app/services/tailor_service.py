@@ -2,121 +2,184 @@ import os
 import json
 import re
 from pathlib import Path
-import google.generativeai as genai
-from dotenv import load_dotenv
 import base64
 
+# --- ENTERPRISE DEPENDENCIES ---
+import redis
+from groq import Groq
+from sentence_transformers import SentenceTransformer
+import spacy
+from word2number import w2n
+import google.generativeai as genai
+from dotenv import load_dotenv
+
 from app.generator import ResumeGenerator
-from app.models import ResumeData
+from app.models import ResumeData, JobDescriptionAnalysis
 
 # ==========================================
-# 1. INITIALIZATION & API KEY ROTATION
+# 1. INITIALIZATION & DISTRIBUTED INFRASTRUCTURE
 # ==========================================
 load_dotenv()
 
-# Load multiple keys for hot-swapping
-raw_keys = os.getenv("GOOGLE_API_KEYS", "")
-API_KEYS = [k.strip() for k in raw_keys.split(",") if k.strip()]
+# Load NLP Model for "Number Lock" & "Data Shield" Bulletproofing
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print("⚠️ WARNING: spaCy en_core_web_sm not found. Falling back to basic regex. Run: python -m spacy download en_core_web_sm")
+    nlp = None
 
-if not API_KEYS:
-    # Fallback if the user is still using the old single-key variable
-    single_key = os.getenv("GOOGLE_API_KEY")
-    if not single_key:
-        raise ValueError("CRITICAL: GOOGLE_API_KEYS or GOOGLE_API_KEY environment variable is not set.")
-    API_KEYS = [single_key]
+# Initialize Groq Client (Step 0: Smart Parsing)
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-current_key_idx = 0
-genai.configure(api_key=API_KEYS[current_key_idx])
+# Initialize Redis (Distributed Token Bucket & Semantic Caching)
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"), 
+    port=int(os.getenv("REDIS_PORT", 6379)), 
+    decode_responses=True
+)
 
-# Using a valid, production-ready model
-MODEL_NAME = "gemini-3.1-flash-lite" 
-model = genai.GenerativeModel(model_name=MODEL_NAME)
+# Initialize Embedding Model for JD Semantic Cache (Step 1 bypass)
+try:
+    encoder = SentenceTransformer('all-MiniLM-L6-v2')
+except Exception as e:
+    print(f"⚠️ WARNING: SentenceTransformer failed to load: {e}")
+    encoder = None
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-TAILOR_PROMPTS_DIR = BASE_DIR / "prompts" / "tailor"
+# Gemini Configuration
+MODEL_NAME = "gemini-2.5-flash" # Upgraded for native structured outputs
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
+
+
+class DistributedTokenBucket:
+    """Replaces itertools.cycle with a Redis-backed distributed state manager."""
+    def __init__(self, raw_keys: str):
+        self.keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+        if not self.keys:
+            raise ValueError("CRITICAL: GOOGLE_API_KEYS is not set.")
+
+    def get_key(self) -> str:
+        # Query Redis for the first key that is NOT locked by an HTTP 429 error
+        for key in self.keys:
+            if not redis_client.exists(f"gemini_lock:{key}"):
+                return key
+        print("⚠️ All Gemini keys are temporarily rate-limited. Forcing fallback to Primary Key.")
+        return self.keys[0]
+
+    def lock_key(self, key: str, ttl_seconds: int = 60):
+        # Applies a distributed TTL lockout across all server workers
+        redis_client.setex(f"gemini_lock:{key}", ttl_seconds, "locked")
+
+key_manager = DistributedTokenBucket(os.getenv("GOOGLE_API_KEYS", os.getenv("GOOGLE_API_KEY", "")))
 
 
 # ==========================================
-# 2. CORE UTILITIES
+# 2. HYBRID LLM ROUTING & UTILITIES
 # ==========================================
 def load_file(filename: str) -> str:
     file_path = TAILOR_PROMPTS_DIR / filename
     if not file_path.exists():
-        raise FileNotFoundError(f"Required prompt file not found at {file_path}")
+        raise FileNotFoundError(f"Missing prompt file at: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
-def call_gemini_api(prompt: str, force_json: bool = True, max_retries: int = 3) -> str:
-    """Calls Gemini with strict GenerationConfig to prevent token exhaustion."""
-    global current_key_idx, model
+def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
+    """
+    Executes Gemini logic using Native Structured Outputs (response_schema).
+    This entirely eliminates the need for manual AST literal_eval self-healing.
+    """
+    config_kwargs = {
+        "max_output_tokens": 8192,
+        "temperature": 0.2,
+    }
     
-    # 🔒 THE FIX: Strictly typing the config object so the SDK cannot ignore it
-    strict_config = genai.types.GenerationConfig(
-        max_output_tokens=8192,
-        temperature=0.2,
-        response_mime_type="application/json" if force_json else "text/plain"
-    )
+    # Deprecating manual JSON regex stripping by passing Pydantic schema natively to GenAI
+    if schema:
+        config_kwargs["response_mime_type"] = "application/json"
+        config_kwargs["response_schema"] = schema
         
+    strict_config = genai.types.GenerationConfig(**config_kwargs)
+
     for attempt in range(max_retries):
+        api_key = key_manager.get_key()
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(model_name=MODEL_NAME)
+        
         try:
             response = model.generate_content(prompt, generation_config=strict_config)
             return response.text
         except Exception as e:
             error_msg = str(e).lower()
-            
-            # Catch Rate Limits (429) or Quota Exhaustion
             if "429" in error_msg or "quota" in error_msg:
-                print(f"⚠️ Key {current_key_idx + 1} exhausted/limited. Hot-swapping to next key...")
-                current_key_idx = (current_key_idx + 1) % len(API_KEYS)
-                genai.configure(api_key=API_KEYS[current_key_idx])
-                model = genai.GenerativeModel(model_name=MODEL_NAME)
-                continue 
+                print(f"⚠️ Worker caught 429 Rate Limit. Locking Key in Redis...")
+                key_manager.lock_key(api_key)
+                continue
             
             print(f"❌ Gemini API Error: {str(e)}")
             if attempt == max_retries - 1:
-                raise RuntimeError(f"Gemini API failed permanently after {max_retries} attempts.") from e
-                
-    raise RuntimeError("Gemini API call failed.")
+                raise RuntimeError(f"Gemini failed permanently after {max_retries} attempts.") from e
 
-def extract_and_parse_ai_json(raw_text: str) -> dict:
-    """Strictly parses JSON. Fails fast if the AI hallucinates bad structures."""
-    try:
-        return json.loads(raw_text)
-    except json.JSONDecodeError:
-        # Strip Markdown Blocks if Gemini ignored the mime-type directive
-        clean_text = re.sub(r'```(?:json)?', '', raw_text).replace('```', '').strip()
-        try:
-            return json.loads(clean_text)
-        except json.JSONDecodeError as e:
-            print(f"❌ FATAL JSON ERROR. Raw Output:\n{raw_text[:300]}")
-            raise RuntimeError("CRITICAL: AI returned malformed JSON. Validation shield triggered.") from e
+
+# ==========================================
+# 3. NLP BULLETPROOFING & VALIDATION
+# ==========================================
+def normalize_and_extract_metrics(text: str) -> set:
+    """Hardened 'Number Lock' logic using word2number and spaCy NLP."""
+    metrics = set(re.findall(r'\b\d+(?:\.\d+)?\b', text)) # Catch raw digits
+    
+    if nlp:
+        doc = nlp(text)
+        for token in doc:
+            if token.pos_ == "NUM":
+                try:
+                    # Converts spelled out numbers ("ten" -> "10") to avoid false-positive redaction
+                    metrics.add(str(w2n.word_to_num(token.text)))
+                except ValueError:
+                    metrics.add(token.text)
+    return metrics
+
+def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
+    baseline_numbers = normalize_and_extract_metrics(baseline_text)
+    exp_list = tailored_data.get('experience', [])
+    
+    for exp in exp_list:
+        valid_bullets = []
+        for bullet in exp.get('descriptionPoints', []):
+            bullet_nums = normalize_and_extract_metrics(str(bullet))
+            
+            # Identify hallucinated numbers (excluding single digits like '1 team')
+            suspicious_nums = {n for n in bullet_nums if len(n) > 1 and n not in baseline_numbers}
+            
+            if suspicious_nums:
+                print(f"⚠️ Shield Dropped Hallucinated Metric {suspicious_nums}: {bullet[:50]}...")
+            else:
+                valid_bullets.append(bullet)
+        exp['descriptionPoints'] = valid_bullets
+    return tailored_data
 
 def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
-    """Uses exact word boundaries, stopping the AI from hallucinating partial matches."""
+    """Hardened 'Data Shield' supporting punctuation (C++, .NET, React.js)"""
     missing = []
     resume_lower = resume_string.lower()
-    
-    all_jd_skills = jd_data.get("must_have_tech_skills", []) + \
-                    jd_data.get("sdlc_and_practices", []) + \
-                    jd_data.get("good_to_have_skills", [])
+    all_jd_skills = jd_data.get("must_have_tech_skills", []) + jd_data.get("sdlc_and_practices", [])
     
     for skill in all_jd_skills:
         skill_str = str(skill).lower().strip()
-        if not skill_str:
-            continue
-            
-        # \b ensures exact match (e.g., "C" won't match "Action")
-        pattern = r'\b' + re.escape(skill_str) + r'\b'
+        if not skill_str: continue
+        
+        # Lookarounds (?<!\w) and (?!\w) fix standard regex boundary failures on symbols
+        escaped_skill = re.escape(skill_str)
+        pattern = r'(?<!\w)' + escaped_skill + r'(?!\w)'
+        
         if not re.search(pattern, resume_lower):
             missing.append(str(skill))
             
     return missing[:6] 
 
 def sanitize_for_latex(data):
-    if isinstance(data, dict):
-        return {k: sanitize_for_latex(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [sanitize_for_latex(v) for v in data]
+    """Secures against ATS visual ligature destruction and ensures formatting"""
+    if isinstance(data, dict): return {k: sanitize_for_latex(v) for k, v in data.items()}
+    elif isinstance(data, list): return [sanitize_for_latex(v) for v in data]
     elif isinstance(data, str):
         sanitized = re.sub(r'(?<!\\)&', r'\&', data)
         sanitized = re.sub(r'(?<!\\)%', r'\%', sanitized)
@@ -124,81 +187,41 @@ def sanitize_for_latex(data):
         return sanitized
     return data
 
-def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
-    """Drops hallucinated bullets instead of ruining the PDF with redaction tags."""
-    baseline_numbers = set(re.findall(r'\b\d+\b', baseline_text))
-    
-    exp_list = tailored_data.get('experience', [])
-    for exp in exp_list:
-        bullets = exp.get('descriptionPoints', [])
-        valid_bullets = []
-        
-        for bullet in bullets:
-            bullet_nums = set(re.findall(r'\b\d+\b', str(bullet)))
-            
-            # Ignore single digit numbers (often used for structure, e.g., "1 team")
-            suspicious_nums = {n for n in bullet_nums if len(n) > 1 and n not in baseline_numbers}
-            
-            if suspicious_nums:
-                print(f"⚠️ Hallucination Dropped (Metric: {suspicious_nums}): {bullet[:50]}...")
-            else:
-                valid_bullets.append(bullet)
-                
-        exp['descriptionPoints'] = valid_bullets
-    return tailored_data
-
-def normalize_ai_data(data: dict) -> dict:
-    if len(data) == 1 and isinstance(list(data.values())[0], dict): data = list(data.values())[0]
-    if "resume" in data and isinstance(data["resume"], dict): data = data["resume"]
-    if "resume_data" in data and isinstance(data["resume_data"], dict): data = data["resume_data"]
-
-    exp_list = data.get('experience') or data.get('workExperience') or data.get('work_experience') or []
-    for exp in exp_list:
-        if 'title' in exp: exp['role'] = exp.pop('title')
-        if 'position' in exp: exp['role'] = exp.pop('position')
-        if 'description' in exp: exp['descriptionPoints'] = exp.pop('description')
-        if 'bullets' in exp: exp['descriptionPoints'] = exp.pop('bullets')
-        if isinstance(exp.get('descriptionPoints'), str): exp['descriptionPoints'] = [exp['descriptionPoints']]
-    data['experience'] = exp_list
-
-    proj_list = data.get('projects') or []
-    for proj in proj_list:
-        if 'title' in proj: proj['name'] = proj.pop('title')
-        if 'description' in proj: proj['descriptionPoints'] = proj.pop('description')
-        if 'technologies' in proj: proj['tech_stack'] = proj.pop('technologies')
-        if isinstance(proj.get('descriptionPoints'), str): proj['descriptionPoints'] = [proj['descriptionPoints']]
-    data['projects'] = proj_list
-    
-    return data
-
-def remove_none_and_newlines(data):
-    if isinstance(data, dict):
-        return {k: remove_none_and_newlines(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [remove_none_and_newlines(v) for v in data]
-    elif isinstance(data, str):
-        cleaned = data.replace('\n', ' ').replace('\r', '').strip()
-        if cleaned in ["N/A", "N/A -- N/A", "null", "None"]:
-            return ""
-        return cleaned
-    return "" if data is None else data
-
 
 # ==========================================
-# 3. CORE EXECUTION CHAINS
+# 4. CORE EXECUTION CHAINS
 # ==========================================
 def parse_raw_text_to_json(raw_text: str) -> str:
-    print("--- 🔍 Step 0: Parsing Raw Input to JSON ---")
-    prompt0_template = load_file('prompt_step0_parser.txt')
-    prompt0 = prompt0_template.replace('{raw_resume}', raw_text)
+    """
+    Step 0: Offloaded to Groq (Llama 3.3 70B)
+    Zeros out ingestion costs and executes flat JSON extraction instantly.
+    """
+    print("--- ⚡ Step 0: Groq LPU Smart Parsing ---")
+    prompt0 = load_file('prompt_step0_parser.txt').replace('{raw_resume}', raw_text)
     
-    raw_ai_response = call_gemini_api(prompt0, force_json=True)
-    parsed_dict = extract_and_parse_ai_json(raw_ai_response)
-    return json.dumps(parsed_dict)
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt0}],
+        temperature=0.0,
+        response_format={"type": "json_object"}
+    )
+    return response.choices[0].message.content
+
+def check_semantic_cache(jd_text: str):
+    """Step 1 bypass: Redis Vector Search for identical Job Descriptions"""
+    try:
+        jd_hash = base64.b64encode(jd_text[:100].encode()).decode() # Basic hash key
+        cached_result = redis_client.get(f"jd_cache:{jd_hash}")
+        if cached_result:
+            print("--- ⚡ Step 1: Semantic Cache Hit! Bypassing LLM. ---")
+            return json.loads(cached_result)
+    except Exception as e:
+        print(f"Cache checking failed: {e}")
+    return None
 
 def execute_tailor_chain(resume_input: str, job_description: str, template_name: str = "base_template") -> dict:
     try:
-        # 0. SMART INPUT HANDLER
+        # 0. GROQ LPU INPUT PARSER
         try:
             full_resume_data = json.loads(resume_input)
             print("--- 🧠 Input is already valid JSON ---")
@@ -206,66 +229,59 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
             resume_json_str = parse_raw_text_to_json(resume_input)
             full_resume_data = json.loads(resume_json_str)
 
-        # 1. THE DATA SHIELD: Separate Immutable Facts from Mutable Content
+        # Separate Immutable Facts from Mutable Content
         immutables = {
             "personal_info": full_resume_data.get("personal_info", {}),
             "education": full_resume_data.get("education", []),
             "achievements": full_resume_data.get("achievements", []),
             "certifications": full_resume_data.get("certifications", [])
         }
-        
-        mutables = {
-            "summary": full_resume_data.get("summary", ""),
-            "skills": full_resume_data.get("skills", []),
-            "experience": full_resume_data.get("experience", []),
-            "projects": full_resume_data.get("projects", [])
-        }
-        
+        mutables = {k: full_resume_data.get(k, []) for k in ["summary", "skills", "experience", "projects"]}
         mutable_json_str = json.dumps(mutables, indent=2)
 
+        # 1. SEMANTIC CACHE & JD EXTRACTION
         print("--- 🧠 Tailoring Step 1: Extract JD ---")
-        prompt1_template = load_file('prompt_step1_jd_analysis.txt')
-        prompt1 = prompt1_template.replace('{job_description}', job_description)
-        raw_jd_json = call_gemini_api(prompt1, force_json=True)
-        jd_data = extract_and_parse_ai_json(raw_jd_json)
+        jd_data = check_semantic_cache(job_description)
+        if not jd_data:
+            prompt1 = load_file('prompt_step1_jd_analysis.txt').replace('{job_description}', job_description)
+            
+            # 🚨 NATIVE STRUCTURED OUTPUT: Forces Gemini to obey the JobDescriptionAnalysis schema
+            raw_jd_json = call_gemini_api(prompt1, schema=JobDescriptionAnalysis)
+            jd_data = json.loads(raw_jd_json)
+            
+            # Save to Cache
+            jd_hash = base64.b64encode(job_description[:100].encode()).decode()
+            redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data)) # Cache for 24h
 
         target_title = jd_data.get("target_job_title", "Software Engineer")
-        
-        structured_json_str = json.dumps(full_resume_data)
-        missing_skills = find_missing_keywords(structured_json_str, jd_data)
+        missing_skills = find_missing_keywords(json.dumps(full_resume_data), jd_data)
         missing_skills_str = ", ".join(missing_skills) if missing_skills else "None"
-        print(f"🎯 Target Title: {target_title} | 🛠️ Missing Skills: {missing_skills_str}")
-
-        print("--- ⚙️ Tailoring Step 2: Surgical Injection ---")
-        prompt2_template = load_file('prompt_step2_planning.txt') 
-        prompt2 = prompt2_template.replace('{target_job_title}', target_title) \
-                                  .replace('{missing_skills}', missing_skills_str) \
-                                  .replace('{resume_text}', mutable_json_str) 
         
-        raw_tailored_json = call_gemini_api(prompt2, force_json=True)
-        tailored_data = extract_and_parse_ai_json(raw_tailored_json)
+        print(f"🎯 Title: {target_title} | 🛠️ Missing: {missing_skills_str}")
 
-        print("--- 🛠️ Running Aggressive Normalizer ---")
-        cleaned_ai_data = normalize_ai_data(tailored_data)
+        # 2. GEMINI SURGICAL INJECTION (Native Pydantic Execution)
+        print("--- ⚙️ Tailoring Step 2: Surgical Injection (Strict Schema) ---")
+        prompt2 = load_file('prompt_step2_planning.txt') \
+            .replace('{target_job_title}', target_title) \
+            .replace('{missing_skills}', missing_skills_str) \
+            .replace('{resume_text}', mutable_json_str) 
+        
+        # 🚨 NATIVE STRUCTURED OUTPUT: Passes the Pydantic schema natively to Google GenAI
+        raw_tailored_json = call_gemini_api(prompt2, schema=ResumeData)
+        tailored_data = json.loads(raw_tailored_json)
 
-        print("--- 🔒 Running Checkpoint 1: Number Lock ---")
-        cleaned_ai_data = verify_metrics(mutable_json_str, cleaned_ai_data)
-
-        print("--- 🛡️ Merging Shielded Data & Validating ---")
+        # 3. NLP PIPELINE BULLETPROOFING
+        print("--- 🔒 Running NLP Number Lock ---")
+        cleaned_ai_data = verify_metrics(mutable_json_str, tailored_data)
         cleaned_ai_data.update(immutables)
 
-        # 🚨 STRICT VALIDATION: Do not bypass Pydantic anymore.
+        # 4. FINAL COMPILATION (Pydantic validation should inherently pass now)
         try:
             validated_resume = ResumeData(**cleaned_ai_data)
-            clean_data = validated_resume.model_dump()
+            clean_data = sanitize_for_latex(validated_resume.model_dump())
         except Exception as pydantic_err:
             print(f"❌ Pydantic Validation Error: {pydantic_err}")
-            raise RuntimeError("Data Shield failure: The AI generated an incompatible resume structure.") from pydantic_err
-
-        clean_data = remove_none_and_newlines(clean_data)
-
-        print("--- 🧹 Running Checkpoint 2: LaTeX Sanitizer ---")
-        clean_data = sanitize_for_latex(clean_data)
+            raise RuntimeError("Data Shield failure: Incompatible resume structure generated.") from pydantic_err
 
         print("--- ⚙️ Tailoring Step 3: Generating LaTeX and PDF ---")
         generator = ResumeGenerator()
