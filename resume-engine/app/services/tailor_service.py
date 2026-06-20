@@ -64,7 +64,7 @@ def load_file(filename: str) -> str:
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
-def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
+def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retries: int = 3) -> str:
     config_kwargs = {
         "max_output_tokens": 8192,
         "temperature": 0.2,
@@ -73,6 +73,8 @@ def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
     if schema:
         config_kwargs["response_mime_type"] = "application/json"
         config_kwargs["response_schema"] = schema
+    elif force_json:
+        config_kwargs["response_mime_type"] = "application/json"
         
     strict_config = genai.types.GenerationConfig(**config_kwargs)
 
@@ -95,6 +97,21 @@ def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
             if attempt == max_retries - 1:
                 raise RuntimeError(f"Gemini failed permanently after {max_retries} attempts.") from e
 
+def extract_and_parse_ai_json(raw_text: str) -> dict:
+    """Restored strictly for legacy compatibility. Bug-proofed regex."""
+    try:
+        return json.loads(raw_text)
+    except json.JSONDecodeError:
+        # Bypassing the UI rendering bug by constructing the markdown ticks programmatically
+        tick = chr(96)
+        pattern = r'' + tick*3 + r'(?:json)?\n?'
+        clean_text = re.sub(pattern, '', raw_text).replace(tick*3, '').strip()
+        try:
+            return json.loads(clean_text)
+        except json.JSONDecodeError as e:
+            print(f"❌ FATAL JSON ERROR. Raw Output:\n{raw_text[:300]}")
+            raise RuntimeError("CRITICAL: AI returned malformed JSON.") from e
+
 
 # ==========================================
 # 3. REGEX BULLETPROOFING & VALIDATION (FREE-TIER)
@@ -112,7 +129,6 @@ def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
         for bullet in exp.get('descriptionPoints', []):
             bullet_nums = normalize_and_extract_metrics(str(bullet))
             
-            # Identify hallucinated numbers (excluding single digits like '1 team')
             suspicious_nums = {n for n in bullet_nums if len(n) > 1 and n not in baseline_numbers}
             
             if suspicious_nums:
