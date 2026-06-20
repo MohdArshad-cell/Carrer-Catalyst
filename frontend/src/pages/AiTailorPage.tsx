@@ -17,7 +17,7 @@ const loadingSteps = [
 ];
 
 const AiTailorPage: React.FC = () => {
-    const navigate = useNavigate(); // ✅ Correct hook placement
+    const navigate = useNavigate();
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
@@ -80,7 +80,7 @@ const AiTailorPage: React.FC = () => {
         setMetrics(null);
         setLoadingStep(0);
 
-        let stepInterval: any = null; // Interval ko safely clear karne ke liye
+        let stepInterval: any = null;
 
         try {
             // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
@@ -94,9 +94,6 @@ const AiTailorPage: React.FC = () => {
                 return;
             }
 
-            // ⚠️ DOUBLE DEDUCTION FIX: Yahan se manual "/api/deduct-token" hata diya gaya hai.
-            // Ab seedha AI route hit karenge, backend automatic token check aur deduct karega!
-
             // ✅ Start Loading Animation
             stepInterval = setInterval(() => {
                 setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
@@ -107,10 +104,10 @@ const AiTailorPage: React.FC = () => {
                 job_description: jobDescription 
             };
             
-            // ✅ API CALL WITH HEADERS (SECURITY GATEKEEPER KO TOKEN BHEJ RAHE HAIN)
+            // ✅ API CALL WITH HEADERS
             const response = await axios.post(`${API_BASE_URL}/api/ai/tailor`, payload, {
                 headers: {
-                    'Authorization': `Bearer ${session.access_token}`, // <--- YEH JAADU HAI
+                    'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -172,9 +169,24 @@ const AiTailorPage: React.FC = () => {
         setError('');
         
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/ai/compile-only`, { 
-                latex_code: latexCode 
-            });
+            // ✅ ADDED: Must grab the session token to pass the backend security gate!
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                setError("Session expired. Please log in again.");
+                setIsCompiling(false);
+                setTimeout(() => navigate('/login'), 2000);
+                return;
+            }
+
+            const response = await axios.post(`${API_BASE_URL}/api/ai/compile-only`, 
+                { latex_code: latexCode },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`, // <--- THIS WAS MISSING
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
             
             if (response.data && response.data.pdf_base64) {
                 setPdfData(response.data.pdf_base64);
@@ -183,7 +195,13 @@ const AiTailorPage: React.FC = () => {
             }
         } catch (err: any) {
             console.error("Compile Error:", err);
-            setError(err.response?.data?.detail || 'LaTeX Compilation failed. Check for missing brackets (}).');
+            
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                setError("🚫 Session Expired! Redirecting to login...");
+                setTimeout(() => navigate('/login'), 3000);
+            } else {
+                setError(err.response?.data?.detail || 'LaTeX Compilation failed. Check for missing brackets (}).');
+            }
         } finally {
             setIsCompiling(false);
         }
