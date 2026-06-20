@@ -20,30 +20,27 @@ async def verify_and_charge_token(credentials: HTTPAuthorizationCredentials = Se
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
 
-    # 2. Check Token Balance
-    profile_data = supabase.table('profiles').select('token_balance').eq('id', user_id).execute()
+    # 2. Check Token Balance directly from the new token_ledger
+    ledger_data = supabase.table('token_ledger').select('tokens_balance').eq('user_id', user_id).execute()
     
-    if not profile_data.data or profile_data.data[0]['token_balance'] <= 0:
+    if not ledger_data.data or ledger_data.data[0]['tokens_balance'] <= 0:
         # Stop execution immediately, save Gemini quotas
         raise HTTPException(status_code=402, detail="Payment Required: Insufficient token balance")
         
-    # 3. Deduct Token AND Update Ledger
-    # In a production environment, this should ideally be an RPC (Remote Procedure Call) 
-    # to a Postgres function to ensure atomicity, but doing it sequentially works for MVP.
+    # 3. Deduct Token AND Update Ledger Audit Trail
     try:
-        # Deduct balance
-        new_balance = profile_data.data[0]['token_balance'] - 1
-        supabase.table('profiles').update({'token_balance': new_balance}).eq('id', user_id).execute()
+        # Calculate new balance
+        new_balance = ledger_data.data[0]['tokens_balance'] - 1
         
-        # Record in ledger
-        ledger_entry = {
-            'user_id': user_id,
-            'amount': -1,
-            'transaction_type': 'AI_GENERATION'
-        }
-        supabase.table('token_ledger').insert(ledger_entry).execute()
+        # Update the existing row (DO NOT INSERT, as user_id is UNIQUE)
+        supabase.table('token_ledger').update({
+            'tokens_balance': new_balance,
+            'action': 'AI_GENERATION', # Updates the action column we added
+            'amount': -1               # Updates the amount column we added
+        }).eq('user_id', user_id).execute()
         
     except Exception as e:
+        print(f"Database error: {str(e)}") # Helpful for Render logs
         raise HTTPException(status_code=500, detail="Database transaction failed")
 
     return user_id # Returns user_id so the route can use it if needed
