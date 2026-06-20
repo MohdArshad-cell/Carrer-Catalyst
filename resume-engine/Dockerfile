@@ -37,8 +37,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 🚨 THE NEW REQUIRED STEP: Download the spaCy NLP model
-RUN python -m spacy download en_core_web_sm
 
 # 6. Copy your application code
 COPY ./app ./app

@@ -4,12 +4,9 @@ import re
 from pathlib import Path
 import base64
 
-# --- ENTERPRISE DEPENDENCIES ---
+# --- API & DISTRIBUTED DEPENDENCIES ---
 import redis
 from groq import Groq
-from sentence_transformers import SentenceTransformer
-import spacy
-from word2number import w2n
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -21,32 +18,18 @@ from app.models import ResumeData, JobDescriptionAnalysis
 # ==========================================
 load_dotenv()
 
-# Load NLP Model for "Number Lock" & "Data Shield" Bulletproofing
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("⚠️ WARNING: spaCy en_core_web_sm not found. Falling back to basic regex. Run: python -m spacy download en_core_web_sm")
-    nlp = None
-
 # Initialize Groq Client (Step 0: Smart Parsing)
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Initialize Redis (Distributed Token Bucket & Semantic Caching)
+# Initialize Redis (Distributed Token Bucket & Exact-Match Caching)
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"), 
     port=int(os.getenv("REDIS_PORT", 6379)), 
     decode_responses=True
 )
 
-# Initialize Embedding Model for JD Semantic Cache (Step 1 bypass)
-try:
-    encoder = SentenceTransformer('all-MiniLM-L6-v2')
-except Exception as e:
-    print(f"⚠️ WARNING: SentenceTransformer failed to load: {e}")
-    encoder = None
-
 # Gemini Configuration
-MODEL_NAME = "gemini-2.5-flash" # Upgraded for native structured outputs
+MODEL_NAME = "gemini-2.5-flash" 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
 
@@ -59,7 +42,6 @@ class DistributedTokenBucket:
             raise ValueError("CRITICAL: GOOGLE_API_KEYS is not set.")
 
     def get_key(self) -> str:
-        # Query Redis for the first key that is NOT locked by an HTTP 429 error
         for key in self.keys:
             if not redis_client.exists(f"gemini_lock:{key}"):
                 return key
@@ -67,7 +49,6 @@ class DistributedTokenBucket:
         return self.keys[0]
 
     def lock_key(self, key: str, ttl_seconds: int = 60):
-        # Applies a distributed TTL lockout across all server workers
         redis_client.setex(f"gemini_lock:{key}", ttl_seconds, "locked")
 
 key_manager = DistributedTokenBucket(os.getenv("GOOGLE_API_KEYS", os.getenv("GOOGLE_API_KEY", "")))
@@ -84,16 +65,11 @@ def load_file(filename: str) -> str:
         return f.read()
 
 def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
-    """
-    Executes Gemini logic using Native Structured Outputs (response_schema).
-    This entirely eliminates the need for manual AST literal_eval self-healing.
-    """
     config_kwargs = {
         "max_output_tokens": 8192,
         "temperature": 0.2,
     }
     
-    # Deprecating manual JSON regex stripping by passing Pydantic schema natively to GenAI
     if schema:
         config_kwargs["response_mime_type"] = "application/json"
         config_kwargs["response_schema"] = schema
@@ -121,22 +97,11 @@ def call_gemini_api(prompt: str, schema=None, max_retries: int = 3) -> str:
 
 
 # ==========================================
-# 3. NLP BULLETPROOFING & VALIDATION
+# 3. REGEX BULLETPROOFING & VALIDATION (FREE-TIER)
 # ==========================================
 def normalize_and_extract_metrics(text: str) -> set:
-    """Hardened 'Number Lock' logic using word2number and spaCy NLP."""
-    metrics = set(re.findall(r'\b\d+(?:\.\d+)?\b', text)) # Catch raw digits
-    
-    if nlp:
-        doc = nlp(text)
-        for token in doc:
-            if token.pos_ == "NUM":
-                try:
-                    # Converts spelled out numbers ("ten" -> "10") to avoid false-positive redaction
-                    metrics.add(str(w2n.word_to_num(token.text)))
-                except ValueError:
-                    metrics.add(token.text)
-    return metrics
+    """Free-Tier Fallback: Basic regex digit extraction without memory-heavy NLP."""
+    return set(re.findall(r'\b\d+(?:\.\d+)?\b', text)) 
 
 def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
     baseline_numbers = normalize_and_extract_metrics(baseline_text)
@@ -158,7 +123,6 @@ def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
     return tailored_data
 
 def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
-    """Hardened 'Data Shield' supporting punctuation (C++, .NET, React.js)"""
     missing = []
     resume_lower = resume_string.lower()
     all_jd_skills = jd_data.get("must_have_tech_skills", []) + jd_data.get("sdlc_and_practices", [])
@@ -167,7 +131,6 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
         skill_str = str(skill).lower().strip()
         if not skill_str: continue
         
-        # Lookarounds (?<!\w) and (?!\w) fix standard regex boundary failures on symbols
         escaped_skill = re.escape(skill_str)
         pattern = r'(?<!\w)' + escaped_skill + r'(?!\w)'
         
@@ -177,7 +140,6 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
     return missing[:6] 
 
 def sanitize_for_latex(data):
-    """Secures against ATS visual ligature destruction and ensures formatting"""
     if isinstance(data, dict): return {k: sanitize_for_latex(v) for k, v in data.items()}
     elif isinstance(data, list): return [sanitize_for_latex(v) for v in data]
     elif isinstance(data, str):
@@ -192,10 +154,6 @@ def sanitize_for_latex(data):
 # 4. CORE EXECUTION CHAINS
 # ==========================================
 def parse_raw_text_to_json(raw_text: str) -> str:
-    """
-    Step 0: Offloaded to Groq (Llama 3.3 70B)
-    Zeros out ingestion costs and executes flat JSON extraction instantly.
-    """
     print("--- ⚡ Step 0: Groq LPU Smart Parsing ---")
     prompt0 = load_file('prompt_step0_parser.txt').replace('{raw_resume}', raw_text)
     
@@ -208,12 +166,12 @@ def parse_raw_text_to_json(raw_text: str) -> str:
     return response.choices[0].message.content
 
 def check_semantic_cache(jd_text: str):
-    """Step 1 bypass: Redis Vector Search for identical Job Descriptions"""
+    """Step 1 bypass: Basic Exact-Match Cache for Job Descriptions"""
     try:
-        jd_hash = base64.b64encode(jd_text[:100].encode()).decode() # Basic hash key
+        jd_hash = base64.b64encode(jd_text[:100].encode()).decode() 
         cached_result = redis_client.get(f"jd_cache:{jd_hash}")
         if cached_result:
-            print("--- ⚡ Step 1: Semantic Cache Hit! Bypassing LLM. ---")
+            print("--- ⚡ Step 1: Cache Hit! Bypassing LLM. ---")
             return json.loads(cached_result)
     except Exception as e:
         print(f"Cache checking failed: {e}")
@@ -229,7 +187,6 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
             resume_json_str = parse_raw_text_to_json(resume_input)
             full_resume_data = json.loads(resume_json_str)
 
-        # Separate Immutable Facts from Mutable Content
         immutables = {
             "personal_info": full_resume_data.get("personal_info", {}),
             "education": full_resume_data.get("education", []),
@@ -239,19 +196,17 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         mutables = {k: full_resume_data.get(k, []) for k in ["summary", "skills", "experience", "projects"]}
         mutable_json_str = json.dumps(mutables, indent=2)
 
-        # 1. SEMANTIC CACHE & JD EXTRACTION
+        # 1. CACHE & JD EXTRACTION
         print("--- 🧠 Tailoring Step 1: Extract JD ---")
         jd_data = check_semantic_cache(job_description)
         if not jd_data:
             prompt1 = load_file('prompt_step1_jd_analysis.txt').replace('{job_description}', job_description)
             
-            # 🚨 NATIVE STRUCTURED OUTPUT: Forces Gemini to obey the JobDescriptionAnalysis schema
             raw_jd_json = call_gemini_api(prompt1, schema=JobDescriptionAnalysis)
             jd_data = json.loads(raw_jd_json)
             
-            # Save to Cache
             jd_hash = base64.b64encode(job_description[:100].encode()).decode()
-            redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data)) # Cache for 24h
+            redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data))
 
         target_title = jd_data.get("target_job_title", "Software Engineer")
         missing_skills = find_missing_keywords(json.dumps(full_resume_data), jd_data)
@@ -259,23 +214,22 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         
         print(f"🎯 Title: {target_title} | 🛠️ Missing: {missing_skills_str}")
 
-        # 2. GEMINI SURGICAL INJECTION (Native Pydantic Execution)
-        print("--- ⚙️ Tailoring Step 2: Surgical Injection (Strict Schema) ---")
+        # 2. GEMINI SURGICAL INJECTION
+        print("--- ⚙️ Tailoring Step 2: Surgical Injection ---")
         prompt2 = load_file('prompt_step2_planning.txt') \
             .replace('{target_job_title}', target_title) \
             .replace('{missing_skills}', missing_skills_str) \
             .replace('{resume_text}', mutable_json_str) 
         
-        # 🚨 NATIVE STRUCTURED OUTPUT: Passes the Pydantic schema natively to Google GenAI
         raw_tailored_json = call_gemini_api(prompt2, schema=ResumeData)
         tailored_data = json.loads(raw_tailored_json)
 
-        # 3. NLP PIPELINE BULLETPROOFING
-        print("--- 🔒 Running NLP Number Lock ---")
+        # 3. REGEX PIPELINE BULLETPROOFING
+        print("--- 🔒 Running Basic Number Lock ---")
         cleaned_ai_data = verify_metrics(mutable_json_str, tailored_data)
         cleaned_ai_data.update(immutables)
 
-        # 4. FINAL COMPILATION (Pydantic validation should inherently pass now)
+        # 4. FINAL COMPILATION
         try:
             validated_resume = ResumeData(**cleaned_ai_data)
             clean_data = sanitize_for_latex(validated_resume.model_dump())
