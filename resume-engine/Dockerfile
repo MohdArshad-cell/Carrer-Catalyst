@@ -14,6 +14,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
+    fontconfig \
     --no-install-recommends \
     && ARCH=$(uname -m) \
     && if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
