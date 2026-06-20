@@ -65,36 +65,18 @@ def load_file(filename: str) -> str:
         return f.read()
 
 
-
-def strip_defaults(d):
-    """Recursively removes 'default' keys from a dictionary to prevent Gemini API crashes."""
-    if isinstance(d, dict):
-        d.pop("default", None)
-        for k, v in d.items():
-            strip_defaults(v)
-    elif isinstance(d, list):
-        for i in d:
-            strip_defaults(i)
-    return d
-
-
-
 def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retries: int = 3) -> str:
     config_kwargs = {
         "max_output_tokens": 8192,
         "temperature": 0.2,
+        "response_mime_type": "application/json" # ALWAYS force valid JSON output
     }
     
+    # 🚨 THE FIX: Schema-Injected JSON Mode
+    # We bypass the SDK protobuf bug by injecting the Pydantic schema directly into the prompt.
     if schema:
-        config_kwargs["response_mime_type"] = "application/json"
-        
-        # Convert Pydantic class to dict, strip "default" keys, and pass to Gemini
-        schema_dict = schema.model_json_schema()
-        clean_schema = strip_defaults(schema_dict)
-        config_kwargs["response_schema"] = clean_schema
-        
-    elif force_json:
-        config_kwargs["response_mime_type"] = "application/json"
+        schema_json = json.dumps(schema.model_json_schema(), indent=2)
+        prompt = prompt + f"\n\nCRITICAL INSTRUCTION: You MUST return a raw, highly structured JSON object that exactly matches this OpenAPI schema. Do NOT wrap it in markdown backticks:\n{schema_json}"
         
     strict_config = genai.types.GenerationConfig(**config_kwargs)
 
@@ -117,12 +99,12 @@ def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retr
             if attempt == max_retries - 1:
                 raise RuntimeError(f"Gemini failed permanently after {max_retries} attempts.") from e
 
+
 def extract_and_parse_ai_json(raw_text: str) -> dict:
     """Restored strictly for legacy compatibility. Bug-proofed regex."""
     try:
         return json.loads(raw_text)
     except json.JSONDecodeError:
-        # Bypassing the UI rendering bug by constructing the markdown ticks programmatically
         tick = chr(96)
         pattern = r'' + tick*3 + r'(?:json)?\n?'
         clean_text = re.sub(pattern, '', raw_text).replace(tick*3, '').strip()
