@@ -36,7 +36,7 @@
 
 % --- BULLETPROOF COMMANDS (Fixed Spacing & Overlap) ---
 \newcommand{\resumeItem}[1]{
-  \item\small{{#1 \vspace{1pt}}} % Changed from -3pt to +1pt to let bullets breathe
+  \item\small{{#1 \vspace{-2pt}}} % Changed from -3pt to +1pt to let bullets breathe
 }
 
 \newcommand{\resumeSubheading}[4]{
@@ -45,7 +45,7 @@
       \textbf{#1}
     \end{minipage}
     \hfill #2 \\
-    \textit{\small#3} \hfill \textit{\small #4} \vspace{2pt} % Removed aggressive -6pt
+    \textit{\small#3} \hfill \textit{\small #4} \vspace{-4pt} % Removed aggressive -6pt
 }
 
 \newcommand{\resumeProjectHeading}[2]{
@@ -53,7 +53,7 @@
     \begin{minipage}[t]{0.80\textwidth}
       \textbf{\small#1}
     \end{minipage}
-    \hfill #2 \vspace{2pt} % Removed aggressive -6pt
+    \hfill #2 \vspace{-4pt} % Removed aggressive -6pt
 }
 
 \newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=*, label=$\bullet$]}
@@ -146,8 +146,6 @@
     \BLOCK{ for cert in resume_data.certifications }
       \item \small{
         \textbf{\VAR{cert.name | escape_tex}} 
-        \BLOCK{ if cert.issuer } $|$ \emph{\VAR{cert.issuer | escape_tex}} \BLOCK{ endif } 
-        \BLOCK{ if cert.date } \hfill \VAR{cert.date | escape_tex} \BLOCK{ endif }
       }
     \BLOCK{ endfor }
   \end{itemize}
