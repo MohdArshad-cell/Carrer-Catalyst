@@ -94,7 +94,7 @@ generator = ResumeGenerator()
 security = HTTPBearer()
 
 def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Validates the Supabase JWT securely and checks token balance."""
+    """Validates the Supabase JWT securely and checks token balance from token_ledger."""
     token = credentials.credentials
     payload = None
 
@@ -104,7 +104,6 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
     except Exception:
         raise HTTPException(status_code=401, detail="Malformed authorization token.")
 
-    # Try Asymmetric JWKS Verification
     if jwk_client:
         try:
             signing_key = jwk_client.get_signing_key_from_jwt(token)
@@ -112,12 +111,10 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
         except Exception as jwks_err:
             print(f"⚠️ [AUTH DEBUG]: JWKS verification failed ({str(jwks_err)}). Trying fallback...")
 
-    # Fallback to Symmetric Verification
     if not payload:
         jwt_secret = os.getenv("SUPABASE_JWT_SECRET")
         if not jwt_secret:
             raise HTTPException(status_code=500, detail="Server Error: Missing JWT Secret configuration.")
-        
         try:
             payload = jwt.decode(token, jwt_secret, algorithms=[token_alg], audience="authenticated")
         except Exception:
@@ -127,14 +124,14 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload: Missing user subject.")
 
-    # Database Logic: Token Balance Check
+    # ✅ FIXED: Database Logic now checks token_ledger exclusively
     try:
-        res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
+        res = supabase.table("token_ledger").select("tokens_balance").eq("user_id", user_id).execute()
         
         if not res.data:
-            raise HTTPException(status_code=404, detail="User profile not found in database.")
+            raise HTTPException(status_code=404, detail="User ledger not found in database.")
             
-        current_tokens = res.data[0].get("tokens", 0)
+        current_tokens = res.data[0].get("tokens_balance", 0)
         
         if current_tokens <= 0:
             raise HTTPException(status_code=402, detail="Insufficient tokens. Please purchase more.")
@@ -149,21 +146,18 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
 
 
 def deduct_token_and_log(user_id: str, current_tokens: int, action_name: str):
-    """Safely deducts a token and writes to the immutable ledger to prevent abuse/disputes."""
+    """✅ FIXED: Safely deducts a token via update to prevent duplicate key crashes."""
     try:
         new_tokens = current_tokens - 1
         
-        # 1. Update the profile number
-        supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
-        
-        # 2. Write to the ledger
-        ledger_entry = {
-            "user_id": user_id,
+        # Update the token_ledger row (DO NOT INSERT)
+        supabase.table("token_ledger").update({
+            "tokens_balance": new_tokens,
             "transaction_type": "deduction",
             "amount": -1,
             "action": action_name
-        }
-        supabase.table("token_ledger").insert(ledger_entry).execute()
+        }).eq("user_id", user_id).execute()
+        
         return new_tokens
         
     except Exception as db_error:
@@ -401,21 +395,19 @@ async def stripe_webhook(request: Request):
 
         if user_id:
             try:
-                res = supabase.table("profiles").select("tokens").eq("id", user_id).execute()
+                # ✅ FIXED: Read from token_ledger
+                res = supabase.table("token_ledger").select("tokens_balance").eq("user_id", user_id).execute()
                 if res.data and len(res.data) > 0:
-                    current_tokens = res.data[0]["tokens"]
+                    current_tokens = res.data[0]["tokens_balance"]
                     new_tokens = current_tokens + 10 # Adjust quantity based on your pricing
                     
-                    # 1. Update Profile Balance
-                    supabase.table("profiles").update({"tokens": new_tokens}).eq("id", user_id).execute()
-                    
-                    # 2. Write to Immutable Ledger
-                    supabase.table("token_ledger").insert({
-                        "user_id": user_id,
+                    # ✅ FIXED: Update token_ledger (DO NOT INSERT)
+                    supabase.table("token_ledger").update({
+                        "tokens_balance": new_tokens,
                         "transaction_type": "purchase",
                         "amount": 10,
                         "action": "stripe_checkout"
-                    }).execute()
+                    }).eq("user_id", user_id).execute()
                     
             except Exception as e:
                 print("❌ SUPABASE UPDATE ERROR:", str(e))
