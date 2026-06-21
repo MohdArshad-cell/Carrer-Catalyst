@@ -34,33 +34,31 @@
   \vspace{-10pt}\scshape\raggedright\large
 }{}{0em}{}[\color{black}\titlerule \vspace{-7pt}]
 
-% --- BULLETPROOF COMMANDS (Fixed Spacing & Overlap) ---
 \newcommand{\resumeItem}[1]{
-  \item\small{{#1 \vspace{-2pt}}} % Changed from -3pt to +1pt to let bullets breathe
+  \item\small{
+    {#1 \vspace{-3pt}}
+  }
 }
 
 \newcommand{\resumeSubheading}[4]{
-  \vspace{2pt}\item
-    \begin{minipage}[t]{0.97\textwidth}
-      \textbf{#1}
-    \end{minipage}
-    \hfill #2 \\
-    \textit{\small#3} \hfill \textit{\small #4} \vspace{-6pt} % Removed aggressive -6pt
+  \vspace{-1pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-6pt}
 }
 
 \newcommand{\resumeProjectHeading}[2]{
-  \vspace{2pt}\item
-    \begin{minipage}[t]{0.97\textwidth}
-      \textbf{\small#1}
-    \end{minipage}
-    \hfill #2 \vspace{-6pt} % Removed aggressive -6pt
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-6pt}
 }
 
 \newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=*, label=$\bullet$]}
-\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-2pt}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
 \newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
 \newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
-
 %-------------------------------------------
 %%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
