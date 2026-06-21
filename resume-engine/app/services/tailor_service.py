@@ -158,23 +158,38 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
     return missing[:6] 
 
 def sanitize_for_latex(data):
-    if isinstance(data, dict): return {k: sanitize_for_latex(v) for k, v in data.items()}
-    elif isinstance(data, list): return [sanitize_for_latex(v) for v in data]
+    # 1. Catch Python None objects and turn them into empty strings
+    if data is None:
+        return ""
+        
+    elif isinstance(data, dict): 
+        return {k: sanitize_for_latex(v) for k, v in data.items()}
+        
+    elif isinstance(data, list): 
+        # 2. Filter out any completely empty items from lists (like Certifications)
+        cleaned_list = [sanitize_for_latex(v) for v in data]
+        return [item for item in cleaned_list if item != ""]
+        
     elif isinstance(data, str):
+        # 3. Catch AI writing the literal word "None" or "null"
+        if data.strip().lower() in ["none", "n/a", "null", ""]:
+            return ""
+            
         # Escape core LaTeX breaking characters
         s = re.sub(r'(?<!\\)&', r'\&', data)
         s = re.sub(r'(?<!\\)%', r'\%', s)
         s = re.sub(r'(?<!\\)\$', r'\$', s)
-        s = re.sub(r'(?<!\\)#', r'\#', s)   # Prevents "C#" from crashing LaTeX
-        s = re.sub(r'(?<!\\)_', r'\_', s)   # Prevents math-mode crashes
+        s = re.sub(r'(?<!\\)#', r'\#', s)   
+        s = re.sub(r'(?<!\\)_', r'\_', s)   
         
         # Strip LLM typography that breaks Tectonic fonts
         s = s.replace('”', '"').replace('“', '"')
         s = s.replace('’', "'").replace('‘', "'")
         s = s.replace('—', '---').replace('–', '--')
-        s = s.replace('\u2022', '-') # Convert rogue bullet points to standard dashes
+        s = s.replace('\u2022', '-') 
         
         return s
+        
     return data
 
 
