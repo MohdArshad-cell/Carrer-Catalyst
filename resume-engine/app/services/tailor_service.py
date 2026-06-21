@@ -158,20 +158,25 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
     return missing[:6] 
 
 def sanitize_for_latex(data):
-    # 1. Catch Python None objects and turn them into empty strings
+    # 1. Catch Python None objects
     if data is None:
         return ""
         
     elif isinstance(data, dict): 
-        return {k: sanitize_for_latex(v) for k, v in data.items()}
+        # Clean all values in the dictionary
+        cleaned_dict = {k: sanitize_for_latex(v) for k, v in data.items()}
+        # CRITICAL FIX: If all values in this dict are empty strings, destroy the dict
+        if all(v == "" for v in cleaned_dict.values()):
+            return ""
+        return cleaned_dict
         
     elif isinstance(data, list): 
-        # 2. Filter out any completely empty items from lists (like Certifications)
+        # Clean the list and filter out any empty strings/destroyed dicts
         cleaned_list = [sanitize_for_latex(v) for v in data]
         return [item for item in cleaned_list if item != ""]
         
     elif isinstance(data, str):
-        # 3. Catch AI writing the literal word "None" or "null"
+        # Catch AI writing the literal word "None" or "null"
         if data.strip().lower() in ["none", "n/a", "null", ""]:
             return ""
             
