@@ -30,14 +30,15 @@ const Navbar = () => {
 
     const fetchTokenBalance = async (userId) => {
         try {
+            // ✅ FIXED: Point to token_ledger and the new tokens_balance column
             const { data, error } = await supabase
-                .from('profiles')
-                .select('tokens')
-                .eq('id', userId)
+                .from('token_ledger')
+                .select('tokens_balance')
+                .eq('user_id', userId)
                 .single();
                 
             if (error) throw error;
-            if (data) setTokens(data.tokens);
+            if (data) setTokens(data.tokens_balance); // ✅ FIXED: Map to tokens_balance
         } catch (err) {
             console.error("Error fetching tokens:", err.message);
         }
@@ -66,7 +67,6 @@ const Navbar = () => {
                 </button>
                 
                 <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
-                    {/* BUG FIXED: Changed <a> to <Link> for SPA routing */}
                     <Link to="/features" onClick={closeMenu}>Features</Link>
                     
                     <Link to="/pricing" style={{ color: 'var(--accent-cyan)', fontWeight: '600' }} onClick={closeMenu}>
