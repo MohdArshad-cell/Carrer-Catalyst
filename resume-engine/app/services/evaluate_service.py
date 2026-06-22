@@ -24,12 +24,14 @@ class RoastDetail(BaseModel):
     critique: str = Field(..., description="Brutally honest reason why a recruiter would reject this.")
     rewrite: str = Field(..., description="A hard-hitting, metric-driven AI rewrite incorporating missing keywords.")
 
+class SkillEvaluation(BaseModel):
+    skill_name: str = Field(..., description="The exact noun-based skill from the JD (e.g., 'Spring Boot', 'Redis'). NO VERBS.")
+    is_found: bool = Field(..., description="True if the skill OR a direct semantic equivalent (e.g., 'React' for 'React.js') is explicitly in the resume.")
+
 class AIResumeExtractionSchema(BaseModel):
-    jd_hard_skills: List[str] = Field(..., description="Every specific technical tool, framework, or hard skill explicitly demanded by the JD.")
-    jd_soft_skills: List[str] = Field(..., description="Specific methodologies (Agile) or soft skills requested.")
-    resume_hard_skills: List[str] = Field(..., description="The technical tools and hard skills explicitly found in the resume text.")
-    resume_soft_skills: List[str] = Field(..., description="The soft skills and methodologies explicitly found in the resume text.")
-    red_flags: List[str] = Field(..., description="Critical dealbreakers (e.g., missing mandatory core technologies).")
+    hard_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of technical tools, frameworks, and hard skills.")
+    soft_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of methodologies (e.g., Agile) and soft skills.")
+    red_flags: List[str] = Field(..., description="Critical dealbreakers.")
     constructive_roasts: List[RoastDetail] = Field(..., description="3 specific roasts targeting weak bullet points.")
 
 # ==========================================
@@ -129,7 +131,7 @@ def normalize_skills(skill_list: List[str]) -> dict:
 
 def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
     try:
-        print("--- 🧠 ATS Evaluator: Extracting Raw Data via AI ---")
+        print("--- 🧠 ATS Evaluator: Extracting Semantic Data ---")
         prompt_template = load_file('prompt_evaluate.txt')
         today_date = datetime.now().strftime("%B %Y")
         
@@ -137,35 +139,27 @@ def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
                                 .replace('{job_description}', job_description) \
                                 .replace('{current_date}', today_date)
         
-        # 1. Retrieve the extracted arrays from Gemini
+        # 1. Retrieve the classification array from Gemini
         ai_data = call_gemini_structured_api(prompt)
         
-        # 2. Normalize data for mathematical comparison (fixes "React" vs "React.js" case issues)
-        jd_hard_map = normalize_skills(ai_data.get("jd_hard_skills", []))
-        res_hard_map = normalize_skills(ai_data.get("resume_hard_skills", []))
-        
-        jd_soft_map = normalize_skills(ai_data.get("jd_soft_skills", []))
-        res_soft_map = normalize_skills(ai_data.get("resume_soft_skills", []))
+        hard_skills = ai_data.get("hard_skills_evaluation", [])
+        soft_skills = ai_data.get("soft_skills_evaluation", [])
 
-        # 3. Calculate strict Set Intersections
-        missing_hard_keys = set(jd_hard_map.keys()) - set(res_hard_map.keys())
-        missing_soft_keys = set(jd_soft_map.keys()) - set(res_soft_map.keys())
+        # 2. Extract Missing Keywords (Where is_found == False)
+        missing_hard = [skill["skill_name"] for skill in hard_skills if not skill["is_found"]]
+        missing_soft = [skill["skill_name"] for skill in soft_skills if not skill["is_found"]]
 
-        missing_hard = [jd_hard_map[k] for k in missing_hard_keys]
-        missing_soft = [jd_soft_map[k] for k in missing_soft_keys]
-
-        # 4. Calculate Mathematical ATS Score
-        hard_total = len(jd_hard_map)
-        soft_total = len(jd_soft_map)
+        # 3. Calculate True Match Score Mathematically
+        hard_total = len(hard_skills)
+        soft_total = len(soft_skills)
 
         hard_score = ((hard_total - len(missing_hard)) / hard_total * 100) if hard_total > 0 else 100
         soft_score = ((soft_total - len(missing_soft)) / soft_total * 100) if soft_total > 0 else 100
 
-        # Weighted calculation: Hard skills matter much more than soft skills (75/25 split)
+        # Weighted calculation (75% Hard / 25% Soft)
         final_score = int(round((hard_score * 0.75) + (soft_score * 0.25)))
 
-        # 5. Build the final payload exactly as the React frontend expects it
-        print(f"--- ✅ Evaluation Complete. True ATS Score: {final_score}% ---")
+        print(f"--- ✅ Evaluation Complete. Semantic ATS Score: {final_score}% ---")
         
         return {
             "score": final_score,
