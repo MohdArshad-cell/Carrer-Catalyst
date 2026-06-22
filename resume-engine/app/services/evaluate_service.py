@@ -19,6 +19,21 @@ load_dotenv()
 # ==========================================
 # 1. ENTERPRISE PYDANTIC RESPONSE SCHEMA
 # ==========================================
+class RoastDetail(BaseModel):
+    weak_bullet: str = Field(
+        ..., 
+        description="The exact weak, generic bullet point quoted from the resume."
+    )
+    critique: str = Field(
+        ..., 
+        description="Brutally honest reason why a recruiter would reject this."
+    )
+    rewrite: str = Field(
+        ..., 
+        description="A hard-hitting, metric-driven AI rewrite using the XYZ formula (Accomplished X as measured by Y, by doing Z)."
+    )
+
+# 2. Update the main schema to use the new RoastDetail object
 class ATSEvaluationSchema(BaseModel):
     score: int = Field(
         ..., 
@@ -32,9 +47,9 @@ class ATSEvaluationSchema(BaseModel):
         ..., 
         description="High-priority industry terms and core competencies present in the job description that are contextually missing or weak in the resume."
     )
-    constructive_roasts: List[str] = Field(
+    constructive_roasts: List[RoastDetail] = Field(
         ..., 
-        description="Brutally honest, clear, and logical feedback calling out layout flaws, weak action verbs, unquantified achievements, or corporate buzzword filler."
+        description="A list of specific roasts targeting weak bullet points, providing the original bullet, a brutal critique, and a metric-driven rewrite."
     )
 
 # ==========================================

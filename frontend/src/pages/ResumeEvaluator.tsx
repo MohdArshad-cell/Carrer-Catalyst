@@ -16,12 +16,18 @@ const loadingSteps = [
     "🔥 Generating Brutal Constructive Roasts..."
 ];
 
-// 🚀 UPDATED INTERFACE: Strictly matches the new Python Pydantic Schema
+// 🚀 UPDATED INTERFACES: Perfectly matches the new Pydantic structure
+interface RoastDetail {
+    weak_bullet: string;
+    critique: string;
+    rewrite: string;
+}
+
 interface EvaluationData {
     score: number;
     red_flags: string[];
     missing_keywords: string[];
-    constructive_roasts: string[];
+    constructive_roasts: RoastDetail[];
 }
 
 const AtsEvaluatorPage: React.FC = () => {
@@ -101,10 +107,7 @@ const AtsEvaluatorPage: React.FC = () => {
             
             if (stepInterval) clearInterval(stepInterval); 
             
-            // 🚀 The API now returns a flat schema natively
             if (response.data) {
-                // Ensure we are grabbing the exact dictionary the backend returned
-                // Depending on your FastAPI route wrapper, it might be response.data or response.data.evaluation_result
                 const payloadData = response.data.evaluation_result || response.data;
                 setEvaluationResult(payloadData);
             } else {
@@ -202,7 +205,6 @@ const AtsEvaluatorPage: React.FC = () => {
                                 {/* SCORE & RED FLAGS ROW */}
                                 <div className="tailor-input-grid" style={{ marginBottom: '2rem' }}>
                                     
-                                    {/* UPDATED: Score is now just `evaluationResult.score` */}
                                     <div className="panel glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                         <h2 className="panel-title">ATS Match Score</h2>
                                         <div style={{
@@ -233,7 +235,7 @@ const AtsEvaluatorPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* UPDATED: Keywords is now a flat array */}
+                                {/* KEYWORDS ROW */}
                                 <div className="panel glass-card" style={{ marginBottom: '2rem' }}>
                                     <h2 className="panel-title" style={{ color: '#00e5ff' }}>🔍 Missing Keywords (Semantic Gap)</h2>
                                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
@@ -251,19 +253,57 @@ const AtsEvaluatorPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* UPDATED: Roasts are now a flat array of highly detailed critique strings */}
+                                {/* 🔥 NEW HIGH-VISIBILITY ROASTS SECTION 🔥 */}
                                 <div className="panel glass-card">
                                     <h2 className="panel-title" style={{ color: '#b620e0' }}>🔥 Constructive Roasts & Rewrites</h2>
                                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Direct, brutal feedback on how a recruiter perceives your weak bullet points.</p>
                                     
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                         {evaluationResult.constructive_roasts.map((roast, idx) => (
-                                            <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', borderLeft: '4px solid #b620e0' }}>
-                                                <p style={{ color: '#e2e8f0', margin: 0, fontSize: '1.05rem', lineHeight: '1.6' }}>{roast}</p>
+                                            <div key={idx} style={{ 
+                                                background: 'rgba(10, 10, 10, 0.6)', 
+                                                border: '1px solid rgba(182, 32, 224, 0.3)', 
+                                                borderRadius: '12px', 
+                                                overflow: 'hidden',
+                                                boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                                            }}>
+                                                {/* Section 1: The Garbage Bullet */}
+                                                <div style={{ padding: '1.2rem', background: 'rgba(239, 68, 68, 0.08)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <span style={{ background: '#ef4444', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px', display: 'inline-block', marginBottom: '8px' }}>
+                                                        WEAK BULLET
+                                                    </span>
+                                                    {/* Strikethrough to emphasize they need to delete this */}
+                                                    <p style={{ color: '#fca5a5', margin: 0, fontSize: '1.05rem', textDecoration: 'line-through', opacity: 0.8 }}>
+                                                        "{roast.weak_bullet}"
+                                                    </p>
+                                                </div>
+
+                                                {/* Section 2: The Brutal Critique */}
+                                                <div style={{ padding: '1.2rem', borderLeft: '4px solid #f59e0b', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <span style={{ color: '#f59e0b', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+                                                        WHY IT SUCKS:
+                                                    </span>
+                                                    <p style={{ color: '#fcd34d', margin: 0, fontSize: '0.95rem', lineHeight: '1.5' }}>
+                                                        {roast.critique}
+                                                    </p>
+                                                </div>
+
+                                                {/* Section 3: The Fix */}
+                                                <div style={{ padding: '1.2rem', background: 'rgba(16, 185, 129, 0.05)', borderLeft: '4px solid #10b981' }}>
+                                                    <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+                                                        AI REWRITE (USE THIS):
+                                                    </span>
+                                                    <p style={{ color: '#a7f3d0', margin: 0, fontSize: '1.1rem', fontWeight: '500', lineHeight: '1.5' }}>
+                                                        {roast.rewrite}
+                                                    </p>
+                                                </div>
                                             </div>
                                         ))}
+
                                         {evaluationResult.constructive_roasts.length === 0 && (
-                                            <div style={{ color: '#10b981', padding: '1rem' }}>✅ Your bullet points are solidly quantified. Good job.</div>
+                                            <div style={{ color: '#10b981', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
+                                                ✅ Outstanding work. The AI could not find any weak bullet points to roast.
+                                            </div>
                                         )}
                                     </div>
                                 </div>
