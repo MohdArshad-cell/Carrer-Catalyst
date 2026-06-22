@@ -5,39 +5,30 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import { supabase } from '../supabaseClient';
-import './AiTailorPage.css'; // Reusing our magical CSS layout
+import './AiTailorPage.css'; 
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const loadingSteps = [
     "⏳ Parsing Resume & Job Description...",
-    "🧠 Executing Deep Keyword Analysis...",
-    "🔎 Identifying Red Flags & Dealbreakers...",
-    "🔥 Roasting Weak Bullets & Writing Metrics..."
+    "🧠 Executing Semantic NLP Analysis...",
+    "🔎 Identifying Red Flags & Gaps...",
+    "🔥 Generating Brutal Constructive Roasts..."
 ];
 
-// Define the interface based on our Python backend JSON
+// 🚀 UPDATED INTERFACE: Strictly matches the new Python Pydantic Schema
 interface EvaluationData {
-    ats_score: number;
+    score: number;
     red_flags: string[];
-    missing_keywords: {
-        hard_skills: string[];
-        soft_skills: string[];
-    };
-    resume_roast: {
-        weak_bullet: string;
-        why_it_sucks: string;
-        rewritten_bullet: string;
-    }[];
+    missing_keywords: string[];
+    constructive_roasts: string[];
 }
 
 const AtsEvaluatorPage: React.FC = () => {
-    const navigate = useNavigate(); // ✅ Hook added for redirection
+    const navigate = useNavigate(); 
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
-    
-    // State to hold the parsed JSON evaluation
     const [evaluationResult, setEvaluationResult] = useState<EvaluationData | null>(null); 
     
     const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +61,7 @@ const AtsEvaluatorPage: React.FC = () => {
         }
     };
 
-    // --- MAIN API CALL (WITH TOLL PLAZA 🚧) ---
+    // --- MAIN API CALL ---
     const handleEvaluateResume = async () => {
         if (!resumeText.trim() || !jobDescription.trim()) {
             setError('Please provide both your resume and the job description.');
@@ -82,10 +73,9 @@ const AtsEvaluatorPage: React.FC = () => {
         setEvaluationResult(null);
         setLoadingStep(0);
 
-        let stepInterval: any = null; // ✅ Safe interval initialization
+        let stepInterval: any = null; 
 
         try {
-            // 🛑 TOLL PLAZA CHECK 1: User Logged in hai?
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
@@ -96,17 +86,12 @@ const AtsEvaluatorPage: React.FC = () => {
                 return;
             }
 
-            // ⚠️ DOUBLE DEDUCTION FIX: Yahan se manual "/api/deduct-token" hata diya gaya hai.
-            // Backend khud 1 token deduct karega agar ATS evaluation successful raha.
-
-            // ✅ Start Loading Animation
             stepInterval = setInterval(() => {
                 setLoadingStep(prev => prev < 3 ? prev + 1 : prev);
             }, 3000);
 
             const payload = { resume_text: resumeText, job_description: jobDescription };
             
-            // ✅ API CALL WITH HEADERS: Gatekeeper ko token bhej rahe hain
             const response = await axios.post(`${API_BASE_URL}/api/ai/evaluate`, payload, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
@@ -114,18 +99,21 @@ const AtsEvaluatorPage: React.FC = () => {
                 }
             });
             
-            if (stepInterval) clearInterval(stepInterval); // Loading rok do
+            if (stepInterval) clearInterval(stepInterval); 
             
-            if (response.data && response.data.evaluation_result) {
-                setEvaluationResult(response.data.evaluation_result);
+            // 🚀 The API now returns a flat schema natively
+            if (response.data) {
+                // Ensure we are grabbing the exact dictionary the backend returned
+                // Depending on your FastAPI route wrapper, it might be response.data or response.data.evaluation_result
+                const payloadData = response.data.evaluation_result || response.data;
+                setEvaluationResult(payloadData);
             } else {
                 throw new Error("Invalid JSON format received from server.");
             }
         } catch (err: any) {
-            if (stepInterval) clearInterval(stepInterval); // Error aane par loading roko
+            if (stepInterval) clearInterval(stepInterval); 
             console.error("Error evaluating resume:", err);
             
-            // ✅ HANDLE EMPTY TOKENS OR EXPIRED SESSIONS (401/402/403)
             if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
                 setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
                 setIsLoading(false);
@@ -139,7 +127,6 @@ const AtsEvaluatorPage: React.FC = () => {
         }
     };
 
-    // Helper to determine score color
     const getScoreColor = (score: number) => {
         if (score >= 80) return '#10b981'; // Green
         if (score >= 60) return '#f59e0b'; // Yellow
@@ -156,10 +143,10 @@ const AtsEvaluatorPage: React.FC = () => {
                 
                 <div className="studio-header text-center" style={{ marginBottom: '3rem' }}>
                     <div className="hero-badge" style={{ borderColor: '#ef4444', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}>
-                        <span className="sparkle">🔥</span> Brutal ATS Scanner
+                        <span className="sparkle">🔥</span> Enterprise ATS Engine
                     </div>
                     <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>Resume Evaluator</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>No sugarcoating. Find out exactly why your resume might be rejected.</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>No sugarcoating. Find out exactly how a modern semantic ATS ranks you.</p>
                 </div>
 
                 <div className="tailor-input-grid">
@@ -215,22 +202,21 @@ const AtsEvaluatorPage: React.FC = () => {
                                 {/* SCORE & RED FLAGS ROW */}
                                 <div className="tailor-input-grid" style={{ marginBottom: '2rem' }}>
                                     
-                                    {/* The Score Box */}
+                                    {/* UPDATED: Score is now just `evaluationResult.score` */}
                                     <div className="panel glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                         <h2 className="panel-title">ATS Match Score</h2>
                                         <div style={{
                                             width: '140px', height: '140px', borderRadius: '50%', 
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            border: `8px solid ${getScoreColor(evaluationResult.ats_score)}`,
+                                            border: `8px solid ${getScoreColor(evaluationResult.score)}`,
                                             fontSize: '3rem', fontWeight: '800', color: '#fff',
-                                            boxShadow: `0 0 30px ${getScoreColor(evaluationResult.ats_score)}40`,
+                                            boxShadow: `0 0 30px ${getScoreColor(evaluationResult.score)}40`,
                                             marginTop: '1rem'
                                         }}>
-                                            {evaluationResult.ats_score}%
+                                            {evaluationResult.score}%
                                         </div>
                                     </div>
 
-                                    {/* The Red Flags Box */}
                                     <div className="panel glass-card" style={{ borderLeft: '4px solid #ef4444' }}>
                                         <h2 className="panel-title" style={{ color: '#ef4444' }}>🚩 Critical Dealbreakers</h2>
                                         {evaluationResult.red_flags.length > 0 ? (
@@ -247,53 +233,38 @@ const AtsEvaluatorPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* KEYWORDS ROW */}
+                                {/* UPDATED: Keywords is now a flat array */}
                                 <div className="panel glass-card" style={{ marginBottom: '2rem' }}>
-                                    <h2 className="panel-title" style={{ color: '#00e5ff' }}>🔍 Missing Keywords Tracker</h2>
-                                    <div className="tailor-input-grid" style={{ gap: '1rem', marginBottom: 0 }}>
-                                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                                            <h4 style={{ color: '#a0aec0', marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Hard Skills / Tech</h4>
-                                            <div className="pills-container" style={{ justifyContent: 'flex-start' }}>
-                                                {evaluationResult.missing_keywords.hard_skills.map((skill, idx) => (
-                                                    <span key={idx} className="glow-pill" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' }}>{skill}</span>
-                                                ))}
-                                                {evaluationResult.missing_keywords.hard_skills.length === 0 && <span style={{ color: '#10b981' }}>None missing!</span>}
-                                            </div>
-                                        </div>
-                                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                                            <h4 style={{ color: '#a0aec0', marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Soft Skills / Methods</h4>
-                                            <div className="pills-container" style={{ justifyContent: 'flex-start' }}>
-                                                {evaluationResult.missing_keywords.soft_skills.map((skill, idx) => (
-                                                    <span key={idx} className="glow-pill" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#fcd34d', borderColor: 'rgba(245, 158, 11, 0.3)' }}>{skill}</span>
-                                                ))}
-                                                {evaluationResult.missing_keywords.soft_skills.length === 0 && <span style={{ color: '#10b981' }}>None missing!</span>}
-                                            </div>
+                                    <h2 className="panel-title" style={{ color: '#00e5ff' }}>🔍 Missing Keywords (Semantic Gap)</h2>
+                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+                                        <div className="pills-container" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                                            {evaluationResult.missing_keywords.length > 0 ? (
+                                                evaluationResult.missing_keywords.map((skill, idx) => (
+                                                    <span key={idx} className="glow-pill" style={{ background: 'rgba(0, 229, 255, 0.1)', color: '#67e8f9', borderColor: 'rgba(0, 229, 255, 0.3)', padding: '8px 16px', borderRadius: '20px' }}>
+                                                        {skill}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span style={{ color: '#10b981' }}>Outstanding! No major keyword gaps found.</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* ROAST & REWRITE SECTION */}
+                                {/* UPDATED: Roasts are now a flat array of highly detailed critique strings */}
                                 <div className="panel glass-card">
-                                    <h2 className="panel-title" style={{ color: '#b620e0' }}>🔥 Resume Roast & Rewrites</h2>
-                                    <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>This is how a recruiter sees your weak points. Use the AI rewrites to instantly fix them.</p>
+                                    <h2 className="panel-title" style={{ color: '#b620e0' }}>🔥 Constructive Roasts & Rewrites</h2>
+                                    <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Direct, brutal feedback on how a recruiter perceives your weak bullet points.</p>
                                     
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                                        {evaluationResult.resume_roast.map((roast, idx) => (
+                                        {evaluationResult.constructive_roasts.map((roast, idx) => (
                                             <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', borderLeft: '4px solid #b620e0' }}>
-                                                <div style={{ marginBottom: '1rem' }}>
-                                                    <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '1px' }}>WEAK BULLET:</span>
-                                                    <p style={{ color: '#e2e8f0', margin: '8px 0 0 0', fontStyle: 'italic', fontSize: '1.05rem' }}>"{roast.weak_bullet}"</p>
-                                                </div>
-                                                <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px' }}>
-                                                    <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '1px' }}>WHY IT SUCKS:</span>
-                                                    <p style={{ color: '#fcd34d', margin: '8px 0 0 0' }}>{roast.why_it_sucks}</p>
-                                                </div>
-                                                <div>
-                                                    <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '1px' }}>AI REWRITE (USE THIS):</span>
-                                                    <p style={{ color: '#a7f3d0', margin: '8px 0 0 0', fontSize: '1.1rem', fontWeight: '500' }}>{roast.rewritten_bullet}</p>
-                                                </div>
+                                                <p style={{ color: '#e2e8f0', margin: 0, fontSize: '1.05rem', lineHeight: '1.6' }}>{roast}</p>
                                             </div>
                                         ))}
+                                        {evaluationResult.constructive_roasts.length === 0 && (
+                                            <div style={{ color: '#10b981', padding: '1rem' }}>✅ Your bullet points are solidly quantified. Good job.</div>
+                                        )}
                                     </div>
                                 </div>
 

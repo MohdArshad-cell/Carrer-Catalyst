@@ -29,7 +29,7 @@ redis_client = redis.Redis(
 )
 
 # Gemini Configuration
-MODEL_NAME = "gemini-2.5-flash" 
+MODEL_NAME = "gemini-3.1-flash-lite" 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
 
