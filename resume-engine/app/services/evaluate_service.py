@@ -79,7 +79,7 @@ def flag_key_as_rate_limited(exhausted_key: str):
 # ==========================================
 # 3. INITIAL MODEL CONFIGURATION
 # ==========================================
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.1-flash-lite"
 BASE_DIR = Path(__file__).resolve().parent.parent
 EVAL_PROMPTS_DIR = BASE_DIR / "prompts" / "evaluate"
 
