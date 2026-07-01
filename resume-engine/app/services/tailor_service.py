@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 from pathlib import Path
 import base64
 
@@ -18,9 +19,6 @@ from app.models import ResumeData, JobDescriptionAnalysis
 # ==========================================
 load_dotenv()
 
-# Initialize Groq Client (Step 0: Smart Parsing)
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
 # Initialize Redis (Distributed Token Bucket & Exact-Match Caching)
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"), 
@@ -36,22 +34,33 @@ TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
 
 class DistributedTokenBucket:
     """Replaces itertools.cycle with a Redis-backed distributed state manager."""
-    def __init__(self, raw_keys: str):
+    def __init__(self, raw_keys: str, prefix: str):
+        self.prefix = prefix
         self.keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
         if not self.keys:
-            raise ValueError("CRITICAL: GOOGLE_API_KEYS is not set.")
+            raise ValueError(f"CRITICAL: API keys for {self.prefix} are not set.")
 
     def get_key(self) -> str:
         for key in self.keys:
-            if not redis_client.exists(f"gemini_lock:{key}"):
+            if not redis_client.exists(f"{self.prefix}{key}"):
                 return key
-        print("⚠️ All Gemini keys are temporarily rate-limited. Forcing fallback to Primary Key.")
+        print(f"⚠️ All keys for {self.prefix} are temporarily rate-limited. Forcing fallback to Primary Key with backoff.")
+        time.sleep(2) # Prevent CPU spinning if all keys are exhausted
         return self.keys[0]
 
     def lock_key(self, key: str, ttl_seconds: int = 60):
-        redis_client.setex(f"gemini_lock:{key}", ttl_seconds, "locked")
+        redis_client.setex(f"{self.prefix}{key}", ttl_seconds, "locked")
 
-key_manager = DistributedTokenBucket(os.getenv("GOOGLE_API_KEYS", os.getenv("GOOGLE_API_KEY", "")))
+# Initialize isolated Key Managers for both APIs
+key_manager = DistributedTokenBucket(
+    os.getenv("GOOGLE_API_KEYS", os.getenv("GOOGLE_API_KEY", "")), 
+    prefix="gemini_lock:"
+)
+
+groq_key_manager = DistributedTokenBucket(
+    os.getenv("GROQ_API_KEYS", os.getenv("GROQ_API_KEY", "")), 
+    prefix="groq_lock:"
+)
 
 
 # ==========================================
@@ -180,8 +189,12 @@ def sanitize_for_latex(data):
         if data.strip().lower() in ["none", "n/a", "null", ""]:
             return ""
             
+        # --- NEW: Convert Markdown bold to LaTeX bold ---
+        # We do this before escaping special characters so the \textbf{...} is preserved
+        s = re.sub(r'\*\*(.*?)\*\*', r'\\textbf{\1}', data)
+            
         # Escape core LaTeX breaking characters
-        s = re.sub(r'(?<!\\)&', r'\&', data)
+        s = re.sub(r'(?<!\\)&', r'\&', s)
         s = re.sub(r'(?<!\\)%', r'\%', s)
         s = re.sub(r'(?<!\\)\$', r'\$', s)
         s = re.sub(r'(?<!\\)#', r'\#', s)   
@@ -201,17 +214,32 @@ def sanitize_for_latex(data):
 # ==========================================
 # 4. CORE EXECUTION CHAINS
 # ==========================================
-def parse_raw_text_to_json(raw_text: str) -> str:
+def parse_raw_text_to_json(raw_text: str, max_retries: int = 3) -> str:
     print("--- ⚡ Step 0: Groq LPU Smart Parsing ---")
     prompt0 = load_file('prompt_step0_parser.txt').replace('{raw_resume}', raw_text)
     
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt0}],
-        temperature=0.0,
-        response_format={"type": "json_object"}
-    )
-    return response.choices[0].message.content
+    for attempt in range(max_retries):
+        api_key = groq_key_manager.get_key()
+        client = Groq(api_key=api_key)
+        
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt0}],
+                temperature=0.0,
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "429" in error_msg or "rate limit" in error_msg:
+                print(f"⚠️ Worker caught 429 Rate Limit on Groq. Locking Key in Redis...")
+                groq_key_manager.lock_key(api_key)
+                continue
+            
+            print(f"❌ Groq API Error: {str(e)}")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Groq failed permanently after {max_retries} attempts.") from e
 
 def check_semantic_cache(jd_text: str):
     """Step 1 bypass: Basic Exact-Match Cache for Job Descriptions"""

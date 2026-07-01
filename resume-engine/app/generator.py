@@ -9,17 +9,23 @@ from jinja2 import Environment, FileSystemLoader
 def escape_latex(text):
     if not isinstance(text, str):
         return text
-        
-    # Prevent double-escaping by ensuring the character isn't already preceded by a backslash.
-    # We explicitly REMOVED the blind '\' conversion so it doesn't destroy valid LaTeX commands.
+    
+    # --- FIX: Preserve our custom bolding tags ---
+    # We temporarily mask the \textbf command so the escape function ignores it
+    placeholder = "___BOLD_MASK___"
+    text = text.replace(r"\textbf{", placeholder)
+    
+    # Now run standard escaping on the rest
     conv = {
         '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#', '_': r'\_',
         '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'
     }
     
     for char, replacement in conv.items():
-        # (?<!\\) ensures we only replace the char if it does NOT have a backslash before it
         text = re.sub(r'(?<!\\)' + re.escape(char), replacement, text)
+    
+    # Restore the \textbf command
+    text = text.replace(placeholder, r"\textbf{")
         
     return text
 
