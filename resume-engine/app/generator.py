@@ -10,9 +10,8 @@ def escape_latex(text):
     if not isinstance(text, str):
         return text
     
-    # --- FIX: Preserve our custom bolding tags ---
-    # We temporarily mask the \textbf command so the escape function ignores it
-    placeholder = "___BOLD_MASK___"
+    # --- FIX: Use a placeholder with purely alphabetical characters (no underscores) ---
+    placeholder = "XYZBOLDMASKXYZ"
     text = text.replace(r"\textbf{", placeholder)
     
     # Now run standard escaping on the rest
@@ -24,7 +23,7 @@ def escape_latex(text):
     for char, replacement in conv.items():
         text = re.sub(r'(?<!\\)' + re.escape(char), replacement, text)
     
-    # Restore the \textbf command
+    # Restore the \textbf command safely
     text = text.replace(placeholder, r"\textbf{")
         
     return text
@@ -33,12 +32,19 @@ def safe_latex(text):
     if not isinstance(text, str):
         return text
         
+    # --- FIX: Also protect bolding in safe_latex ---
+    placeholder = "XYZBOLDMASKXYZ"
+    text = text.replace(r"\textbf{", placeholder)
+        
     conv = {
         '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#', '_': r'\_',
     }
     
     for char, replacement in conv.items():
         text = re.sub(r'(?<!\\)' + re.escape(char), replacement, text)
+        
+    # Restore the \textbf command safely
+    text = text.replace(placeholder, r"\textbf{")
         
     return text
 
