@@ -319,6 +319,9 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
 
         # 4. FINAL COMPILATION
         try:
+            # ---> THE FIX: Prevent Pydantic from crashing on integers <---
+            cleaned_ai_data = coerce_ints_to_strings(cleaned_ai_data)
+            
             validated_resume = ResumeData(**cleaned_ai_data)
             clean_data = sanitize_for_latex(validated_resume.model_dump())
         except Exception as pydantic_err:
