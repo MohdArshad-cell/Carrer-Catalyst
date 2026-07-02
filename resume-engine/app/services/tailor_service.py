@@ -19,21 +19,18 @@ from app.models import ResumeData, JobDescriptionAnalysis
 # ==========================================
 load_dotenv()
 
-# Initialize Redis (Distributed Token Bucket & Exact-Match Caching)
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"), 
     port=int(os.getenv("REDIS_PORT", 6379)), 
     decode_responses=True
 )
 
-# Gemini Configuration
-MODEL_NAME = "gemini-3.1-flash-lite" 
+MODEL_NAME = "gemini-2.5-flash-lite" 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
 
 
 class DistributedTokenBucket:
-    """Replaces itertools.cycle with a Redis-backed distributed state manager."""
     def __init__(self, raw_keys: str, prefix: str):
         self.prefix = prefix
         self.keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
@@ -44,14 +41,13 @@ class DistributedTokenBucket:
         for key in self.keys:
             if not redis_client.exists(f"{self.prefix}{key}"):
                 return key
-        print(f"⚠️ All keys for {self.prefix} are temporarily rate-limited. Forcing fallback to Primary Key with backoff.")
-        time.sleep(2) # Prevent CPU spinning if all keys are exhausted
+        print(f"⚠️ All keys for {self.prefix} are temporarily rate-limited. Forcing fallback with backoff.")
+        time.sleep(2) 
         return self.keys[0]
 
     def lock_key(self, key: str, ttl_seconds: int = 60):
         redis_client.setex(f"{self.prefix}{key}", ttl_seconds, "locked")
 
-# Initialize isolated Key Managers for both APIs
 key_manager = DistributedTokenBucket(
     os.getenv("GOOGLE_API_KEYS", os.getenv("GOOGLE_API_KEY", "")), 
     prefix="gemini_lock:"
@@ -78,11 +74,9 @@ def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retr
     config_kwargs = {
         "max_output_tokens": 8192,
         "temperature": 0.2,
-        "response_mime_type": "application/json" # ALWAYS force valid JSON output
+        "response_mime_type": "application/json" 
     }
     
-    # 🚨 THE FIX: Schema-Injected JSON Mode
-    # We bypass the SDK protobuf bug by injecting the Pydantic schema directly into the prompt.
     if schema:
         schema_json = json.dumps(schema.model_json_schema(), indent=2)
         prompt = prompt + f"\n\nCRITICAL INSTRUCTION: You MUST return a raw, highly structured JSON object that exactly matches this OpenAPI schema. Do NOT wrap it in markdown backticks:\n{schema_json}"
@@ -110,7 +104,6 @@ def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retr
 
 
 def extract_and_parse_ai_json(raw_text: str) -> dict:
-    """Restored strictly for legacy compatibility. Bug-proofed regex."""
     try:
         return json.loads(raw_text)
     except json.JSONDecodeError:
@@ -125,10 +118,9 @@ def extract_and_parse_ai_json(raw_text: str) -> dict:
 
 
 # ==========================================
-# 3. REGEX BULLETPROOFING & VALIDATION (FREE-TIER)
+# 3. REGEX BULLETPROOFING & VALIDATION 
 # ==========================================
 def normalize_and_extract_metrics(text: str) -> set:
-    """Free-Tier Fallback: Basic regex digit extraction without memory-heavy NLP."""
     return set(re.findall(r'\b\d+(?:\.\d+)?\b', text)) 
 
 def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
@@ -139,7 +131,6 @@ def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
         valid_bullets = []
         for bullet in exp.get('descriptionPoints', []):
             bullet_nums = normalize_and_extract_metrics(str(bullet))
-            
             suspicious_nums = {n for n in bullet_nums if len(n) > 1 and n not in baseline_numbers}
             
             if suspicious_nums:
@@ -147,6 +138,26 @@ def verify_metrics(baseline_text: str, tailored_data: dict) -> dict:
             else:
                 valid_bullets.append(bullet)
         exp['descriptionPoints'] = valid_bullets
+    return tailored_data
+
+def verify_bullet_count(original_json_str: str, tailored_data: dict) -> dict:
+    """THE FIX: This stops the AI from shrinking a 2-page resume into a 1-page resume."""
+    original_data = json.loads(original_json_str)
+    
+    orig_exp = original_data.get('experience', [])
+    tail_exp = tailored_data.get('experience', [])
+    
+    for i, orig_job in enumerate(orig_exp):
+        if i < len(tail_exp):
+            orig_bullets = orig_job.get('descriptionPoints', [])
+            tail_bullets = tail_exp[i].get('descriptionPoints', [])
+            
+            # If the AI deleted bullets, put them back
+            if len(tail_bullets) < len(orig_bullets):
+                print(f"⚠️ AI tried to shrink resume! Restoring {len(orig_bullets) - len(tail_bullets)} bullets to {orig_job.get('company')}.")
+                lost_bullets = orig_bullets[len(tail_bullets):]
+                tail_exp[i]['descriptionPoints'] = tail_bullets + lost_bullets
+                
     return tailored_data
 
 def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
@@ -157,18 +168,14 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
     for skill in all_jd_skills:
         skill_str = str(skill).lower().strip()
         if not skill_str: continue
-        
         escaped_skill = re.escape(skill_str)
         pattern = r'(?<!\w)' + escaped_skill + r'(?!\w)'
-        
         if not re.search(pattern, resume_lower):
             missing.append(str(skill))
             
     return missing[:6] 
 
-
 def coerce_ints_to_strings(data):
-    """Recursively converts any integer values to strings to prevent Pydantic strict-mode crashes."""
     if isinstance(data, dict):
         return {k: coerce_ints_to_strings(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -177,49 +184,33 @@ def coerce_ints_to_strings(data):
         return str(data)
     return data
 
-
 def sanitize_for_latex(data):
-    # 1. Catch Python None objects
     if data is None:
         return ""
-        
     elif isinstance(data, dict): 
-        # Clean all values in the dictionary
         cleaned_dict = {k: sanitize_for_latex(v) for k, v in data.items()}
-        # CRITICAL FIX: If all values in this dict are empty strings, destroy the dict
         if all(v == "" for v in cleaned_dict.values()):
             return ""
         return cleaned_dict
-        
     elif isinstance(data, list): 
-        # Clean the list and filter out any empty strings/destroyed dicts
         cleaned_list = [sanitize_for_latex(v) for v in data]
         return [item for item in cleaned_list if item != ""]
-        
     elif isinstance(data, str):
-        # Catch AI writing the literal word "None" or "null"
         if data.strip().lower() in ["none", "n/a", "null", ""]:
             return ""
             
-        # --- NEW: Convert Markdown bold to LaTeX bold ---
-        # We do this before escaping special characters so the \textbf{...} is preserved
         s = re.sub(r'\*\*(.*?)\*\*', r'\\textbf{\1}', data)
-            
-        # Escape core LaTeX breaking characters
         s = re.sub(r'(?<!\\)&', r'\&', s)
         s = re.sub(r'(?<!\\)%', r'\%', s)
         s = re.sub(r'(?<!\\)\$', r'\$', s)
         s = re.sub(r'(?<!\\)#', r'\#', s)   
         s = re.sub(r'(?<!\\)_', r'\_', s)   
         
-        # Strip LLM typography that breaks Tectonic fonts
         s = s.replace('”', '"').replace('“', '"')
         s = s.replace('’', "'").replace('‘', "'")
         s = s.replace('—', '---').replace('–', '--')
         s = s.replace('\u2022', '-') 
-        
         return s
-        
     return data
 
 
@@ -254,7 +245,6 @@ def parse_raw_text_to_json(raw_text: str, max_retries: int = 3) -> str:
                 raise RuntimeError(f"Groq failed permanently after {max_retries} attempts.") from e
 
 def check_semantic_cache(jd_text: str):
-    """Step 1 bypass: Basic Exact-Match Cache for Job Descriptions"""
     try:
         jd_hash = base64.b64encode(jd_text[:100].encode()).decode() 
         cached_result = redis_client.get(f"jd_cache:{jd_hash}")
@@ -289,10 +279,8 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         jd_data = check_semantic_cache(job_description)
         if not jd_data:
             prompt1 = load_file('prompt_step1_jd_analysis.txt').replace('{job_description}', job_description)
-            
             raw_jd_json = call_gemini_api(prompt1, schema=JobDescriptionAnalysis)
             jd_data = json.loads(raw_jd_json)
-            
             jd_hash = base64.b64encode(job_description[:100].encode()).decode()
             redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data))
 
@@ -313,15 +301,17 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         tailored_data = json.loads(raw_tailored_json)
 
         # 3. REGEX PIPELINE BULLETPROOFING
-        print("--- 🔒 Running Basic Number Lock ---")
+        print("--- 🔒 Running Basic Number Lock & Length Shield ---")
         cleaned_ai_data = verify_metrics(mutable_json_str, tailored_data)
+        
+        # ---> THE SHIELD IS ACTIVATED HERE <---
+        cleaned_ai_data = verify_bullet_count(mutable_json_str, cleaned_ai_data)
+        
         cleaned_ai_data.update(immutables)
 
         # 4. FINAL COMPILATION
         try:
-            # ---> THE FIX: Prevent Pydantic from crashing on integers <---
             cleaned_ai_data = coerce_ints_to_strings(cleaned_ai_data)
-            
             validated_resume = ResumeData(**cleaned_ai_data)
             clean_data = sanitize_for_latex(validated_resume.model_dump())
         except Exception as pydantic_err:
