@@ -166,6 +166,18 @@ def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
             
     return missing[:6] 
 
+
+def coerce_ints_to_strings(data):
+    """Recursively converts any integer values to strings to prevent Pydantic strict-mode crashes."""
+    if isinstance(data, dict):
+        return {k: coerce_ints_to_strings(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [coerce_ints_to_strings(v) for v in data]
+    elif isinstance(data, int) and not isinstance(data, bool):
+        return str(data)
+    return data
+
+
 def sanitize_for_latex(data):
     # 1. Catch Python None objects
     if data is None:
