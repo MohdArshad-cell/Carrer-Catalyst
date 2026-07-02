@@ -101,6 +101,9 @@ def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retr
             print(f"❌ Gemini API Error: {str(e)}")
             if attempt == max_retries - 1:
                 raise RuntimeError(f"Gemini failed permanently after {max_retries} attempts.") from e
+                
+    # THE FIX: If the loop finishes entirely because of 429s, raise an error instead of returning None.
+    raise RuntimeError(f"API Rate Limit Reached: Gemini failed permanently after {max_retries} retries.")
 
 
 def extract_and_parse_ai_json(raw_text: str) -> dict:
@@ -243,6 +246,9 @@ def parse_raw_text_to_json(raw_text: str, max_retries: int = 3) -> str:
             print(f"❌ Groq API Error: {str(e)}")
             if attempt == max_retries - 1:
                 raise RuntimeError(f"Groq failed permanently after {max_retries} attempts.") from e
+                
+    # THE FIX: Prevent silent None returns
+    raise RuntimeError(f"API Rate Limit Reached: Groq failed permanently after {max_retries} retries.")
 
 def check_semantic_cache(jd_text: str):
     try:
