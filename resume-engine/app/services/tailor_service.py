@@ -70,7 +70,7 @@ def load_file(filename: str) -> str:
         return f.read()
 
 
-def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retries: int = 3) -> str:
+def call_gemini_api(prompt: str, schema=None, force_json: bool = False, max_retries: int = 10) -> str:
     config_kwargs = {
         "max_output_tokens": 8192,
         "temperature": 0.2,
@@ -220,7 +220,7 @@ def sanitize_for_latex(data):
 # ==========================================
 # 4. CORE EXECUTION CHAINS
 # ==========================================
-def parse_raw_text_to_json(raw_text: str, max_retries: int = 3) -> str:
+def parse_raw_text_to_json(raw_text: str, max_retries: int = 10) -> str:
     print("--- ⚡ Step 0: Groq LPU Smart Parsing ---")
     prompt0 = load_file('prompt_step0_parser.txt').replace('{raw_resume}', raw_text)
     
