@@ -1,8 +1,8 @@
-\documentclass[letterpaper,11pt]{article}
+\documentclass[letterpaper,10pt]{article} % Dropped to 10pt to prevent word-wrapping bloat
 
 %------------------------- PACKAGES -------------------------
 \usepackage{latexsym}
-\usepackage[margin=0.6in]{geometry} % FIX: Clean margin handling
+\usepackage[margin=0.5in]{geometry} % Let geometry handle the math, stop using \addtolength
 \usepackage{titlesec}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{enumitem}
@@ -11,12 +11,6 @@
 \usepackage{tabularx}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-
-% ==========================================
-% ATS MACHINE READABILITY FIX (DO NOT REMOVE)
-% ==========================================
-
-% ==========================================
 
 %------------------------- PAGE STYLE -------------------------
 \pagestyle{fancy}
@@ -27,13 +21,13 @@
 %------------------------- GLOBAL SETTINGS -------------------------
 \urlstyle{same}
 \raggedright
-\raggedbottom % FIX: Prevents vertical stretching on half-empty pages
+\raggedbottom % CRITICAL: Forces text to the top, prevents vertical stretching
 \setlength{\tabcolsep}{0in}
 
 %------------------------- SECTION FORMATTING -------------------------
 \titleformat{\section}
 {
-    \vspace{-4pt}
+    \vspace{-4pt} % Tightened
     \scshape
     \raggedright
     \large
@@ -41,15 +35,12 @@
 {}{0em}{}[\color{black}\titlerule \vspace{-4pt}]
 
 %------------------------- CUSTOM MACROS -------------------------
-
-% Resume Bullet
 \newcommand{\resumeItem}[1]{
     \item \small{
-        {#1}
+        {#1} % Removed manual vspace here
     }
 }
 
-% Experience / Education Heading
 \newcommand{\resumeSubheading}[4]{
     \vspace{-1pt}\item
     \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
@@ -59,7 +50,6 @@
     \vspace{-4pt}
 }
 
-% Project Heading
 \newcommand{\resumeProjectHeading}[2]{
     \item
     \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
@@ -68,24 +58,21 @@
     \vspace{-4pt}
 }
 
-% Bullet List Start
 \newcommand{\resumeItemListStart}{
 \begin{itemize}[
     leftmargin=0.15in,
-    itemsep=1pt,
+    itemsep=1pt,    % Controlled list spacing
     topsep=1pt,
     parsep=0pt,
     label=\textbullet
 ]
 }
 
-% Bullet List End
 \newcommand{\resumeItemListEnd}{
 \end{itemize}
 \vspace{-2pt}
 }
 
-% Main Section Start
 \newcommand{\resumeSubHeadingListStart}{
 \begin{itemize}[
     leftmargin=0.0in,
@@ -93,12 +80,10 @@
 ]
 }
 
-% Main Section End
 \newcommand{\resumeSubHeadingListEnd}{
 \end{itemize}
 \vspace{-2pt}
 }
-
 %-------------------------------------------
 %%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
