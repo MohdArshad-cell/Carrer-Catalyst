@@ -1,4 +1,4 @@
-\documentclass[letterpaper,11pt]{article}
+\documentclass[letterpaper,9.8pt]{article}
 
 %------------------------- PACKAGES -------------------------
 \usepackage{latexsym}
@@ -19,102 +19,53 @@
 \renewcommand{\footrulewidth}{0pt}
 
 %------------------------- MARGINS -------------------------
-\addtolength{\oddsidemargin}{-0.55in}
-\addtolength{\evensidemargin}{-0.55in}
-\addtolength{\textwidth}{1.1in}
-
-\addtolength{\topmargin}{-0.75in}
-\addtolength{\textheight}{1.5in}
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.35in}
 
 %------------------------- GLOBAL SETTINGS -------------------------
 \urlstyle{same}
-
-\raggedright
 \raggedbottom
-
+\raggedright
 \setlength{\tabcolsep}{0in}
 
 %------------------------- SECTION FORMATTING -------------------------
-\titleformat{\section}
-{
-    \vspace{-8pt}
-    \scshape
-    \raggedright
-    \large
-}
-{}{0em}{}[\color{black}\titlerule \vspace{-6pt}]
+\titleformat{\section}{
+  \vspace{-8pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-8pt}]
 
 %------------------------- CUSTOM MACROS -------------------------
-
-% Resume Bullet
+% --- CUSTOM COMMANDS ---
 \newcommand{\resumeItem}[1]{
-    \item \small{
-        #1 \vspace{2pt}
-    }
+  \item\small{
+    {#1 \vspace{-3pt}}
+  }
 }
 
-% Experience / Education Heading
 \newcommand{\resumeSubheading}[4]{
-    \vspace{-2pt}\item
-    \begin{tabular*}{0.97\textwidth}[t]
-    {l@{\extracolsep{\fill}}r}
-
-        \textbf{#1} & #2 \\
-
-        \textit{\small #3} &
-        \textit{\small #4} \\
-
-    \end{tabular*}
-
-    \vspace{-2pt}
+  \vspace{1pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-5pt}
 }
 
-% Project Heading
 \newcommand{\resumeProjectHeading}[2]{
     \item
-    \begin{tabular*}{0.97\textwidth}
-    {l@{\extracolsep{\fill}}r}
-
-        \small #1 & #2 \\
-
-    \end{tabular*}
-
-    \vspace{-2pt}
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-5pt}
 }
 
-% Bullet List Start
-\newcommand{\resumeItemListStart}{
-\begin{itemize}[
-    leftmargin=0.27in,
-    itemsep=2pt,
-    topsep=2pt,
-    parsep=0pt,
-    label=\textbullet
-]
-}
+\newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=*, label=$\bullet$]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
 
-% Bullet List End
-\newcommand{\resumeItemListEnd}{
-\end{itemize}
-\vspace{-4pt}
-}
-
-% Main Section Start
-\newcommand{\resumeSubHeadingListStart}{
-\begin{itemize}[
-    leftmargin=0.15in,
-    label={}
-]
-}
-
-% Main Section End
-\newcommand{\resumeSubHeadingListEnd}{
-\end{itemize}
-}
-
-%----------------------------------------------------
-%%%%%% RESUME STARTS HERE %%%%%%
-%----------------------------------------------------
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
 
