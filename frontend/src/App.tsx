@@ -11,6 +11,7 @@ import Pricing from './pages/Pricing';
 import FeaturesPage from './pages/FeaturesPage'; 
 import ProtectedRoute from './components/ProtectedRoute'; 
 import AtsXrayPage from './pages/AtsXrayPage';
+import AdminDashboardPage from './pages/AdminDashboardPage'; 
 import "./App.css";
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/features" element={<FeaturesPage />} />
-        <Route path="/ats-xray" element={<AtsXrayPage />} /> {/* <-- ATS X-RAY ADDED HERE */}
+        <Route path="/ats-xray" element={<AtsXrayPage />} />
 
         {/* =========================================
             Protected Routes - Premium SaaS Tools
@@ -57,6 +58,14 @@ function App() {
         <Route path="/mock-interview" element={
             <ProtectedRoute>
                 <MockInterviewPage />
+            </ProtectedRoute>
+        } />
+        {/* =========================================
+            Admin Routes (Restricted)
+            ========================================= */}
+        <Route path="/admin" element={
+            <ProtectedRoute requireAdmin={true}>
+                <AdminDashboardPage />
             </ProtectedRoute>
         } />
       </Routes>

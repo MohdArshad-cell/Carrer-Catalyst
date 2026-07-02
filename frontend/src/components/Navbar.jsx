@@ -6,13 +6,17 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [tokens, setTokens] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false); // ✅ Added Admin State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
-            if (currentUser) fetchTokenBalance(currentUser.id);
+            if (currentUser) {
+                fetchTokenBalance(currentUser.id);
+                checkUserRole(currentUser.id); // ✅ Check role on load
+            }
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -20,17 +24,40 @@ const Navbar = () => {
             setUser(currentUser);
             if (currentUser) {
                 fetchTokenBalance(currentUser.id);
+                checkUserRole(currentUser.id); // ✅ Check role on auth change
             } else {
                 setTokens(null);
+                setIsAdmin(false); // ✅ Reset on logout
             }
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
+    // ✅ Added function to check if user has 'admin' role in database
+    const checkUserRole = async (userId) => {
+        try {
+            // Note: Ensure you have a 'profiles' or 'users' table with a 'role' column
+            const { data, error } = await supabase
+                .from('profiles') 
+                .select('role')
+                .eq('id', userId)
+                .single();
+                
+            if (error) throw error;
+            if (data && data.role === 'admin') {
+                setIsAdmin(true);
+            } else {
+                setIsAdmin(false);
+            }
+        } catch (err) {
+            console.error("Error fetching user role:", err.message);
+            setIsAdmin(false);
+        }
+    };
+
     const fetchTokenBalance = async (userId) => {
         try {
-            // ✅ FIXED: Point to token_ledger and the new tokens_balance column
             const { data, error } = await supabase
                 .from('token_ledger')
                 .select('tokens_balance')
@@ -38,7 +65,7 @@ const Navbar = () => {
                 .single();
                 
             if (error) throw error;
-            if (data) setTokens(data.tokens_balance); // ✅ FIXED: Map to tokens_balance
+            if (data) setTokens(data.tokens_balance); 
         } catch (err) {
             console.error("Error fetching tokens:", err.message);
         }
@@ -75,6 +102,18 @@ const Navbar = () => {
 
                     {user ? (
                         <div className="nav-action-group">
+                            {/* ✅ Admin Button (Only visible if isAdmin is true) */}
+                            {isAdmin && (
+                                <button 
+                                    onClick={() => { navigate('/admin'); closeMenu(); }} 
+                                    className="btn-outline"
+                                    style={{ borderColor: '#f59e0b', color: '#f59e0b' }} 
+                                    title="Go to Admin Dashboard"
+                                >
+                                    Admin View
+                                </button>
+                            )}
+
                             <button 
                                 onClick={() => { navigate('/pricing'); closeMenu(); }} 
                                 className="token-pill"
