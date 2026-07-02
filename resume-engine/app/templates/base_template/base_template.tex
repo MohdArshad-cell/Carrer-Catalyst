@@ -1,8 +1,9 @@
-\documentclass[letterpaper,10pt]{article} % Dropped to 10pt to prevent word-wrapping bloat
+\documentclass[letterpaper,10pt]{article}
 
 %------------------------- PACKAGES -------------------------
 \usepackage{latexsym}
-\usepackage[margin=0.5in]{geometry} % Let geometry handle the math, stop using \addtolength
+% FIX 1: Aggressive Margins to reclaim border space
+\usepackage[top=0.35in, bottom=0.35in, left=0.4in, right=0.4in]{geometry} 
 \usepackage{titlesec}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{enumitem}
@@ -21,48 +22,50 @@
 %------------------------- GLOBAL SETTINGS -------------------------
 \urlstyle{same}
 \raggedright
-\raggedbottom % CRITICAL: Forces text to the top, prevents vertical stretching
+\raggedbottom 
 \setlength{\tabcolsep}{0in}
 
 %------------------------- SECTION FORMATTING -------------------------
 \titleformat{\section}
 {
-    \vspace{-4pt} % Tightened
+    \vspace{-8pt} % FIX 2: Pulled the section title much closer to the text above it
     \scshape
     \raggedright
     \large
 }
-{}{0em}{}[\color{black}\titlerule \vspace{-4pt}]
+{}{0em}{}[\color{black}\titlerule \vspace{-8pt}] % FIX 3: Pulled the text below much closer to the line
 
 %------------------------- CUSTOM MACROS -------------------------
 \newcommand{\resumeItem}[1]{
     \item \small{
-        {#1} % Removed manual vspace here
+        {#1} 
     }
 }
 
 \newcommand{\resumeSubheading}[4]{
-    \vspace{-1pt}\item
-    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+    \vspace{-2pt}\item
+    % FIX 4: Changed 0.97\textwidth to \textwidth to use 100% of horizontal space
+    \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
         \textbf{#1} & #2 \\
         \textit{\small #3} & \textit{\small #4} \\
     \end{tabular*}
-    \vspace{-4pt}
+    \vspace{-6pt} % Tighter space after the heading
 }
 
 \newcommand{\resumeProjectHeading}[2]{
-    \item
-    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+    \vspace{-2pt}\item
+    % FIX 5: Changed 0.97\textwidth to \textwidth
+    \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
         \small #1 & #2 \\
     \end{tabular*}
-    \vspace{-4pt}
+    \vspace{-6pt} % Tighter space after the heading
 }
 
 \newcommand{\resumeItemListStart}{
 \begin{itemize}[
     leftmargin=0.15in,
-    itemsep=1pt,    % Controlled list spacing
-    topsep=1pt,
+    itemsep=0pt,    % FIX 6: Squeezed bullets closer together (0pt instead of 1pt)
+    topsep=0pt,     % FIX 7: Removed gap before the list starts
     parsep=0pt,
     label=\textbullet
 ]
@@ -76,6 +79,9 @@
 \newcommand{\resumeSubHeadingListStart}{
 \begin{itemize}[
     leftmargin=0.0in,
+    itemsep=0pt,
+    topsep=0pt,
+    parsep=0pt,
     label={}
 ]
 }
