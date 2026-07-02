@@ -1,9 +1,10 @@
 \documentclass[letterpaper,10pt]{article}
 
-%------------------------- PACKAGES -------------------------
+%----------------------------------------------------
+% Packages
+%----------------------------------------------------
 \usepackage{latexsym}
-% FIX 1: Aggressive Margins to reclaim border space
-\usepackage[top=0.35in, bottom=0.35in, left=0.4in, right=0.4in]{geometry} 
+\usepackage[margin=0.55in]{geometry}
 \usepackage{titlesec}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{enumitem}
@@ -13,61 +14,91 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
-%------------------------- PAGE STYLE -------------------------
+%----------------------------------------------------
+% Page Style
+%----------------------------------------------------
 \pagestyle{fancy}
 \fancyhf{}
+\fancyfoot{}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
 
-%------------------------- GLOBAL SETTINGS -------------------------
+%----------------------------------------------------
+% General Settings
+%----------------------------------------------------
 \urlstyle{same}
 \raggedright
-\raggedbottom 
-\setlength{\tabcolsep}{0in}
+\raggedbottom
+\setlength{\tabcolsep}{0pt}
+\setlength{\parindent}{0pt}
 
-%------------------------- SECTION FORMATTING -------------------------
+%----------------------------------------------------
+% Section Formatting
+%----------------------------------------------------
 \titleformat{\section}
 {
-    \vspace{-8pt} % FIX 2: Pulled the section title much closer to the text above it
+    \vspace{-2pt}
     \scshape
     \raggedright
     \large
 }
-{}{0em}{}[\color{black}\titlerule \vspace{-8pt}] % FIX 3: Pulled the text below much closer to the line
+{}{0em}{}[\color{black}\titlerule\vspace{-6pt}]
 
-%------------------------- CUSTOM MACROS -------------------------
+%----------------------------------------------------
+% Custom Commands
+%----------------------------------------------------
+
 \newcommand{\resumeItem}[1]{
-    \item \small{
-        {#1} 
+    \item\small{
+        #1
     }
 }
 
 \newcommand{\resumeSubheading}[4]{
-    \vspace{-2pt}\item
-    % FIX 4: Changed 0.97\textwidth to \textwidth to use 100% of horizontal space
-    \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
-        \textbf{#1} & #2 \\
-        \textit{\small #3} & \textit{\small #4} \\
+    \item
+    \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
+        \textbf{#1} & #2\\
+        \textit{\small #3} & \textit{\small #4}\\
     \end{tabular*}
-    \vspace{-6pt} % Tighter space after the heading
+    \vspace{-2pt}
 }
 
 \newcommand{\resumeProjectHeading}[2]{
-    \vspace{-2pt}\item
-    % FIX 5: Changed 0.97\textwidth to \textwidth
+    \item
     \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
-        \small #1 & #2 \\
+        \textbf{#1} & #2\\
     \end{tabular*}
-    \vspace{-6pt} % Tighter space after the heading
+    \vspace{-2pt}
+}
+
+%----------------------------------------------------
+% Lists
+%----------------------------------------------------
+
+\newcommand{\resumeSubHeadingListStart}{
+\begin{itemize}[
+leftmargin=0in,
+label={},
+itemsep=5pt,
+topsep=2pt,
+parsep=0pt,
+partopsep=0pt
+]
+}
+
+\newcommand{\resumeSubHeadingListEnd}{
+\end{itemize}
+\vspace{-2pt}
 }
 
 \newcommand{\resumeItemListStart}{
 \begin{itemize}[
-    leftmargin=0.15in,
-    itemsep=0pt,    % FIX 6: Squeezed bullets closer together (0pt instead of 1pt)
-    topsep=0pt,     % FIX 7: Removed gap before the list starts
-    parsep=0pt,
-    label=\textbullet
+leftmargin=0.18in,
+label=\textbullet,
+itemsep=3pt,
+topsep=2pt,
+parsep=0pt,
+partopsep=0pt
 ]
 }
 
@@ -76,22 +107,9 @@
 \vspace{-2pt}
 }
 
-\newcommand{\resumeSubHeadingListStart}{
-\begin{itemize}[
-    leftmargin=0.0in,
-    itemsep=0pt,
-    topsep=0pt,
-    parsep=0pt,
-    label={}
-]
-}
-
-\newcommand{\resumeSubHeadingListEnd}{
-\end{itemize}
-\vspace{-2pt}
-}
-%-------------------------------------------
-%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%----------------------------------------------------
+%%%%%% RESUME STARTS HERE %%%%%%
+%----------------------------------------------------
 
 \begin{document}
 
