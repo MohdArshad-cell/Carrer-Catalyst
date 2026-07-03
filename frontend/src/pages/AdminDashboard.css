@@ -1,13 +1,10 @@
 /* ==========================================================================
-   AdminDashboard.css (Complete Final Version)
-   ========================================================================== */
-/* ==========================================================================
-   Admin CSS Reset (Prevents App.css from breaking the dashboard)
+   1. Admin CSS Reset (Prevents App.css from breaking the dashboard)
    ========================================================================== */
 .admin-isolate-wrapper {
   all: initial; /* Resets all inherited global styles */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #334155; /* Force default text color */
+  color: #334155;
   background-color: #f8fafc;
   display: block;
   width: 100%;
@@ -18,11 +15,14 @@
 .admin-isolate-wrapper * {
   box-sizing: border-box;
 }
+
+/* ==========================================================================
+   2. Main Layout
+   ========================================================================== */
 .admin-page {
   background-color: #f8fafc;
   min-height: calc(100vh - 80px);
   padding: 40px 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   width: 100%;
 }
 
@@ -32,7 +32,6 @@
   width: 100%;
 }
 
-/* --- Header --- */
 .admin-header {
   margin-bottom: 2rem;
 }
@@ -47,9 +46,12 @@
 .admin-header p {
   color: #64748b;
   font-size: 0.9rem;
+  margin: 0;
 }
 
-/* --- Tab Navigation --- */
+/* ==========================================================================
+   3. Tab Navigation
+   ========================================================================== */
 .admin-tabs {
   display: flex;
   gap: 1.5rem;
@@ -87,7 +89,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Metrics Grid --- */
+/* ==========================================================================
+   4. Metrics Grid
+   ========================================================================== */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -113,6 +117,7 @@
   color: #64748b;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
+  margin-top: 0;
 }
 
 .metric-value {
@@ -132,7 +137,9 @@
   color: #64748b;
 }
 
-/* --- Dashboard Grid (Overview Tab) --- */
+/* ==========================================================================
+   5. Dashboard Grid (Overview Tab)
+   ========================================================================== */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -158,12 +165,12 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
+  margin-top: 0;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
-/* --- Activity List --- */
 .activity-list {
   list-style: none;
   padding: 0;
@@ -198,7 +205,9 @@
   margin-top: 0.25rem;
 }
 
-/* --- Table Section --- */
+/* ==========================================================================
+   6. Table Section (User Management & Logs)
+   ========================================================================== */
 .admin-table-container {
   background: white;
   border-radius: 12px;
@@ -313,7 +322,9 @@
   gap: 0.25rem;
 }
 
-/* --- Action Buttons --- */
+/* ==========================================================================
+   7. Action Buttons
+   ========================================================================== */
 .action-buttons {
   display: flex;
   gap: 0.5rem;
@@ -336,7 +347,6 @@
 .btn-ban { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
 .btn-ban:hover { background: #fee2e2; }
 
-/* --- Token Button Group (+10, +30, +100) --- */
 .token-btn-group {
   display: flex;
   gap: 2px;
@@ -362,7 +372,9 @@
   background: #dbeafe;
 }
 
-/* --- Settings Forms --- */
+/* ==========================================================================
+   8. Settings Forms
+   ========================================================================== */
 .settings-group {
   margin-bottom: 1.5rem;
 }
@@ -375,19 +387,10 @@
   margin-bottom: 0.5rem;
 }
 
-/* --- Utility Classes (Replacing Tailwind) --- */
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.text-green-600 {
-  color: #16a34a !important;
-}
+/* ==========================================================================
+   9. Utility Classes (Replaces Tailwind)
+   ========================================================================== */
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.text-green-600 { color: #16a34a !important; }
