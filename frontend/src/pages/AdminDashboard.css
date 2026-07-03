@@ -1,7 +1,23 @@
 /* ==========================================================================
    AdminDashboard.css (Complete Final Version)
    ========================================================================== */
+/* ==========================================================================
+   Admin CSS Reset (Prevents App.css from breaking the dashboard)
+   ========================================================================== */
+.admin-isolate-wrapper {
+  all: initial; /* Resets all inherited global styles */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #334155; /* Force default text color */
+  background-color: #f8fafc;
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
 
+.admin-isolate-wrapper * {
+  box-sizing: border-box;
+}
 .admin-page {
   background-color: #f8fafc;
   min-height: calc(100vh - 80px);
@@ -357,4 +373,21 @@
   font-weight: 600;
   color: #475569;
   margin-bottom: 0.5rem;
+}
+
+/* --- Utility Classes (Replacing Tailwind) --- */
+.flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.text-green-600 {
+  color: #16a34a !important;
 }
