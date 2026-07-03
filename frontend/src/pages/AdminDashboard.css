@@ -1,11 +1,12 @@
 /* ==========================================================================
-   1. Admin CSS Reset & Premium Dark Theme Base 
+   1. Admin CSS Reset & Transparent Base (Allows Aurora to show through)
    ========================================================================== */
 .admin-isolate-wrapper {
   all: initial; 
   font-family: 'Poppins', sans-serif; 
   color: #FFFFFF; 
-  background-color: #0A0F1E; /* Deep dark space background */
+  /* ✅ CHANGED TO TRANSPARENT: This lets your Home Page aurora background shine through! */
+  background-color: transparent; 
   display: block;
   width: 100%;
   min-height: 100vh;
@@ -18,7 +19,7 @@
 }
 
 /* ==========================================================================
-   2. Main Layout & Premium Header
+   2. Main Layout & Header (Matched to Home Page Typography)
    ========================================================================== */
 .admin-page {
   background-color: transparent;
@@ -40,23 +41,16 @@
   align-items: center;
 }
 
-/* Animated Gradient Title from your premium styles */
+/* ✅ MATCHED TO HOME PAGE: Static vertical White-to-Cyan gradient */
 .admin-header h1 {
   font-size: 2.8rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
   line-height: 1.2;
-  background: linear-gradient(to right, #ffffff 20%, #00F6FF 40%, #6248FF 60%, #ffffff 80%);
-  background-size: 200% auto;
+  background: linear-gradient(180deg, #FFFFFF 0%, #00F6FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shine 5s linear infinite;
-}
-
-@keyframes shine {
-  to {
-    background-position: 200% center;
-  }
+  filter: drop-shadow(0 4px 10px rgba(0, 246, 255, 0.2));
 }
 
 .admin-header p {
@@ -72,7 +66,7 @@
 .admin-tabs {
   display: flex;
   gap: 1.5rem;
-  border-bottom: 1px solid rgba(67, 97, 255, 0.2);
+  border-bottom: 1px solid rgba(0, 246, 255, 0.2); /* Cyan border to match theme */
   margin-bottom: 3rem;
 }
 
@@ -112,7 +106,7 @@
 }
 
 /* ==========================================================================
-   4. Bento Grid Metrics (The Premium Upgrade)
+   4. Bento Grid Metrics (Ultra-Glassmorphism)
    ========================================================================== */
 .metrics-grid {
   display: grid;
@@ -121,14 +115,14 @@
   margin-bottom: 3rem;
 }
 
-/* Upgraded to match your "tool-card" Bento box styling */
+/* ✅ INCREASED TRANSPARENCY: From 0.7 to 0.3 so the aurora background is highly visible */
 .metric-card, .panel-card, .admin-table-container {
-  background: rgba(18, 24, 43, 0.7); /* Slightly lighter card background */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 15, 30, 0.35); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 1.8rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
@@ -253,7 +247,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-wrap: wrap;
   gap: 1rem;
-  background: rgba(10, 15, 30, 0.3);
+  background: rgba(10, 15, 30, 0.2);
 }
 
 .table-header h2 {
@@ -265,9 +259,9 @@
 
 .search-input {
   padding: 0.8rem 1.2rem 0.8rem 2.8rem;
-  background-color: rgba(10, 15, 30, 0.6);
-  border: 1px solid rgba(67, 97, 255, 0.3);
-  border-radius: 50px; /* Pill shaped like premium UI */
+  background-color: rgba(10, 15, 30, 0.5);
+  border: 1px solid rgba(0, 246, 255, 0.3);
+  border-radius: 50px; 
   width: 280px;
   font-size: 0.9rem;
   color: #FFFFFF;
@@ -282,7 +276,7 @@
 .search-input:focus {
   border-color: #00F6FF;
   box-shadow: 0 0 15px rgba(0, 246, 255, 0.2);
-  background-color: rgba(10, 15, 30, 0.9);
+  background-color: rgba(10, 15, 30, 0.8);
 }
 
 .table-responsive {
@@ -297,7 +291,7 @@
 
 .admin-table th {
   padding: 1.2rem 1.8rem;
-  background-color: rgba(10, 15, 30, 0.5);
+  background-color: rgba(10, 15, 30, 0.3);
   font-size: 0.8rem;
   text-transform: uppercase;
   color: #8A93B1;
@@ -315,7 +309,7 @@
 }
 
 .admin-table tr:hover {
-  background-color: rgba(67, 97, 255, 0.08);
+  background-color: rgba(0, 246, 255, 0.05);
 }
 
 /* User Avatars & Text */
@@ -330,7 +324,7 @@
 .avatar {
   width: 36px;
   height: 36px;
-  border-radius: 10px; /* Squircle shape matching your bento icons */
+  border-radius: 10px; 
   background: linear-gradient(135deg, rgba(98, 72, 255, 0.2), rgba(0, 246, 255, 0.2));
   color: #00F6FF;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -409,8 +403,8 @@
 .token-btn-group {
   display: flex;
   gap: 2px;
-  background: rgba(10, 15, 30, 0.8);
-  border: 1px solid rgba(67, 97, 255, 0.3);
+  background: rgba(10, 15, 30, 0.5);
+  border: 1px solid rgba(0, 246, 255, 0.3);
   border-radius: 8px;
   padding: 4px;
 }
@@ -428,7 +422,7 @@
 }
 
 .btn-add-sm:hover {
-  background: rgba(0, 246, 255, 0.15);
+  background: rgba(0, 246, 255, 0.2);
   text-shadow: 0 0 8px rgba(0, 246, 255, 0.6);
 }
 
