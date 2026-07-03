@@ -2,71 +2,70 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-// Added requireAdmin prop (defaults to false for normal user routes)
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
-    const [isAdmin, setIsAdmin] = useState(false);
+    // Grouping state to prevent React race conditions
+    const [authState, setAuthState] = useState({
+        loading: true,
+        user: null,
+        isAdmin: false
+    });
 
     useEffect(() => {
-        const checkAuthAndRole = async () => {
-            // 1. Get current session
+        const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             const currentUser = session?.user ?? null;
-            setUser(currentUser);
+            
+            let userIsAdmin = false;
 
-            // 2. If user is logged in AND this specific route requires admin
+            // Only check the database if the user is logged in AND the route requires admin
             if (currentUser && requireAdmin) {
                 try {
-                    // Fetch the user's role from your database
-                    // Note: Change 'profiles' to whatever your user data table is named
                     const { data, error } = await supabase
                         .from('profiles')
                         .select('role')
                         .eq('id', currentUser.id)
                         .single();
 
-                    if (error) throw error;
-                    
-                    // Check if the role is exactly 'admin'
-                    if (data && data.role === 'admin') {
-                        setIsAdmin(true);
+                    if (!error && data && data.role === 'admin') {
+                        userIsAdmin = true;
                     }
                 } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    setIsAdmin(false);
+                    console.error("Admin check failed:", error);
                 }
             }
-            
-            setLoading(false);
+
+            // Update all state at once when we have the final answer
+            setAuthState({
+                loading: false,
+                user: currentUser,
+                isAdmin: userIsAdmin
+            });
         };
 
-        checkAuthAndRole();
-
-        // Listen for changes (login/logout events)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setUser(session?.user ?? null);
-            setLoading(false); 
-            // Note: On sudden auth state changes, a hard refresh of role might be needed, 
-            // but keeping it simple here for standard login flows.
-        });
-
-        return () => subscription.unsubscribe();
+        checkAuth();
     }, [requireAdmin]);
 
-    // Show a loading state while checking Supabase
-    if (loading) return <div className="loading-spinner flex justify-center items-center h-screen">Checking authorization...</div>;
-
-    // Rule 1: If nobody is logged in, kick them to login page
-    if (!user) return <Navigate to="/login" replace />;
-
-    // Rule 2: If the route requires an admin, but the user is NOT an admin, kick them out
-    if (requireAdmin && !isAdmin) {
-        console.warn("Unauthorized access attempt to admin area blocked.");
-        return <Navigate to="/" replace />; // Send them back to homepage
+    // 1. Show this while checking Supabase
+    if (authState.loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#666' }}>
+                Verifying secure access...
+            </div>
+        );
     }
 
-    // Rule 3: They passed the checks. Let them in.
+    // 2. Not logged in at all? Go to login.
+    if (!authState.user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // 3. Logged in, but trying to access Admin without Admin rights? Kick to home.
+    if (requireAdmin && !authState.isAdmin) {
+        console.warn("🚨 Access Denied: You do not have admin privileges.");
+        return <Navigate to="/" replace />;
+    }
+
+    // 4. Passed all checks! Let them in.
     return children;
 };
 
