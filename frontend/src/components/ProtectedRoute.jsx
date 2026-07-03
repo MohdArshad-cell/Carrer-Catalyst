@@ -3,7 +3,6 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-    // Grouping state to prevent React race conditions
     const [authState, setAuthState] = useState({
         loading: true,
         user: null,
@@ -17,24 +16,41 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
             
             let userIsAdmin = false;
 
-            // Only check the database if the user is logged in AND the route requires admin
             if (currentUser && requireAdmin) {
+                console.log("🔐 Checking admin status for UID:", currentUser.id);
+                
                 try {
-                    const { data, error } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', currentUser.id)
-                        .single();
-
-                    if (!error && data && data.role === 'admin') {
+                    // METHOD 1: Try the secure RPC function (Bypasses RLS)
+                    const { data: rpcData, error: rpcError } = await supabase.rpc('is_admin');
+                    
+                    if (!rpcError && rpcData === true) {
+                        console.log("✅ Admin verified via secure RPC function.");
                         userIsAdmin = true;
+                    } else {
+                        // METHOD 2: Fallback to direct table query
+                        const { data: tableData, error: tableError } = await supabase
+                            .from('profiles')
+                            .select('role')
+                            .eq('id', currentUser.id)
+                            .single();
+
+                        if (tableData && tableData.role === 'admin') {
+                            console.log("✅ Admin verified via direct table query.");
+                            userIsAdmin = true;
+                        } else {
+                            // 🚨 FAILURE LOGGING - THIS TELLS US EXACTLY WHAT IS WRONG
+                            console.error("❌ Admin Verification Failed.");
+                            console.error("1. Current User ID:", currentUser.id);
+                            console.error("2. RPC Check Result:", rpcData, "| RPC Error:", rpcError);
+                            console.error("3. Table Check Data:", tableData, "| Table Error:", tableError);
+                            console.error("💡 FIX: Ensure the ID in your auth.users table exactly matches the ID in your profiles table!");
+                        }
                     }
                 } catch (error) {
-                    console.error("Admin check failed:", error);
+                    console.error("🚨 Critical Error during admin check:", error);
                 }
             }
 
-            // Update all state at once when we have the final answer
             setAuthState({
                 loading: false,
                 user: currentUser,
@@ -45,7 +61,6 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
         checkAuth();
     }, [requireAdmin]);
 
-    // 1. Show this while checking Supabase
     if (authState.loading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#666' }}>
@@ -54,18 +69,15 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
         );
     }
 
-    // 2. Not logged in at all? Go to login.
     if (!authState.user) {
         return <Navigate to="/login" replace />;
     }
 
-    // 3. Logged in, but trying to access Admin without Admin rights? Kick to home.
     if (requireAdmin && !authState.isAdmin) {
         console.warn("🚨 Access Denied: You do not have admin privileges.");
         return <Navigate to="/" replace />;
     }
 
-    // 4. Passed all checks! Let them in.
     return children;
 };
 
