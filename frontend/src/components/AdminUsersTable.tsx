@@ -54,8 +54,31 @@ const AdminUsersTable = () => {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleGrantTokens = (userId: string) => {
-    alert(`Backend API call needed to grant tokens to: ${userId}`);
+  // ✅ Secure Backend Call with Optimistic UI Update
+  const handleGrantTokens = async (userId: string, amount: number) => {
+    // 1. Optimistic Update: Instantly change the UI so it feels lightning fast
+    setUsers((prevUsers) => 
+      prevUsers.map((u) => u.id === userId ? { ...u, tokens: u.tokens + amount } : u)
+    );
+
+    // 2. Database Call: Safely execute the secure RPC function
+    try {
+      const { error } = await supabase.rpc('grant_tokens', {
+        target_user_id: userId,
+        token_amount: amount
+      });
+
+      if (error) throw error;
+      
+    } catch (error) {
+      console.error("Database Error granting tokens:", error);
+      alert("Failed to grant tokens securely. Check console.");
+      
+      // 3. Revert UI: If the database failed, take the tokens back off the screen
+      setUsers((prevUsers) => 
+        prevUsers.map((u) => u.id === userId ? { ...u, tokens: u.tokens - amount } : u)
+      );
+    }
   };
 
   return (
@@ -118,12 +141,32 @@ const AdminUsersTable = () => {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button 
-                        onClick={() => handleGrantTokens(user.id)}
-                        className="btn-action btn-add"
-                      >
-                        + 50 Tokens
-                      </button>
+                      
+                      {/* ✅ The New +10, +30, +100 Button Group */}
+                      <div className="token-btn-group">
+                        <button 
+                          onClick={() => handleGrantTokens(user.id, 10)} 
+                          className="btn-add-sm" 
+                          title="Add 10 Tokens"
+                        >
+                          +10
+                        </button>
+                        <button 
+                          onClick={() => handleGrantTokens(user.id, 30)} 
+                          className="btn-add-sm" 
+                          title="Add 30 Tokens"
+                        >
+                          +30
+                        </button>
+                        <button 
+                          onClick={() => handleGrantTokens(user.id, 100)} 
+                          className="btn-add-sm" 
+                          title="Add 100 Tokens"
+                        >
+                          +100
+                        </button>
+                      </div>
+
                       <button className="btn-action btn-ban">
                         Ban
                       </button>
