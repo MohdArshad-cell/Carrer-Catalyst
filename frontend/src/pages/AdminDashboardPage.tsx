@@ -95,7 +95,7 @@ const AdminDashboardPage = () => {
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
-            <div className="tab-content fade-in">
+            <div className="admin-tab-content fade-in">
               <div className="metrics-grid">
                 <div className="metric-card">
                   <h3 className="metric-title">Total Users</h3>
@@ -164,14 +164,14 @@ const AdminDashboardPage = () => {
 
           {/* TAB 2: USER MANAGEMENT */}
           {activeTab === 'users' && (
-            <div className="tab-content fade-in">
+            <div className="admin-tab-content fade-in">
               <AdminUsersTable />
             </div>
           )}
 
           {/* TAB 3: SYSTEM LOGS */}
           {activeTab === 'logs' && (
-            <div className="tab-content fade-in">
+            <div className="admin-tab-content fade-in">
               <div className="panel-card">
                 <h2 className="panel-header">🚨 System & AI Generation Logs</h2>
                 <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
@@ -208,7 +208,7 @@ const AdminDashboardPage = () => {
 
           {/* TAB 4: SETTINGS */}
           {activeTab === 'settings' && (
-            <div className="tab-content fade-in">
+            <div className="admin-tab-content fade-in">
               <div className="panel-card" style={{ maxWidth: '600px' }}>
                 <h2 className="panel-header">🛠️ Global Platform Settings</h2>
                 

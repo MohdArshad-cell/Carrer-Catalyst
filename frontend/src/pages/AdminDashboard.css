@@ -80,8 +80,12 @@
   border-bottom-color: #2563eb;
 }
 
-.tab-content {
-  animation: fadeIn 0.3s ease-in-out;
+/* Replace your old .tab-content with this */
+.admin-tab-content {
+  animation: fadeIn 0.3s ease-in-out forwards;
+  opacity: 1 !important;
+  display: block !important;
+  visibility: visible !important;
 }
 
 @keyframes fadeIn {
