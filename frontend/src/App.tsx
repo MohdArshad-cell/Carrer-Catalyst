@@ -17,6 +17,10 @@ import "./App.css";
 function App() {
   return (
     <div className="App">
+      
+      {/* ✅ THIS IS THE FIX: The global aurora background now sits permanently behind EVERY page */}
+      <div className="background-aurora"></div>
+
       <Routes>
         {/* =========================================
             Public Routes - Free Tools & Landing Pages
@@ -60,6 +64,7 @@ function App() {
                 <MockInterviewPage />
             </ProtectedRoute>
         } />
+        
         {/* =========================================
             Admin Routes (Restricted)
             ========================================= */}
