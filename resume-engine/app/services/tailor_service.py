@@ -6,7 +6,7 @@ from pathlib import Path
 import base64
 from datetime import datetime
 from rapidfuzz import fuzz
-
+from concurrent.futures import ThreadPoolExecutor
 # --- API & DISTRIBUTED DEPENDENCIES ---
 import redis
 from groq import Groq
@@ -314,13 +314,34 @@ def check_semantic_cache(jd_text: str):
 
 def execute_tailor_chain(resume_input: str, job_description: str, template_name: str = "base_template") -> dict:
     try:
-        # 0. GROQ LPU INPUT PARSER
-        try:
-            full_resume_data = json.loads(resume_input)
-            print("--- 🧠 Input is already valid JSON ---")
-        except json.JSONDecodeError:
-            resume_json_str = parse_raw_text_to_json(resume_input)
-            full_resume_data = json.loads(resume_json_str)
+        # 0 & 1. PARALLEL PARSING (RESUME + JD)
+        print("--- ⚡ Running Step 0 (Resume) and Step 1 (JD) Concurrently ---")
+        
+        def parse_resume():
+            try:
+                res = json.loads(resume_input)
+                print("--- 🧠 Input is already valid JSON ---")
+                return res
+            except json.JSONDecodeError:
+                return json.loads(parse_raw_text_to_json(resume_input))
+                
+        def parse_jd():
+            jd = check_semantic_cache(job_description)
+            if jd:
+                return jd
+            prompt1 = load_file('prompt_step1_jd_analysis.txt').replace('{job_description}', job_description)
+            raw_jd_json = call_gemini_api(prompt1, schema=JobDescriptionAnalysis)
+            jd = json.loads(raw_jd_json)
+            jd_hash = base64.b64encode(job_description[:100].encode()).decode()
+            redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd))
+            return jd
+            
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_resume = executor.submit(parse_resume)
+            future_jd = executor.submit(parse_jd)
+            
+            full_resume_data = future_resume.result()
+            jd_data = future_jd.result()
 
         immutables = {
             "personal_info": full_resume_data.get("personal_info", {}),
@@ -330,16 +351,6 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
         }
         mutables = {k: full_resume_data.get(k, []) for k in ["summary", "skills", "experience", "projects"]}
         mutable_json_str = json.dumps(mutables, indent=2)
-
-        # 1. CACHE & JD EXTRACTION
-        print("--- 🧠 Tailoring Step 1: Extract JD ---")
-        jd_data = check_semantic_cache(job_description)
-        if not jd_data:
-            prompt1 = load_file('prompt_step1_jd_analysis.txt').replace('{job_description}', job_description)
-            raw_jd_json = call_gemini_api(prompt1, schema=JobDescriptionAnalysis)
-            jd_data = json.loads(raw_jd_json)
-            jd_hash = base64.b64encode(job_description[:100].encode()).decode()
-            redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data))
 
         target_title = jd_data.get("target_job_title", "Software Engineer")
         all_jd_skills = jd_data.get("must_have_tech_skills", []) + jd_data.get("sdlc_and_practices", [])
