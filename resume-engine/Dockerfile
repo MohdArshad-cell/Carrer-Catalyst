@@ -50,4 +50,4 @@ USER appuser
 EXPOSE 10000
 
 # 9. Command to run your application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
