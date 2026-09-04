@@ -44,6 +44,12 @@ COPY ./app ./app
 
 # 7. Create a non-root user for security
 RUN useradd -m appuser && chown -R appuser:appuser /app
+
+# FIX: Copy the Tectonic package cache from root to appuser so it doesn't redownload on every run!
+RUN mkdir -p /home/appuser/.cache && \
+    cp -r /root/.cache/Tectonic /home/appuser/.cache/Tectonic && \
+    chown -R appuser:appuser /home/appuser/.cache
+
 USER appuser
 
 # 8. Expose the port your app runs on

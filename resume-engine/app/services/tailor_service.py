@@ -27,7 +27,7 @@ redis_client = redis.Redis(
     decode_responses=True
 )
 
-MODEL_NAME = "gemini-2.5-flash-lite" 
+MODEL_NAME = "gemini-3.5-flash-lite" 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TAILOR_PROMPTS_DIR = BASE_DIR / "app" / "prompts" / "tailor"
 
