@@ -12,18 +12,20 @@ Your objective is to seamlessly inject missing keywords and rewrite the mutable 
 2. MAINTAIN TRUTH (METRIC ISOLATION): NEVER invent fake dates or fake quantitative metrics. All original numbers, percentages, and timelines must remain perfectly intact. If a bullet lacks a metric, focus on the *magnitude* of the impact using strong nouns (e.g., "Spearheaded", "Architected") rather than inventing numbers.
 
 ### TAILORING LOGIC:
-1. SUMMARY REWRITE: Weave the {target_job_title}, 2-3 {missing_skills}, and 1 {soft_skills} naturally into the summary. Use a high-level, results-driven executive tone.
-2. SKILL ARRAY INJECTION: Categorize and append all {missing_skills} into the 'skills' array.
-3. SURGICAL BULLET INJECTION (ATS SCORING): 
-   - DO NOT just write "used {keyword}". If a missing skill logically fits an existing bullet point, rewrite that specific bullet to explain *HOW* the tool was applied to solve a problem.
-   - CONTEXTUAL BOUNDARIES: Keep backend tools with backend work, and frontend with frontend. If a skill does NOT logically fit the existing technical context, LEAVE IT OUT of the experience section and only put it in the Skills array.
-   - ACTION VERB OVERRIDE: Elevate weak bullet points by starting them with high-impact verbs from {action_verbs}.
-4. SMART SDLC INTEGRATION: Seamlessly weave {sdlc_and_practices} (e.g., CI/CD, Unit Testing) into professional experience bullets. For solo/academic projects, emphasize architecture rather than enterprise SDLC.
-5. PRESERVE TIMELINES: Extract exact dates from input. If blank, output null.
+1. SUMMARY REWRITE & TONE: The candidate's tone MUST match this profile: "{tone}". Do NOT write like a 10-year veteran if they are a junior. Weave the {target_job_title}, 2-3 {missing_skills}, and 1 {soft_skills} naturally into the summary.
+2. SKILL ARRAY INJECTION: Categorize and append all {missing_skills} and {bonus_skills} into the 'skills' array.
+3. SURGICAL BULLET INJECTION & CONTEXTUAL BOUNDARIES: 
+   - DO NOT just write "used {keyword}". If a missing or bonus skill logically fits an existing bullet point, rewrite that specific bullet to explain *HOW* the tool was applied.
+   - STRICT BOUNDARIES: Keep backend tools with backend work, frontend with frontend. If a skill does NOT logically fit the existing technical context of a specific job/project, LEAVE IT OUT of the experience section entirely.
+4. XYZ / STAR FORMULA ENFORCEMENT: Every single bullet point must demonstrate impact. If a bullet lacks a quantifiable metric (because you cannot invent numbers), you MUST rewrite it using strong {action_verbs} to emphasize the *architectural magnitude* or *business context* of the work.
+5. SMART SDLC INTEGRATION: Seamlessly weave {sdlc_and_practices} (e.g., CI/CD, Unit Testing) into professional experience bullets where logically appropriate.
+6. PRESERVE TIMELINES: Extract exact dates from input. If blank, output null.
 
 ### INPUT DATA:
+CANDIDATE TONE: {tone}
 TARGET JOB TITLE: {target_job_title}
 MISSING CRITICAL SKILLS: {missing_skills}
+BONUS/NICE-TO-HAVE SKILLS: {bonus_skills}
 TARGET SOFT SKILLS: {soft_skills}
 TARGET SDLC PRACTICES: {sdlc_and_practices}
 TARGET ACTION VERBS: {action_verbs}

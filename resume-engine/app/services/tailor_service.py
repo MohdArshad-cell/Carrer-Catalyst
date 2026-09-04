@@ -4,6 +4,8 @@ import re
 import time
 from pathlib import Path
 import base64
+from datetime import datetime
+from rapidfuzz import fuzz
 
 # --- API & DISTRIBUTED DEPENDENCIES ---
 import redis
@@ -163,17 +165,69 @@ def verify_bullet_count(original_json_str: str, tailored_data: dict) -> dict:
                 
     return tailored_data
 
-def find_missing_keywords(resume_string: str, jd_data: dict) -> list:
+def calculate_yoe(experience_list: list) -> str:
+    total_months = 0
+    now = datetime.now()
+    
+    for exp in experience_list:
+        start = str(exp.get('startDate', ''))
+        end = str(exp.get('endDate', ''))
+        
+        if not start:
+            continue
+            
+        try:
+            # Try to parse Year or Month Year (e.g. "2020", "Jan 2020", "01/2020")
+            # For simplicity, we just look for 4-digit years in the string
+            start_year_match = re.search(r'\d{4}', start)
+            if not start_year_match:
+                continue
+            start_year = int(start_year_match.group())
+            
+            end_year = now.year
+            if end and str(end).lower() not in ["present", "current"]:
+                end_year_match = re.search(r'\d{4}', end)
+                if end_year_match:
+                    end_year = int(end_year_match.group())
+            
+            years = max(0, end_year - start_year)
+            # If they provide exact months we could be more precise, but years is usually enough
+            # We'll assume full years for this simple local calculation
+            total_months += years * 12
+        except Exception:
+            continue
+            
+    total_years = total_months / 12
+    
+    if total_years <= 2:
+        return "Ambitious, growth-oriented, and highly adaptable."
+    elif total_years <= 7:
+        return "Results-driven professional with proven technical execution."
+    else:
+        return "Strategic, high-level leader focused on architecture and business impact."
+
+def find_missing_keywords(resume_string: str, skills_list: list) -> list:
     missing = []
     resume_lower = resume_string.lower()
-    all_jd_skills = jd_data.get("must_have_tech_skills", []) + jd_data.get("sdlc_and_practices", [])
     
-    for skill in all_jd_skills:
+    # Simple tokenization for rapidfuzz matching against resume words
+    resume_words = set(re.findall(r'\b\w+\b', resume_lower))
+    
+    for skill in skills_list:
         skill_str = str(skill).lower().strip()
         if not skill_str: continue
-        escaped_skill = re.escape(skill_str)
-        pattern = r'(?<!\w)' + escaped_skill + r'(?!\w)'
-        if not re.search(pattern, resume_lower):
+        
+        # Exact substring match first (fastest)
+        if skill_str in resume_lower:
+            continue
+            
+        # Fuzzy match using partial ratio
+        # For multi-word skills (e.g., "Amazon Web Services"), partial_ratio against the whole resume works well
+        # For single words (e.g., "React.js"), check against token set
+        score = fuzz.partial_ratio(skill_str, resume_lower)
+        
+        # 85 is a safe threshold for technical synonym matching without false positives
+        if score < 85:
             missing.append(str(skill))
             
     return missing[:6] 
@@ -202,18 +256,40 @@ def sanitize_for_latex(data):
         if data.strip().lower() in ["none", "n/a", "null", ""]:
             return ""
             
-        s = re.sub(r'\*\*(.*?)\*\*', r'\\textbf{\1}', data)
-        s = re.sub(r'(?<!\\)&', r'\&', s)
-        s = re.sub(r'(?<!\\)%', r'\%', s)
-        s = re.sub(r'(?<!\\)\$', r'\$', s)
-        s = re.sub(r'(?<!\\)#', r'\#', s)   
-        s = re.sub(r'(?<!\\)_', r'\_', s)   
-        
-        s = s.replace('”', '"').replace('“', '"')
-        s = s.replace('’', "'").replace('‘', "'")
-        s = s.replace('—', '---').replace('–', '--')
-        s = s.replace('\u2022', '-') 
-        return s
+        def escape_text(text):
+            mapping = {
+                '\\': '\\textbackslash{}',
+                '{': '\\{',
+                '}': '\\}',
+                '~': '\\textasciitilde{}',
+                '^': '\\textasciicircum{}',
+                '&': '\\&',
+                '%': '\\%',
+                '$': '\\$',
+                '#': '\\#',
+                '_': '\\_'
+            }
+            res = []
+            for char in text:
+                res.append(mapping.get(char, char))
+            text = "".join(res)
+            
+            text = text.replace('”', '"').replace('“', '"')
+            text = text.replace('’', "'").replace('‘', "'")
+            text = text.replace('—', '---').replace('–', '--')
+            text = text.replace('\u2022', '-')
+            return text
+
+        parts = re.split(r'\*\*(.*?)\*\*', data)
+        escaped_parts = []
+        for i, part in enumerate(parts):
+            escaped_part = escape_text(part)
+            if i % 2 == 1:
+                escaped_parts.append(f'\\textbf{{{escaped_part}}}')
+            else:
+                escaped_parts.append(escaped_part)
+                
+        return "".join(escaped_parts)
     return data
 
 
@@ -291,16 +367,31 @@ def execute_tailor_chain(resume_input: str, job_description: str, template_name:
             redis_client.setex(f"jd_cache:{jd_hash}", 86400, json.dumps(jd_data))
 
         target_title = jd_data.get("target_job_title", "Software Engineer")
-        missing_skills = find_missing_keywords(json.dumps(full_resume_data), jd_data)
+        all_jd_skills = jd_data.get("must_have_tech_skills", []) + jd_data.get("sdlc_and_practices", [])
+        missing_skills = find_missing_keywords(json.dumps(full_resume_data), all_jd_skills)
         missing_skills_str = ", ".join(missing_skills) if missing_skills else "None"
         
-        print(f"🎯 Title: {target_title} | 🛠️ Missing: {missing_skills_str}")
+        bonus_skills = find_missing_keywords(json.dumps(full_resume_data), jd_data.get("good_to_have_skills", []))
+        bonus_skills_str = ", ".join(bonus_skills) if bonus_skills else "None"
+        
+        print(f"🎯 Title: {target_title} | 🛠️ Missing: {missing_skills_str} | 🎁 Bonus: {bonus_skills_str}")
 
         # 2. GEMINI SURGICAL INJECTION
         print("--- ⚙️ Tailoring Step 2: Surgical Injection ---")
+        tone = calculate_yoe(full_resume_data.get("experience", []))
+        
+        soft_skills_str = ", ".join(jd_data.get("soft_skills", [])) if jd_data.get("soft_skills") else "None"
+        sdlc_str = ", ".join(jd_data.get("sdlc_and_practices", [])) if jd_data.get("sdlc_and_practices") else "None"
+        verbs_str = ", ".join(jd_data.get("action_verbs", [])) if jd_data.get("action_verbs") else "None"
+
         prompt2 = load_file('prompt_step2_planning.txt') \
             .replace('{target_job_title}', target_title) \
+            .replace('{tone}', tone) \
             .replace('{missing_skills}', missing_skills_str) \
+            .replace('{bonus_skills}', bonus_skills_str) \
+            .replace('{soft_skills}', soft_skills_str) \
+            .replace('{sdlc_and_practices}', sdlc_str) \
+            .replace('{action_verbs}', verbs_str) \
             .replace('{resume_text}', mutable_json_str) 
         
         raw_tailored_json = call_gemini_api(prompt2, schema=ResumeData)
