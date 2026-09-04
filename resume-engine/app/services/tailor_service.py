@@ -297,34 +297,9 @@ def sanitize_for_latex(data):
 # 4. CORE EXECUTION CHAINS
 # ==========================================
 def parse_raw_text_to_json(raw_text: str, max_retries: int = 10) -> str:
-    print("--- ⚡ Step 0: Groq LPU Smart Parsing ---")
+    print("--- ⚡ Step 0: Gemini Smart Parsing ---")
     prompt0 = load_file('prompt_step0_parser.txt').replace('{raw_resume}', raw_text)
-    
-    for attempt in range(max_retries):
-        api_key = groq_key_manager.get_key()
-        client = Groq(api_key=api_key)
-        
-        try:
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role": "user", "content": prompt0}],
-                temperature=0.0,
-                response_format={"type": "json_object"}
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "429" in error_msg or "rate limit" in error_msg:
-                print(f"⚠️ Worker caught 429 Rate Limit on Groq. Locking Key in Redis...")
-                groq_key_manager.lock_key(api_key)
-                continue
-            
-            print(f"❌ Groq API Error: {str(e)}")
-            if attempt == max_retries - 1:
-                raise RuntimeError(f"Groq failed permanently after {max_retries} attempts.") from e
-                
-    # THE FIX: Prevent silent None returns
-    raise RuntimeError(f"API Rate Limit Reached: Groq failed permanently after {max_retries} retries.")
+    return call_gemini_api(prompt0, force_json=True, max_retries=max_retries)
 
 def check_semantic_cache(jd_text: str):
     try:
