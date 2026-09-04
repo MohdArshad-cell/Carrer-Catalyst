@@ -306,7 +306,7 @@ def parse_raw_text_to_json(raw_text: str, max_retries: int = 10) -> str:
         
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model="llama3-70b-8192",
                 messages=[{"role": "user", "content": prompt0}],
                 temperature=0.0,
                 response_format={"type": "json_object"}
