@@ -1,10 +1,21 @@
 import asyncio
 import sys
+from unittest.mock import MagicMock
 
 # Add the current directory to Python path
 sys.path.append('.')
 
+# Mock Redis before importing tailor_service
+import redis
+sys.modules['redis'] = MagicMock()
+
 from app.services.tailor_service import execute_tailor_chain
+import app.services.tailor_service as ts
+
+# Mock the actual client instances
+ts.redis_client = MagicMock()
+ts.redis_client.get.return_value = None
+ts.redis_client.exists.return_value = False
 
 raw_resume = r"""\documentclass[letterpaper,9.8pt]{article}
 \usepackage{latexsym}
