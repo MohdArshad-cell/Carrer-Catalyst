@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
 import { supabase } from '../supabaseClient';
-import './AiTailorPage.css'; 
+import './AiTailorPage.css';
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
@@ -41,17 +41,17 @@ interface EvaluationData {
 }
 
 const AtsEvaluatorPage: React.FC = () => {
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
-    const [evaluationResult, setEvaluationResult] = useState<EvaluationData | null>(null); 
-    
+    const [evaluationResult, setEvaluationResult] = useState<EvaluationData | null>(null);
+
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState(0);
     const [error, setError] = useState('');
     const [isDragging, setIsDragging] = useState(false);
-    const [copyState, setCopyState] = useState<{[key: number]: string}>({});
+    const [copyState, setCopyState] = useState<{ [key: number]: string }>({});
 
     // --- DRAG & DROP LOGIC ---
     const handleDragOver = (e: React.DragEvent) => {
@@ -92,13 +92,13 @@ const AtsEvaluatorPage: React.FC = () => {
             setError('Please provide both your resume and the job description.');
             return;
         }
-        
+
         setIsLoading(true);
         setError('');
         setEvaluationResult(null);
         setLoadingStep(0);
 
-        let stepInterval: any = null; 
+        let stepInterval: any = null;
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -116,16 +116,16 @@ const AtsEvaluatorPage: React.FC = () => {
             }, 3000);
 
             const payload = { resume_text: resumeText, job_description: jobDescription };
-            
+
             const response = await axios.post(`${API_BASE_URL}/api/ai/evaluate`, payload, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            
-            if (stepInterval) clearInterval(stepInterval); 
-            
+
+            if (stepInterval) clearInterval(stepInterval);
+
             if (response.data) {
                 const payloadData = response.data.evaluation_result || response.data;
                 setEvaluationResult(payloadData);
@@ -133,9 +133,9 @@ const AtsEvaluatorPage: React.FC = () => {
                 throw new Error("Invalid JSON format received from server.");
             }
         } catch (err: any) {
-            if (stepInterval) clearInterval(stepInterval); 
+            if (stepInterval) clearInterval(stepInterval);
             console.error("Error evaluating resume:", err);
-            
+
             if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
                 setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
                 setIsLoading(false);
@@ -162,7 +162,7 @@ const AtsEvaluatorPage: React.FC = () => {
             <Navbar />
 
             <div className="tailor-studio-container" style={{ paddingTop: '100px', paddingBottom: '3rem', maxWidth: '96%', margin: '0 auto' }}>
-                
+
                 <div className="studio-header text-center" style={{ marginBottom: '3rem' }}>
                     <div className="hero-badge" style={{ borderColor: '#ef4444', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}>
                         <span className="sparkle">🔥</span> Enterprise ATS Engine
@@ -198,9 +198,9 @@ const AtsEvaluatorPage: React.FC = () => {
                 </div>
 
                 <div className="action-row text-center" style={{ margin: '3rem 0' }}>
-                    <button 
-                        className="btn-premium pulse-glow massive-btn" 
-                        onClick={handleEvaluateResume} 
+                    <button
+                        className="btn-premium pulse-glow massive-btn"
+                        onClick={handleEvaluateResume}
                         disabled={isLoading || !resumeText.trim() || !jobDescription.trim()}
                         style={{ padding: '1.2rem 3rem', fontSize: '1.2rem', borderRadius: '50px', background: 'linear-gradient(135deg, #ef4444, #f59e0b)' }}
                     >
@@ -224,12 +224,12 @@ const AtsEvaluatorPage: React.FC = () => {
                             <div className="dashboard-wrapper">
                                 {/* SCORE & RED FLAGS ROW */}
                                 <div className="tailor-input-grid" style={{ marginBottom: '2rem', gridTemplateColumns: '1fr 1.5fr 1fr' }}>
-                                    
+
                                     {/* ATS SCORE PANEL */}
                                     <div className="panel glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                         <h2 className="panel-title">ATS Score</h2>
                                         <div style={{
-                                            width: '140px', height: '140px', borderRadius: '50%', 
+                                            width: '140px', height: '140px', borderRadius: '50%',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             border: `8px solid ${getScoreColor(evaluationResult.score)}`,
                                             fontSize: '3rem', fontWeight: '800', color: '#fff',
@@ -239,9 +239,9 @@ const AtsEvaluatorPage: React.FC = () => {
                                         }}>
                                             {evaluationResult.score}%
                                         </div>
-                                        <button 
-                                            onClick={() => navigate('/tailor')} 
-                                            className="btn-premium pulse-glow" 
+                                        <button
+                                            onClick={() => navigate('/ai-tailor')}
+                                            className="btn-premium pulse-glow"
                                             style={{ marginTop: '1.5rem', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
                                         >
                                             Tailor My Resume 🚀
@@ -306,13 +306,13 @@ const AtsEvaluatorPage: React.FC = () => {
                                 <div className="panel glass-card">
                                     <h2 className="panel-title" style={{ color: '#b620e0' }}>🔥 Constructive Roasts & Rewrites</h2>
                                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Direct, brutal feedback on how a recruiter perceives your weak bullet points.</p>
-                                    
+
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                         {evaluationResult.constructive_roasts.map((roast, idx) => (
-                                            <div key={idx} style={{ 
-                                                background: 'rgba(10, 10, 10, 0.6)', 
-                                                border: '1px solid rgba(182, 32, 224, 0.3)', 
-                                                borderRadius: '12px', 
+                                            <div key={idx} style={{
+                                                background: 'rgba(10, 10, 10, 0.6)',
+                                                border: '1px solid rgba(182, 32, 224, 0.3)',
+                                                borderRadius: '12px',
                                                 overflow: 'hidden',
                                                 boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
                                             }}>
@@ -343,7 +343,7 @@ const AtsEvaluatorPage: React.FC = () => {
                                                         <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px' }}>
                                                             AI REWRITE (USE THIS):
                                                         </span>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleCopyRewrite(roast.rewrite, idx)}
                                                             style={{
                                                                 background: 'rgba(16, 185, 129, 0.2)',
