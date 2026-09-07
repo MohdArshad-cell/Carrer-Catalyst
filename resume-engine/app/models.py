@@ -108,10 +108,10 @@ class ResumeData(BaseModel):
     certifications: Optional[List[CertificationItem]] = []
 
 class CoverLetterContact(BaseModel):
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    linkedin: Optional[str] = None
-    address: Optional[str] = None
+    phone: str = Field(..., description="Phone number. Leave empty string if not found.")
+    email: str = Field(..., description="Email address. Leave empty string if not found.")
+    linkedin: str = Field(..., description="LinkedIn URL. Leave empty string if not found.")
+    address: str = Field(..., description="Location or Address. Leave empty string if not found.")
 
 class CoverLetterData(BaseModel):
     candidate_name: str = Field(..., description="Full name of the candidate")
