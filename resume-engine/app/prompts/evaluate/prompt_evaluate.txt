@@ -10,6 +10,10 @@ EVALUATION & EXTRACTION RULES:
    - Quote the exact weak bullet.
    - Provide a brutally honest critique of why an enterprise recruiter would reject it (e.g., 'No metrics, completely vague, lacks technical depth').
    - Rewrite it using the XYZ formula (Accomplished X as measured by Y, by doing Z). You MUST seamlessly weave in the exact JD skills where `is_found` is False into these rewrites.
+5. Dimension Scoring: Analyze the overall quality of the resume and provide a strict score from 0 to 100 for each of the following:
+   - `metrics_score`: How well does the resume use quantifiable metrics and data? (0 = No numbers, 100 = Every bullet is quantified).
+   - `brevity_score`: How concise and readable is the resume? (0 = Walls of text/fluff, 100 = Crisp, impactful, easily scannable).
+   - `action_verbs_score`: How strong are the action verbs? (0 = Passive voice, generic verbs like "Worked on", 100 = Powerful verbs like "Spearheaded", "Architected").
 
 CURRENT DATE: {current_date}
 

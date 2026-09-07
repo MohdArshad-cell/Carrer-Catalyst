@@ -28,6 +28,9 @@ class AIResumeExtractionSchema(BaseModel):
     soft_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of methodologies (e.g., Agile) and soft skills.")
     red_flags: List[str] = Field(..., description="Critical dealbreakers.")
     constructive_roasts: List[RoastDetail] = Field(..., description="3 specific roasts targeting weak bullet points.")
+    metrics_score: int = Field(..., description="Score out of 100 on how well the resume uses quantifiable metrics and data.")
+    brevity_score: int = Field(..., description="Score out of 100 on brevity, conciseness, and readability.")
+    action_verbs_score: int = Field(..., description="Score out of 100 on the use of strong, active verbs vs passive language.")
 
 
 # ==========================================
@@ -72,6 +75,12 @@ def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
 
         return {
             "score": final_score,
+            "dimension_scores": {
+                "keyword_match": final_score,
+                "metrics": ai_data.get("metrics_score", 50),
+                "brevity": ai_data.get("brevity_score", 50),
+                "action_verbs": ai_data.get("action_verbs_score", 50)
+            },
             "red_flags": ai_data.get("red_flags", []),
             "missing_keywords": missing_hard + missing_soft,
             "constructive_roasts": ai_data.get("constructive_roasts", [])

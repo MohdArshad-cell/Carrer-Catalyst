@@ -7,6 +7,8 @@ import ParticleBackground from '../components/ParticleBackground';
 import { supabase } from '../supabaseClient';
 import './AiTailorPage.css'; 
 
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const loadingSteps = [
@@ -23,8 +25,16 @@ interface RoastDetail {
     rewrite: string;
 }
 
+interface DimensionScores {
+    keyword_match: number;
+    metrics: number;
+    brevity: number;
+    action_verbs: number;
+}
+
 interface EvaluationData {
     score: number;
+    dimension_scores: DimensionScores;
     red_flags: string[];
     missing_keywords: string[];
     constructive_roasts: RoastDetail[];
@@ -41,6 +51,7 @@ const AtsEvaluatorPage: React.FC = () => {
     const [loadingStep, setLoadingStep] = useState(0);
     const [error, setError] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [copyState, setCopyState] = useState<{[key: number]: string}>({});
 
     // --- DRAG & DROP LOGIC ---
     const handleDragOver = (e: React.DragEvent) => {
@@ -65,6 +76,14 @@ const AtsEvaluatorPage: React.FC = () => {
         } else {
             setError("Please drop a valid .txt or .json file.");
         }
+    };
+
+    const handleCopyRewrite = (text: string, idx: number) => {
+        navigator.clipboard.writeText(text);
+        setCopyState(prev => ({ ...prev, [idx]: '✅ Copied!' }));
+        setTimeout(() => {
+            setCopyState(prev => ({ ...prev, [idx]: '📋 Copy' }));
+        }, 2000);
     };
 
     // --- MAIN API CALL ---
@@ -193,7 +212,8 @@ const AtsEvaluatorPage: React.FC = () => {
                 {(isLoading || evaluationResult) && (
                     <div className="output-section">
                         {isLoading ? (
-                            <div className="loading-state glass-card text-center" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
+                            <div className="loading-state glass-card text-center scan-theater" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
+                                <div className="scanner-beam" style={{ background: '#ef4444', boxShadow: '0 0 20px 5px rgba(239, 68, 68, 0.5)' }}></div>
                                 <div className="spinner-premium" style={{ borderTopColor: '#ef4444' }}></div>
                                 <h3 className="step-text" style={{ color: '#ef4444', margin: '1.5rem 0' }}>{loadingSteps[loadingStep]}</h3>
                                 <div className="progress-bar-container">
@@ -203,33 +223,62 @@ const AtsEvaluatorPage: React.FC = () => {
                         ) : evaluationResult && (
                             <div className="dashboard-wrapper">
                                 {/* SCORE & RED FLAGS ROW */}
-                                <div className="tailor-input-grid" style={{ marginBottom: '2rem' }}>
+                                <div className="tailor-input-grid" style={{ marginBottom: '2rem', gridTemplateColumns: '1fr 1.5fr 1fr' }}>
                                     
+                                    {/* ATS SCORE PANEL */}
                                     <div className="panel glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                                        <h2 className="panel-title">ATS Match Score</h2>
+                                        <h2 className="panel-title">ATS Score</h2>
                                         <div style={{
                                             width: '140px', height: '140px', borderRadius: '50%', 
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             border: `8px solid ${getScoreColor(evaluationResult.score)}`,
                                             fontSize: '3rem', fontWeight: '800', color: '#fff',
                                             boxShadow: `0 0 30px ${getScoreColor(evaluationResult.score)}40`,
-                                            marginTop: '1rem'
+                                            marginTop: '1rem',
+                                            transition: 'stroke-dashoffset 1s ease-in-out'
                                         }}>
                                             {evaluationResult.score}%
                                         </div>
+                                        <button 
+                                            onClick={() => navigate('/tailor')} 
+                                            className="btn-premium pulse-glow" 
+                                            style={{ marginTop: '1.5rem', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
+                                        >
+                                            Tailor My Resume 🚀
+                                        </button>
                                     </div>
 
+                                    {/* RADAR CHART PANEL */}
+                                    <div className="panel glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <h2 className="panel-title">Skill Dimensions</h2>
+                                        <div style={{ width: '100%', height: '220px', marginTop: '10px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                                                    { subject: 'Keywords', A: evaluationResult.dimension_scores.keyword_match, fullMark: 100 },
+                                                    { subject: 'Metrics', A: evaluationResult.dimension_scores.metrics, fullMark: 100 },
+                                                    { subject: 'Brevity', A: evaluationResult.dimension_scores.brevity, fullMark: 100 },
+                                                    { subject: 'Action Verbs', A: evaluationResult.dimension_scores.action_verbs, fullMark: 100 },
+                                                ]}>
+                                                    <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                                                    <Radar name="Resume" dataKey="A" stroke="#00e5ff" fill="#00e5ff" fillOpacity={0.4} />
+                                                </RadarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+
+                                    {/* RED FLAGS PANEL */}
                                     <div className="panel glass-card" style={{ borderLeft: '4px solid #ef4444' }}>
-                                        <h2 className="panel-title" style={{ color: '#ef4444' }}>🚩 Critical Dealbreakers</h2>
+                                        <h2 className="panel-title" style={{ color: '#ef4444' }}>🚩 Dealbreakers</h2>
                                         {evaluationResult.red_flags.length > 0 ? (
-                                            <ul style={{ color: '#fca5a5', paddingLeft: '20px', lineHeight: '1.8', fontSize: '1.05rem', margin: 0 }}>
+                                            <ul style={{ color: '#fca5a5', paddingLeft: '20px', lineHeight: '1.5', fontSize: '0.95rem', margin: 0 }}>
                                                 {evaluationResult.red_flags.map((flag, idx) => (
-                                                    <li key={idx} style={{ marginBottom: '10px' }}>{flag}</li>
+                                                    <li key={idx} style={{ marginBottom: '8px' }}>{flag}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#10b981', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                                                ✅ No critical red flags found!
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#10b981', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                                ✅ No red flags!
                                             </div>
                                         )}
                                     </div>
@@ -289,10 +338,27 @@ const AtsEvaluatorPage: React.FC = () => {
                                                 </div>
 
                                                 {/* Section 3: The Fix */}
-                                                <div style={{ padding: '1.2rem', background: 'rgba(16, 185, 129, 0.05)', borderLeft: '4px solid #10b981' }}>
-                                                    <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-                                                        AI REWRITE (USE THIS):
-                                                    </span>
+                                                <div style={{ padding: '1.2rem', background: 'rgba(16, 185, 129, 0.05)', borderLeft: '4px solid #10b981', position: 'relative' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                        <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+                                                            AI REWRITE (USE THIS):
+                                                        </span>
+                                                        <button 
+                                                            onClick={() => handleCopyRewrite(roast.rewrite, idx)}
+                                                            style={{
+                                                                background: 'rgba(16, 185, 129, 0.2)',
+                                                                border: '1px solid rgba(16, 185, 129, 0.5)',
+                                                                color: '#10b981',
+                                                                padding: '4px 10px',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8rem',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            {copyState[idx] || '📋 Copy'}
+                                                        </button>
+                                                    </div>
                                                     <p style={{ color: '#a7f3d0', margin: 0, fontSize: '1.1rem', fontWeight: '500', lineHeight: '1.5' }}>
                                                         {roast.rewrite}
                                                     </p>
