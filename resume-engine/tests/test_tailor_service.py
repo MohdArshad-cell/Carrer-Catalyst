@@ -9,7 +9,7 @@ from app.generator import escape_latex
 
 def test_escape_latex_edge_cases():
     """Test that escape_latex handles LaTeX control characters correctly."""
-    bad_string = "I used C++ & scored ~100% & saved $500, which made me #1. My_test"
+    bad_string = "I used C++ & scored ~100% & saved $500, which made me #1. My_test {}"
     sanitized = escape_latex(bad_string)
 
     assert "\\%" in sanitized
@@ -17,6 +17,8 @@ def test_escape_latex_edge_cases():
     assert "\\#" in sanitized
     assert "\\textasciitilde{}" in sanitized
     assert "\\_" in sanitized
+    assert "\\{" in sanitized
+    assert "\\}" in sanitized
 
 
 def test_escape_latex_with_markdown_bold():

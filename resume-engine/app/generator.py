@@ -19,6 +19,8 @@ _LATEX_ESCAPE_TABLE = str.maketrans({
     '$': r'\$',
     '#': r'\#',
     '_': r'\_',
+    '{': r'\{',
+    '}': r'\}',
     '~': r'\textasciitilde{}',
     '^': r'\textasciicircum{}',
 })

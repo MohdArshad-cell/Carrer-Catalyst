@@ -55,8 +55,8 @@ def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
         soft_skills = ai_data.get("soft_skills_evaluation", [])
 
         # Extract Missing Keywords (Where is_found == False)
-        missing_hard = [skill["skill_name"] for skill in hard_skills if not skill["is_found"]]
-        missing_soft = [skill["skill_name"] for skill in soft_skills if not skill["is_found"]]
+        missing_hard = [skill.get("skill_name", "Unknown") for skill in hard_skills if not skill.get("is_found", False)]
+        missing_soft = [skill.get("skill_name", "Unknown") for skill in soft_skills if not skill.get("is_found", False)]
 
         # Calculate True Match Score Mathematically
         hard_total = len(hard_skills)
