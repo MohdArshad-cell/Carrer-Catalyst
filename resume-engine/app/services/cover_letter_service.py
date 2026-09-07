@@ -5,7 +5,7 @@ Generates high-impact, professionally formatted cover letter PDFs using LaTeX.
 import base64
 from datetime import datetime
 
-from app.services.llm_client import call_llm_structured, load_prompt
+from app.services.llm_client import call_llm, load_prompt, parse_ai_json
 from app.generator import ResumeGenerator
 from app.models import CoverLetterData
 from app.services.tailor_service import clean_data_for_template
@@ -30,13 +30,17 @@ def execute_cover_letter_chain(resume_text: str, job_description: str) -> dict:
             .replace('{job_description}', job_description) \
             .replace('{current_date}', today_date)
 
-        # Call LLM with the new CoverLetterData schema
-        raw_data = call_llm_structured(
+        # Call LLM with the new CoverLetterData schema injected into the prompt
+        raw_response = call_llm(
             prompt,
-            response_schema=CoverLetterData,
+            schema=CoverLetterData,
+            force_json=True,
             temperature=0.3,
             max_output_tokens=4096
         )
+
+        # Parse the JSON response manually to bypass the SDK's schema bugs
+        raw_data = parse_ai_json(raw_response)
 
         print("--- ⚙️ Cover Letter: Generating PDF ---")
         

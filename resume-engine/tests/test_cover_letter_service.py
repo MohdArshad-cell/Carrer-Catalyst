@@ -25,7 +25,11 @@ def test_cover_letter_generation(mocker):
     }
 
     mocker.patch(
-        "app.services.cover_letter_service.call_llm_structured",
+        "app.services.cover_letter_service.call_llm",
+        return_value="{}"
+    )
+    mocker.patch(
+        "app.services.cover_letter_service.parse_ai_json",
         return_value=mock_llm_data
     )
 
