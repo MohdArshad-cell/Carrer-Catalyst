@@ -20,12 +20,12 @@ class RoastDetail(BaseModel):
     rewrite: str = Field(..., description="A hard-hitting, metric-driven AI rewrite incorporating missing keywords.")
 
 class SkillEvaluation(BaseModel):
-    skill_name: str = Field(..., description="The exact noun-based skill from the JD (e.g., 'Spring Boot', 'Redis'). NO VERBS.")
-    is_found: bool = Field(..., description="True if the skill OR a direct semantic equivalent (e.g., 'React' for 'React.js') is explicitly in the resume.")
+    skill_name: str = Field(..., description="The exact noun-based skill extracted FROM THE JOB DESCRIPTION (e.g., 'Spring Boot', 'Redis'). NO VERBS.")
+    is_found: bool = Field(..., description="True ONLY IF the skill OR a direct semantic equivalent (e.g., 'React' for 'React.js') is explicitly in the resume. False if missing.")
 
 class AIResumeExtractionSchema(BaseModel):
-    hard_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of technical tools, frameworks, and hard skills.")
-    soft_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of methodologies (e.g., Agile) and soft skills.")
+    hard_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of technical tools, frameworks, and hard skills REQUIRED BY THE JD.")
+    soft_skills_evaluation: List[SkillEvaluation] = Field(..., description="Evaluation of methodologies (e.g., Agile) and soft skills REQUIRED BY THE JD.")
     red_flags: List[str] = Field(..., description="Critical dealbreakers.")
     constructive_roasts: List[RoastDetail] = Field(..., description="3 specific roasts targeting weak bullet points.")
     metrics_score: int = Field(..., description="Score out of 100 on how well the resume uses quantifiable metrics and data.")
