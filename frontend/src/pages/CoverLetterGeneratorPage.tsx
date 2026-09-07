@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import jsPDF from 'jspdf'; 
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -21,12 +20,12 @@ const CoverLetterGeneratorPage: React.FC = () => {
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
-    const [generatedCoverLetter, setGeneratedCoverLetter] = useState('');
+    const [latexCode, setLatexCode] = useState<string>('');
+    const [pdfData, setPdfData] = useState<string | null>(null);
     
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState(0);
     const [error, setError] = useState('');
-    const [copyButtonText, setCopyButtonText] = useState('📋 Copy Text');
     const [isDragging, setIsDragging] = useState(false);
 
     // --- DRAG & DROP LOGIC ---
@@ -63,8 +62,8 @@ const CoverLetterGeneratorPage: React.FC = () => {
         
         setIsLoading(true);
         setError('');
-        setGeneratedCoverLetter('');
-        setCopyButtonText('📋 Copy Text');
+        setLatexCode('');
+        setPdfData(null);
         setLoadingStep(0);
 
         let stepInterval: any = null; // Initialize safely so it can be cleared on error
@@ -101,8 +100,9 @@ const CoverLetterGeneratorPage: React.FC = () => {
             
             if (stepInterval) clearInterval(stepInterval); 
             
-            if (response.data && response.data.cover_letter) {
-                setGeneratedCoverLetter(response.data.cover_letter);
+            if (response.data && response.data.cover_letter && response.data.cover_letter.pdf_base64) {
+                setLatexCode(response.data.cover_letter.latex_code);
+                setPdfData(response.data.cover_letter.pdf_base64);
             } else {
                 throw new Error("Invalid response format received from server.");
             }
@@ -124,46 +124,26 @@ const CoverLetterGeneratorPage: React.FC = () => {
         }
     };
 
-    // --- PDF EXPORT LOGIC ---
-    const handlePdfDownload = () => {
-        if (!generatedCoverLetter) return;
-        
-        const doc = new jsPDF();
-        const margin = 15;
-        const pageHeight = doc.internal.pageSize.height;
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-
-        // Wrap text to fit page width
-        const textLines = doc.splitTextToSize(generatedCoverLetter, 180);
-        
-        let cursorY = margin + 10;
-        
-        // Loop through lines to handle multi-page overflow
-        textLines.forEach((line: string) => {
-            if (cursorY > pageHeight - margin) {
-                doc.addPage();
-                cursorY = margin + 10; 
-            }
-            doc.text(line, margin, cursorY);
-            cursorY += 6; // Standard line height
-        });
-        
-        doc.save('Tailored_Cover_Letter.pdf');
+    // --- DOWNLOAD HANDLERS ---
+    const handleDownloadPdf = () => {
+        if (!pdfData) return;
+        const byteCharacters = atob(pdfData);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+        const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Tailored_Cover_Letter.pdf';
+        link.click();
     };
 
-    // --- COPY LOGIC ---
-    const handleCopy = () => {
-        if (!generatedCoverLetter) return;
-        
-        navigator.clipboard.writeText(generatedCoverLetter).then(() => {
-            setCopyButtonText('✅ Copied!');
-            setTimeout(() => setCopyButtonText('📋 Copy Text'), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            setCopyButtonText('❌ Failed!');
-        });
+    const handleDownloadLatex = () => {
+        if (!latexCode) return;
+        const blob = new Blob([latexCode], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Cover_Letter.tex';
+        link.click();
     };
 
     return (
@@ -220,7 +200,7 @@ const CoverLetterGeneratorPage: React.FC = () => {
                     {error && <div className="error-status" style={{ marginTop: '1rem', fontSize: '1.1rem' }}>{error}</div>}
                 </div>
 
-                {(isLoading || generatedCoverLetter) && (
+                {(isLoading || latexCode || pdfData) && (
                     <div className="output-section">
                         {isLoading ? (
                             <div className="loading-state glass-card text-center" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -231,37 +211,46 @@ const CoverLetterGeneratorPage: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="panel glass-card" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
-                                <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                    <h3 style={{ margin: 0, color: '#8b5cf6', fontSize: '1.5rem' }}>✉️ Final Cover Letter</h3>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button onClick={handleCopy} className="btn-outline" style={{ borderColor: '#3b82f6', color: '#3b82f6' }}>
-                                            {copyButtonText}
-                                        </button>
-                                        <button onClick={handlePdfDownload} className="btn-premium" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>
-                                            ⬇️ Download PDF
-                                        </button>
+                            <div className="results-wrapper">
+                                <div className="tailor-output-grid">
+                                    <div className="panel output-panel glass-card">
+                                        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: 0, color: '#8b5cf6' }}>💻 LaTeX Source</h3>
+                                            <button onClick={handleDownloadLatex} className="btn-outline">
+                                                ⬇️ .TEX
+                                            </button>
+                                        </div>
+                                        <textarea 
+                                            value={latexCode} 
+                                            readOnly
+                                            className="code-viewer-premium"
+                                            spellCheck={false}
+                                        />
+                                    </div>
+
+                                    <div className="panel output-panel glass-card">
+                                        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: 0, color: '#3b82f6' }}>📄 PDF Preview</h3>
+                                            <button onClick={handleDownloadPdf} className="btn-premium" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>
+                                                ⬇️ Download PDF
+                                            </button>
+                                        </div>
+                                        <div className="pdf-viewer-container-premium">
+                                            {pdfData ? (
+                                                <object 
+                                                    data={URL.createObjectURL(new Blob([new Uint8Array(atob(pdfData).split('').map(c => c.charCodeAt(0)))], { type: 'application/pdf' }))} 
+                                                    type="application/pdf" 
+                                                    className="pdf-preview-object" 
+                                                    aria-label="Cover Letter Preview"
+                                                />
+                                            ) : (
+                                                <div className="pdf-preview-placeholder">
+                                                    Preview will appear here
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <textarea 
-                                    value={generatedCoverLetter}
-                                    onChange={(e) => setGeneratedCoverLetter(e.target.value)}
-                                    className="premium-textarea"
-                                    style={{ 
-                                        minHeight: '600px', 
-                                        fontFamily: "'Inter', system-ui, sans-serif", 
-                                        fontSize: '1.05rem', 
-                                        lineHeight: '1.8', 
-                                        padding: '2rem',
-                                        backgroundColor: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                        color: '#e2e8f0'
-                                    }}
-                                />
-                                <p style={{ textAlign: 'center', margin: '1rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    Feel free to edit the text above directly before copying or downloading.
-                                </p>
                             </div>
                         )}
                     </div>
