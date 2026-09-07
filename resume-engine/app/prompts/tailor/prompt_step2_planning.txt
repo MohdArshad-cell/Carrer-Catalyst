@@ -5,20 +5,23 @@ Your objective is to seamlessly inject missing keywords and rewrite the mutable 
 - Output ONLY a raw, valid JSON string.
 - You must start with '{' and end with '}'. Absolutely NO markdown backticks (```) and NO introductory/closing text.
 - Adhere strictly to the JSON schema.
-- **BOLDING REQUIREMENT**: For every bullet point in 'experience' and 'projects', you MUST use markdown bold (**) to highlight 2 to 3 high-impact keywords, key technologies, or quantitative metrics (e.g., "Reduced latency by **35%** using **Spring Boot**").
+- **BOLDING REQUIREMENT**: For every bullet point in 'experience' and 'projects', you MUST use markdown bold (**) to highlight 2 to 3 high-impact keywords, key technologies, or quantitative metrics (e.g., "Reduced latency by **35%** using **Spring Boot** microservices").
 
 ### STRICT PRESERVATION LAWS (DO NOT VIOLATE):
-1. PRESERVE LENGTH & BULLET COUNT: You are FORBIDDEN from summarizing, truncating, or deleting bullet points. The exact number of jobs, projects, and bullet points MUST remain identical to the input. 
+1. PRESERVE LENGTH & BULLET COUNT: {bullet_count_constraint}
+   You are FORBIDDEN from summarizing, truncating, or deleting bullet points. Every single job, project, and bullet point from the input MUST appear in your output with the EXACT same count.
 2. MAINTAIN TRUTH (METRIC ISOLATION): NEVER invent fake dates or fake quantitative metrics. All original numbers, percentages, and timelines must remain perfectly intact. If a bullet lacks a metric, focus on the *magnitude* of the impact using strong nouns (e.g., "Spearheaded", "Architected") rather than inventing numbers.
 
 ### TAILORING LOGIC:
 1. SUMMARY REWRITE & TONE: The candidate's tone MUST match this profile: "{tone}". Do NOT write like a 10-year veteran if they are a junior. Weave the {target_job_title}, 2-3 {missing_skills}, and 1 {soft_skills} naturally into the summary.
-2. SKILL ARRAY INJECTION: Categorize and append all {missing_skills} and {bonus_skills} into the 'skills' array.
+2. SKILL ARRAY INJECTION: Categorize and append all {missing_skills} and {bonus_skills} into the 'skills' array under appropriate categories. If no matching category exists, create a new one.
 3. SURGICAL BULLET INJECTION & CONTEXTUAL BOUNDARIES: 
-   - DO NOT just write "used {keyword}". If a missing or bonus skill logically fits an existing bullet point, rewrite that specific bullet to explain *HOW* the tool was applied.
-   - STRICT BOUNDARIES: Keep backend tools with backend work, frontend with frontend. If a skill does NOT logically fit the existing technical context of a specific job/project, LEAVE IT OUT of the experience section entirely.
+   - DO NOT just write "used {keyword}". If a missing or bonus skill logically fits an existing bullet point, rewrite that specific bullet to explain *HOW* the tool was applied in a real workflow.
+   - STRICT BOUNDARIES: Keep backend tools with backend work, frontend with frontend, DevOps with DevOps. If a skill does NOT logically fit the existing technical context of a specific job/project, LEAVE IT OUT of the experience section entirely.
+   - EXAMPLE of GOOD injection: BEFORE: "Built an API for user management" → AFTER: "Architected a **RESTful API** for user management using **Spring Boot**, processing **10K+** daily requests with **Redis** caching for sub-100ms response times"
+   - EXAMPLE of BAD injection: "Built a React frontend using Kubernetes" (Kubernetes doesn't belong in frontend work)
 4. XYZ / STAR FORMULA ENFORCEMENT: Every single bullet point must demonstrate impact. If a bullet lacks a quantifiable metric (because you cannot invent numbers), you MUST rewrite it using strong {action_verbs} to emphasize the *architectural magnitude* or *business context* of the work.
-5. SMART SDLC INTEGRATION: Seamlessly weave {sdlc_and_practices} (e.g., CI/CD, Unit Testing) into professional experience bullets where logically appropriate.
+5. SMART SDLC INTEGRATION: Seamlessly weave {sdlc_and_practices} (e.g., CI/CD, Unit Testing) into professional experience bullets where logically appropriate — NOT forced into every bullet.
 6. PRESERVE TIMELINES: Extract exact dates from input. If blank, output null.
 
 ### INPUT DATA:

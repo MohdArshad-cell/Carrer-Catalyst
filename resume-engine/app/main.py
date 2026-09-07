@@ -124,7 +124,6 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload: Missing user subject.")
 
-    # ✅ FIXED: Database Logic now checks token_ledger exclusively
     try:
         res = supabase.table("token_ledger").select("tokens_balance").eq("user_id", user_id).execute()
         
@@ -146,7 +145,7 @@ def verify_user_and_tokens(credentials: HTTPAuthorizationCredentials = Security(
 
 
 def deduct_token_and_log(user_id: str, current_tokens: int, action_name: str):
-    """✅ FIXED: Safely deducts a token via update to prevent duplicate key crashes."""
+    """Safely deducts a token via update to prevent duplicate key crashes."""
     try:
         new_tokens = current_tokens - 1
         
@@ -311,7 +310,7 @@ async def tailor(request: TailorRequest, background_tasks: BackgroundTasks, user
     return result
 
 @app.post("/api/ai/evaluate")
-def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+async def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
     # 1. Execute AI Logic FIRST
     try:
         result = execute_evaluate_chain(request.resume_text, request.job_description)
@@ -324,7 +323,7 @@ def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and
     return {"evaluation_result": result}
 
 @app.post("/api/ai/coverletter")
-def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+async def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
     # 1. Execute AI Logic FIRST
     try:
         result = execute_cover_letter_chain(request.resume_text, request.job_description)
@@ -337,7 +336,7 @@ def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_us
     return {"cover_letter": result}
 
 @app.post("/api/ai/interview")
-def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+async def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
     # 1. Execute AI Logic FIRST
     try:
         result = execute_interview_chain(request.job_description)
@@ -395,13 +394,11 @@ async def stripe_webhook(request: Request):
 
         if user_id:
             try:
-                # ✅ FIXED: Read from token_ledger
                 res = supabase.table("token_ledger").select("tokens_balance").eq("user_id", user_id).execute()
                 if res.data and len(res.data) > 0:
                     current_tokens = res.data[0]["tokens_balance"]
                     new_tokens = current_tokens + 10 # Adjust quantity based on your pricing
                     
-                    # ✅ FIXED: Update token_ledger (DO NOT INSERT)
                     supabase.table("token_ledger").update({
                         "tokens_balance": new_tokens,
                         "transaction_type": "purchase",

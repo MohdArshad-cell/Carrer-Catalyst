@@ -7,7 +7,7 @@ def test_evaluate_chain_scoring(mocker):
         "hard_skills_evaluation": [
             {"skill_name": "Python", "is_found": True},
             {"skill_name": "React", "is_found": True},
-            {"skill_name": "Docker", "is_found": False}, # 2/3 found = 66.6%
+            {"skill_name": "Docker", "is_found": False},
             {"skill_name": "AWS", "is_found": True}
         ], # 3/4 = 75%
         "soft_skills_evaluation": [
@@ -17,15 +17,15 @@ def test_evaluate_chain_scoring(mocker):
         "red_flags": [],
         "constructive_roasts": []
     }
-    
+
     mocker.patch(
-        "app.services.evaluate_service.call_gemini_structured_api", 
+        "app.services.evaluate_service.call_llm_structured",
         return_value=mocked_ai_response
     )
-    
+
     # Run the chain (the inputs don't matter because we mocked the API)
     result = execute_evaluate_chain("dummy resume", "dummy jd")
-    
+
     # 75% Hard (weight 0.75) = 56.25
     # 50% Soft (weight 0.25) = 12.5
     # Total = 68.75 -> rounded to 69
@@ -41,14 +41,14 @@ def test_evaluate_chain_zero_division(mocker):
         "red_flags": [],
         "constructive_roasts": []
     }
-    
+
     mocker.patch(
-        "app.services.evaluate_service.call_gemini_structured_api", 
+        "app.services.evaluate_service.call_llm_structured",
         return_value=mocked_ai_response
     )
-    
+
     # Run the chain
     result = execute_evaluate_chain("dummy resume", "dummy jd")
-    
+
     # Should safely return 100% instead of throwing ZeroDivisionError
     assert result["score"] == 100
