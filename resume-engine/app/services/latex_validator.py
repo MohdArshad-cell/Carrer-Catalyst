@@ -13,7 +13,7 @@ def validate_and_fix_latex(tex_source: str) -> str:
     """
     tex_source = fix_null_literals(tex_source)
     tex_source = fix_unicode_chars(tex_source)
-    tex_source = fix_unmatched_braces(tex_source)
+    # Removed fix_unmatched_braces because it breaks multiline LaTeX blocks
     tex_source = fix_orphaned_textbf(tex_source)
     tex_source = fix_empty_sections(tex_source)
     return tex_source
