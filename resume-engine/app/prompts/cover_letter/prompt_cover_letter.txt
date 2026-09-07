@@ -5,39 +5,22 @@ Your task: Analyze the Job Description (JD) and Resume simultaneously. Identify 
 ### CRITICAL FORMATTING RULES:
 
 1. THE HEADER & DATE:
-   - Extract the candidate's Full Name, Phone, Email, and LinkedIn from the resume
-   - Format the header professionally:
-     [Full Name]
-     [Phone] | [Email] | [LinkedIn URL]
-   - IMMEDIATELY below the header, print this date EXACTLY: {current_date}
-   - Do NOT use any past dates from the resume
+   - Extract the candidate's Full Name, Phone, Email, LinkedIn, and Address from the resume.
+   - Use the exact date: {current_date}
+   - Do NOT use any past dates from the resume.
 
 2. STRUCTURE — A cover letter that LOOKS premium:
-   - Header (name, contact)
-   - Date
-   - Blank line
-   - "Dear Hiring Manager," (or specific name if available in JD)
-   - Blank line
-   - OPENING PARAGRAPH: A powerful hook — NOT "I am writing to apply." Instead, open with a bold statement about how the candidate's specific expertise directly solves the company's biggest challenge. Mention the exact role title.
-   - Blank line
-   - PROOF SECTION: Use 2-3 bullet points (use • symbol) highlighting the candidate's most relevant achievements with HARD METRICS from their resume. Each bullet must connect a specific resume achievement to a specific JD requirement.
-   - Blank line
-   - WHY THIS COMPANY: 1-2 sentences showing genuine interest in the company's mission, product, or technology — derived from the JD content. This is NOT generic flattery.
-   - Blank line
-   - CLOSING: A confident, professional Call to Action. Example: "I would welcome the opportunity to discuss how my expertise in [specific skill] can drive [specific outcome] for your team."
-   - Blank line
-   - "Sincerely,"
-   - [Candidate's Full Name]
+   - OPENING HOOK: A powerful hook — NOT "I am writing to apply." Instead, open with a bold statement about how the candidate's specific expertise directly solves the company's biggest challenge. Mention the exact role title.
+   - BODY PARAGRAPHS: 1-2 paragraphs highlighting the candidate's most relevant achievements with HARD METRICS from their resume. Each paragraph must connect a specific resume achievement to a specific JD requirement. Include 1-2 sentences showing genuine interest in the company's mission, product, or technology — derived from the JD content. This is NOT generic flattery.
+   - CALL TO ACTION: A confident, professional Call to Action. Example: "I would welcome the opportunity to discuss how my expertise in [specific skill] can drive [specific outcome] for your team."
 
-3. NO MARKDOWN FORMATTING: Absolutely DO NOT use asterisks (*), hashtags (#), or backticks. Use • for bullet points.
-
-4. TONE — Executive, confident, specific:
+3. TONE — Executive, confident, specific:
    - NO clichés: "I am a hard worker", "I am passionate about", "I would be a great fit"
    - NO fluff: Every sentence must carry specific technical or business value
    - Mirror the JD's language and terminology naturally
    - Write like a senior professional, not a college applicant
 
-5. LENGTH: 250-350 words maximum (excluding header). Concise is premium.
+4. LENGTH: 250-350 words maximum. Concise is premium.
 
 ### INPUT DATA:
 
@@ -48,4 +31,4 @@ TARGET JOB DESCRIPTION:
 {job_description}
 
 ### OUTPUT:
-Return ONLY the raw plain-text cover letter. Do not include introductory conversational text. Ensure clean spacing between sections.
+Return ONLY a highly structured JSON object matching the requested schema. Do NOT include markdown backticks or conversational text.

@@ -107,6 +107,22 @@ class ResumeData(BaseModel):
     achievements: Optional[List[AchievementItem]] = [] 
     certifications: Optional[List[CertificationItem]] = []
 
+class CoverLetterContact(BaseModel):
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    linkedin: Optional[str] = None
+    address: Optional[str] = None
+
+class CoverLetterData(BaseModel):
+    candidate_name: str = Field(..., description="Full name of the candidate")
+    candidate_contact: CoverLetterContact = Field(..., description="Contact details extracted from the resume")
+    date: str = Field(..., description="The exact date provided in the prompt")
+    salutation: str = Field(..., description="E.g., 'Dear Hiring Manager,'")
+    opening_hook: str = Field(..., description="The opening paragraph hook")
+    body_paragraphs: List[str] = Field(..., description="The proof and connection paragraphs")
+    call_to_action: str = Field(..., description="The closing paragraph")
+    sign_off: str = Field(..., description="E.g., 'Yours Faithfully,'")
+
 # ==========================================
 # API REQUEST MODELS
 # ==========================================

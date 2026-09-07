@@ -1,0 +1,72 @@
+\documentclass[letterpaper,11pt]{article}
+
+%------------------------- PACKAGES -------------------------
+\usepackage[empty]{fullpage}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{parskip} % For nicely spaced paragraphs without indentation
+\usepackage{setspace}
+
+%------------------------- MARGINS -------------------------
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.35in}
+
+%------------------------- GLOBAL SETTINGS -------------------------
+\urlstyle{same}
+\raggedright
+\setlength{\parskip}{1.2em} % Spacing between paragraphs
+\setstretch{1.15} % Line spacing
+
+\begin{document}
+
+%----------HEADING----------
+\begin{minipage}[t]{0.6\textwidth}
+    {\Huge \scshape \VAR{resume_data.candidate_name | escape_tex}} \\[0.5em]
+    {\large \color{MidnightBlue} \VAR{resume_data.candidate_contact.linkedin | escape_tex}}
+\end{minipage}%
+\begin{minipage}[t]{0.4\textwidth}
+    \raggedleft
+    \small
+    \BLOCK{ if resume_data.candidate_contact.phone } \VAR{resume_data.candidate_contact.phone | escape_tex} \\ \BLOCK{ endif }
+    \BLOCK{ if resume_data.candidate_contact.email } \href{mailto:\VAR{resume_data.candidate_contact.email}}{\VAR{resume_data.candidate_contact.email | escape_tex}} \\ \BLOCK{ endif }
+    \BLOCK{ if resume_data.candidate_contact.address } \VAR{resume_data.candidate_contact.address | escape_tex} \\ \BLOCK{ endif }
+\end{minipage}
+
+\vspace{1.5em}
+\hrule
+\vspace{1.5em}
+
+%----------COVER LETTER TITLE----------
+\begin{center}
+    {\Large \scshape \color{MidnightBlue} COVER LETTER}
+\end{center}
+\vspace{1em}
+
+%----------DATE----------
+Date: \VAR{resume_data.date | escape_tex}
+
+%----------SALUTATION----------
+\VAR{resume_data.salutation | escape_tex}
+
+%----------BODY----------
+\VAR{resume_data.opening_hook | escape_tex}
+
+\BLOCK{ for paragraph in resume_data.body_paragraphs }
+\VAR{paragraph | escape_tex}
+\BLOCK{ endfor }
+
+\VAR{resume_data.call_to_action | escape_tex}
+
+%----------CLOSING----------
+\VAR{resume_data.sign_off | escape_tex} \\[2em]
+\VAR{resume_data.candidate_name | escape_tex} \\
+\BLOCK{ if resume_data.candidate_contact.phone }\VAR{resume_data.candidate_contact.phone | escape_tex} \\ \BLOCK{ endif }
+\BLOCK{ if resume_data.candidate_contact.email }\VAR{resume_data.candidate_contact.email | escape_tex}\BLOCK{ endif }
+
+\end{document}
