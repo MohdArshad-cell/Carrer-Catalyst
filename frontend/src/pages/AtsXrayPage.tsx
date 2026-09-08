@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import PdfUploadButton from '../components/PdfUploadButton';
+import { useToast } from '../components/Toast';
 import './AiTailorPage.css'; 
 
 // Standard English + HR/Resume Fluff Stop Words
@@ -28,6 +30,7 @@ const scanMessages = [
 ];
 
 const AtsXrayPage: React.FC = () => {
+    const { showToast } = useToast();
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
     
@@ -57,6 +60,8 @@ const AtsXrayPage: React.FC = () => {
                 if (event.target?.result) setResumeText(event.target.result as string);
             };
             reader.readAsText(file);
+        } else if (file && file.type === "application/pdf") {
+            showToast('For PDF files, please use the "Upload PDF" button above.', 'info');
         }
     };
 
@@ -163,7 +168,10 @@ const AtsXrayPage: React.FC = () => {
                     <>
                         <div className="tailor-input-grid">
                             <div className="panel glass-card relative-panel">
-                                <h2 className="panel-title">Your Resume (Text or JSON)</h2>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <h2 className="panel-title" style={{ margin: 0 }}>Your Resume (Text, JSON, or PDF)</h2>
+                                    <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} />
+                                </div>
                                 <textarea
                                     className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
                                     value={resumeText}
@@ -171,7 +179,7 @@ const AtsXrayPage: React.FC = () => {
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
                                     onDrop={handleDrop}
-                                    placeholder='Paste your raw resume text or drag & drop a .txt/.json file here...'
+                                    placeholder='Paste your resume text, or click "Upload PDF" above...'
                                 />
                             </div>
                             <div className="panel glass-card">

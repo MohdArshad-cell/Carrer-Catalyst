@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import PdfUploadButton from '../components/PdfUploadButton';
+import AiLoadingState from '../components/AiLoadingState';
+import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
 import './AiTailorPage.css'; // Reusing the magical CSS from Tailor page
 
@@ -16,7 +19,8 @@ const loadingSteps = [
 ];
 
 const CoverLetterGeneratorPage: React.FC = () => {
-    const navigate = useNavigate(); // ✅ Hook added for redirection
+    const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
@@ -48,8 +52,10 @@ const CoverLetterGeneratorPage: React.FC = () => {
                 if (event.target?.result) setResumeText(event.target.result as string);
             };
             reader.readAsText(file);
+        } else if (file && file.type === "application/pdf") {
+            showToast('For PDF files, please use the "Upload PDF" button above.', 'info');
         } else {
-            setError("Please drop a valid .txt or .json file.");
+            showToast('Please drop a valid .txt or .json file, or use the Upload PDF button.', 'warning');
         }
     };
 
@@ -74,7 +80,7 @@ const CoverLetterGeneratorPage: React.FC = () => {
             const user = session?.user;
 
             if (!user || !session) {
-                setError("You must be logged in to use this AI tool.");
+                showToast('You must be logged in to use this AI tool.', 'warning');
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
@@ -112,9 +118,15 @@ const CoverLetterGeneratorPage: React.FC = () => {
             
             // ✅ HANDLE EMPTY TOKENS OR UNAUTHORIZED SESSIONS
             if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
-                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                showToast('🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...', 'error');
                 setIsLoading(false);
                 setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
+            if (err.response?.status === 429) {
+                showToast('Too many requests. Please wait a moment before trying again.', 'warning');
+                setIsLoading(false);
                 return;
             }
 
@@ -164,7 +176,10 @@ const CoverLetterGeneratorPage: React.FC = () => {
 
                 <div className="tailor-input-grid">
                     <div className="panel glass-card relative-panel">
-                        <h2 className="panel-title">Your Resume (Text/JSON)</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0 }}>Your Resume (Text, JSON, or PDF)</h2>
+                            <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} disabled={isLoading} />
+                        </div>
                         <textarea
                             className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
@@ -172,7 +187,7 @@ const CoverLetterGeneratorPage: React.FC = () => {
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            placeholder="Paste your resume data here or Drop a file..."
+                            placeholder='Paste your resume text, or click "Upload PDF" above...'
                             disabled={isLoading}
                         />
                     </div>
@@ -203,13 +218,7 @@ const CoverLetterGeneratorPage: React.FC = () => {
                 {(isLoading || latexCode || pdfData) && (
                     <div className="output-section">
                         {isLoading ? (
-                            <div className="loading-state glass-card text-center" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
-                                <div className="spinner-premium" style={{ borderTopColor: '#8b5cf6' }}></div>
-                                <h3 className="step-text" style={{ color: '#8b5cf6', margin: '1.5rem 0' }}>{loadingSteps[loadingStep]}</h3>
-                                <div className="progress-bar-container">
-                                    <div className="progress-bar-fill" style={{ width: `${((loadingStep + 1) / 3) * 100}%`, background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)' }}></div>
-                                </div>
-                            </div>
+                            <AiLoadingState steps={loadingSteps} currentStep={loadingStep} accentColor="#8b5cf6" />
                         ) : (
                             <div className="results-wrapper">
                                 <div className="tailor-output-grid">

@@ -15,6 +15,7 @@ const AdminDashboardPage = () => {
     monthlyRevenue: 0
   });
 
+  const [logs, setLogs] = useState<any[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
@@ -29,15 +30,26 @@ const AdminDashboardPage = () => {
           .select('*', { count: 'exact', head: true })
           .eq('role', 'pro');
 
+        const { data: logData, error: logError } = await supabase
+          .from('generation_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
         if (totalError) throw totalError;
+
+        const fetchedLogs = logData || [];
+        const failed = fetchedLogs.filter(l => l.status === 'failed').length;
 
         setStats({
           totalUsers: totalCount || 0,
           activeSubscribers: proCount || 0,
-          apiTokenCost: 12.45, 
-          failedGenerations: 2, 
+          apiTokenCost: fetchedLogs.length * 0.01, 
+          failedGenerations: failed, 
           monthlyRevenue: (proCount || 0) * 15 
         });
+        
+        setLogs(fetchedLogs);
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -135,27 +147,16 @@ const AdminDashboardPage = () => {
                 <div className="panel-card">
                   <h2 className="panel-header">⚡ Recent Activity</h2>
                   <ul className="activity-list">
-                    <li className="activity-item">
-                      <span className="activity-icon">📄</span>
-                      <div className="activity-details">
-                        <p><strong>john@example.com</strong> generated a Cover Letter</p>
-                        <div className="activity-time">2 mins ago</div>
-                      </div>
-                    </li>
-                    <li className="activity-item">
-                      <span className="activity-icon">🔍</span>
-                      <div className="activity-details">
-                        <p><strong>sarah@tech.com</strong> used ATS X-Ray</p>
-                        <div className="activity-time">15 mins ago</div>
-                      </div>
-                    </li>
-                    <li className="activity-item">
-                      <span className="activity-icon">👤</span>
-                      <div className="activity-details">
-                        <p>New user signup: <strong>alex@mail.com</strong></p>
-                        <div className="activity-time">1 hour ago</div>
-                      </div>
-                    </li>
+                    {logs.slice(0, 5).map((log, idx) => (
+                      <li className="activity-item" key={idx}>
+                        <span className="activity-icon">{log.status === 'success' ? '✅' : '❌'}</span>
+                        <div className="activity-details">
+                          <p>User <strong>{log.user_id.substring(0,8)}...</strong> triggered <strong>{log.action}</strong></p>
+                          <div className="activity-time">{new Date(log.created_at).toLocaleString()}</div>
+                        </div>
+                      </li>
+                    ))}
+                    {logs.length === 0 && <li className="activity-item">No recent activity</li>}
                   </ul>
                 </div>
               </div>
@@ -188,18 +189,19 @@ const AdminDashboardPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>2023-10-24 14:32:01</td>
-                      <td><span className="badge admin">LaTeX Compiler</span></td>
-                      <td><span className="badge" style={{ background: '#fef2f2', color: '#dc2626' }}>Error 500</span></td>
-                      <td>Unescaped '&' character in Work Experience</td>
-                    </tr>
-                    <tr>
-                      <td>2023-10-24 14:28:15</td>
-                      <td><span className="badge pro">Gemini API</span></td>
-                      <td><span className="badge" style={{ background: '#ecfdf5', color: '#059669' }}>Success (2.1s)</span></td>
-                      <td>Generated Cover Letter (245 tokens)</td>
-                    </tr>
+                    {logs.map((log, idx) => (
+                      <tr key={idx}>
+                        <td>{new Date(log.created_at).toLocaleString()}</td>
+                        <td><span className={`badge ${log.action === 'ai_tailor' ? 'pro' : 'admin'}`}>{log.action}</span></td>
+                        <td>
+                          <span className="badge" style={{ background: log.status === 'success' ? '#ecfdf5' : '#fef2f2', color: log.status === 'success' ? '#059669' : '#dc2626' }}>
+                            {log.status} {log.latency_ms ? `(${log.latency_ms}ms)` : ''}
+                          </span>
+                        </td>
+                        <td>{log.error_message || `Tokens: ${log.tokens_deducted}`}</td>
+                      </tr>
+                    ))}
+                    {logs.length === 0 && <tr><td colSpan={4} className="text-center">No logs found</td></tr>}
                   </tbody>
                 </table>
               </div>

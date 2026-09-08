@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import PdfUploadButton from '../components/PdfUploadButton';
+import AiLoadingState from '../components/AiLoadingState';
+import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
 import './AiTailorPage.css';
 
@@ -42,6 +45,7 @@ interface EvaluationData {
 
 const AtsEvaluatorPage: React.FC = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
@@ -73,8 +77,10 @@ const AtsEvaluatorPage: React.FC = () => {
                 if (event.target?.result) setResumeText(event.target.result as string);
             };
             reader.readAsText(file);
+        } else if (file && file.type === "application/pdf") {
+            showToast('For PDF files, please use the "Upload PDF" button above.', 'info');
         } else {
-            setError("Please drop a valid .txt or .json file.");
+            showToast('Please drop a valid .txt or .json file, or use the Upload PDF button.', 'warning');
         }
     };
 
@@ -105,7 +111,7 @@ const AtsEvaluatorPage: React.FC = () => {
             const user = session?.user;
 
             if (!user || !session) {
-                setError("You must be logged in to use this AI tool.");
+                showToast('You must be logged in to use this AI tool.', 'warning');
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
@@ -137,9 +143,15 @@ const AtsEvaluatorPage: React.FC = () => {
             console.error("Error evaluating resume:", err);
 
             if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
-                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                showToast('🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...', 'error');
                 setIsLoading(false);
                 setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
+            if (err.response?.status === 429) {
+                showToast('Too many requests. Please wait a moment before trying again.', 'warning');
+                setIsLoading(false);
                 return;
             }
 
@@ -173,7 +185,10 @@ const AtsEvaluatorPage: React.FC = () => {
 
                 <div className="tailor-input-grid">
                     <div className="panel glass-card relative-panel">
-                        <h2 className="panel-title">Your Resume (Text/JSON)</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0 }}>Your Resume (Text, JSON, or PDF)</h2>
+                            <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} disabled={isLoading} />
+                        </div>
                         <textarea
                             className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
@@ -181,7 +196,7 @@ const AtsEvaluatorPage: React.FC = () => {
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            placeholder="Paste your resume data here or Drop a file..."
+                            placeholder='Paste your resume text, or click "Upload PDF" above...'
                             disabled={isLoading}
                         />
                     </div>
@@ -212,14 +227,7 @@ const AtsEvaluatorPage: React.FC = () => {
                 {(isLoading || evaluationResult) && (
                     <div className="output-section">
                         {isLoading ? (
-                            <div className="loading-state glass-card text-center scan-theater" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
-                                <div className="scanner-beam" style={{ background: '#ef4444', boxShadow: '0 0 20px 5px rgba(239, 68, 68, 0.5)' }}></div>
-                                <div className="spinner-premium" style={{ borderTopColor: '#ef4444' }}></div>
-                                <h3 className="step-text" style={{ color: '#ef4444', margin: '1.5rem 0' }}>{loadingSteps[loadingStep]}</h3>
-                                <div className="progress-bar-container">
-                                    <div className="progress-bar-fill" style={{ width: `${((loadingStep + 1) / 4) * 100}%`, background: 'linear-gradient(90deg, #ef4444, #f59e0b)' }}></div>
-                                </div>
-                            </div>
+                            <AiLoadingState steps={loadingSteps} currentStep={loadingStep} accentColor="#ef4444" />
                         ) : evaluationResult && (
                             <div className="dashboard-wrapper">
                                 {/* SCORE & RED FLAGS ROW */}

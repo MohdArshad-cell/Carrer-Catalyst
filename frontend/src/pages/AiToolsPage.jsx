@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-// Added FaEye for the ATS X-Ray Vision icon
-import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone, FaEye } from "react-icons/fa6";
+// Added FaEye for the ATS X-Ray Vision icon, and FaLinkedin, FaPaperPlane, FaMapSigns for Phase 3 tools
+import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone, FaEye, FaLinkedin, FaPaperPlane, FaMapSigns } from "react-icons/fa6";
 import ParticleBackground from '../components/ParticleBackground';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -120,6 +120,45 @@ const AiToolsPage = () => {
                             <h3>AI Mock Interview</h3>
                             <p>Practice with AI-generated questions tailored to your target job to ace your interviews.</p>
                             <div className="tool-cta">Start Practice <span className="arrow">→</span></div>
+                        </div>
+                    </div>
+
+                    {/* Tool 7: LinkedIn Optimizer */}
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/linkedin-optimizer')}>
+                        <div className="bento-glow"></div>
+                        <div className="bento-content">
+                            <div className="tool-icon-wrapper" style={{ color: '#0077b5' }}>
+                                <FaLinkedin className="premium-icon" />
+                            </div>
+                            <h3>LinkedIn Optimizer</h3>
+                            <p>Transform your profile into a magnet for recruiters with AI-optimized headlines and about sections.</p>
+                            <div className="tool-cta">Optimize Profile <span className="arrow">→</span></div>
+                        </div>
+                    </div>
+
+                    {/* Tool 8: Cold Outreach AI */}
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cold-outreach')}>
+                        <div className="bento-glow"></div>
+                        <div className="bento-content">
+                            <div className="tool-icon-wrapper" style={{ color: '#ea580c' }}>
+                                <FaPaperPlane className="premium-icon" />
+                            </div>
+                            <h3>Cold Outreach AI</h3>
+                            <p>Generate highly-converting networking messages and follow-ups to score referrals.</p>
+                            <div className="tool-cta">Start Networking <span className="arrow">→</span></div>
+                        </div>
+                    </div>
+
+                    {/* Tool 9: Career Roadmap AI */}
+                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/career-roadmap')}>
+                        <div className="bento-glow"></div>
+                        <div className="bento-content">
+                            <div className="tool-icon-wrapper" style={{ color: '#22c55e' }}>
+                                <FaMapSigns className="premium-icon" />
+                            </div>
+                            <h3>Career Roadmap AI</h3>
+                            <p>Map out your exact steps to promotion or pivot over the next 12 months with a personalized plan.</p>
+                            <div className="tool-cta">Plot Trajectory <span className="arrow">→</span></div>
                         </div>
                     </div>
 

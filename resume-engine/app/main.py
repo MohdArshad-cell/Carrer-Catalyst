@@ -6,10 +6,11 @@ import shutil
 import tempfile
 import subprocess
 import traceback
+import time
 from typing import Dict, Any
 
 # FastAPI & Security Imports
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Depends, Security
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Depends, Security, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -28,13 +29,18 @@ from supabase import create_client, Client
 
 # Local Imports
 from .models import (
-    GenerationRequest, TailorRequest, EvaluateRequest, CoverLetterRequest, InterviewRequest
+    GenerationRequest, TailorRequest, EvaluateRequest, CoverLetterRequest, InterviewRequest, LinkedInRequest, OutreachRequest, RoadmapRequest, BulletRewriteRequest, ResignationRequest
 )
 from .generator import ResumeGenerator
 from app.services.tailor_service import execute_tailor_chain
 from app.services.evaluate_service import execute_evaluate_chain
 from app.services.cover_letter_service import execute_cover_letter_chain
 from app.services.interview_service import execute_interview_chain
+from app.services.linkedin_service import execute_linkedin_chain
+from app.services.outreach_service import execute_outreach_chain
+from app.services.roadmap_service import execute_roadmap_chain
+from app.services.pdf_extractor import extract_text_from_pdf
+from app.services.llm_client import call_llm, parse_ai_json
 
 # ==========================================
 # 1. INITIALIZATION & CONFIGURATION
@@ -163,6 +169,22 @@ def deduct_token_and_log(user_id: str, current_tokens: int, action_name: str):
         print(f"🚨 [CRITICAL DB ERROR]: Failed to deduct/log token for {user_id}. Error: {str(db_error)}")
         raise HTTPException(status_code=500, detail="Database ledger error during token deduction.")
 
+def log_generation(user_id: str, action: str, status: str, latency_ms: int, error_message: str = None):
+    """Safely log the generation to Supabase generation_logs table."""
+    try:
+        log_data = {
+            "user_id": user_id,
+            "action": action,
+            "status": status,
+            "latency_ms": latency_ms
+        }
+        if error_message:
+            log_data["error_message"] = error_message[:500]  # truncate to avoid huge logs
+            
+        supabase.table("generation_logs").insert(log_data).execute()
+    except Exception as e:
+        # We don't want a logging failure to break the user's flow
+        print(f"⚠️ [LOGGING ERROR]: Could not insert generation log: {str(e)}")
 
 # ==========================================
 # 3. PYDANTIC MODELS (FastAPI Validators)
@@ -205,7 +227,52 @@ def cleanup_session_and_task(task_id: str, session_dir: str):
 
 
 # ==========================================
-# 5. CORE RESUME ENGINE ROUTES
+# 5. UTILITY: PDF UPLOAD & RATE LIMITING
+# ==========================================
+def check_user_rate_limit(user_id: str, max_requests: int = 5, window_seconds: int = 60):
+    """Prevent API abuse: max N requests per window per user."""
+    key = f"rate_limit:{user_id}"
+    try:
+        current = redis_client.get(key)
+        if current and int(current) >= max_requests:
+            raise HTTPException(status_code=429, detail="Too many requests. Please wait a moment before trying again.")
+        pipe = redis_client.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, window_seconds)
+        pipe.execute()
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # If Redis is down, don't block the user
+
+
+@app.post("/api/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    """Extract text from an uploaded PDF resume. Free utility — no auth or tokens required."""
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
+    
+    # Read file content
+    pdf_bytes = await file.read()
+    
+    if len(pdf_bytes) > 5_000_000:  # 5MB limit
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB.")
+    
+    if len(pdf_bytes) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    
+    try:
+        text = extract_text_from_pdf(pdf_bytes)
+        return {"extracted_text": text, "page_count": len(text.split('\n\n'))}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"❌ PDF Extraction Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process PDF. Please try pasting your resume text instead.")
+
+
+# ==========================================
+# 6. CORE RESUME ENGINE ROUTES
 # ==========================================
 @app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
@@ -293,10 +360,18 @@ async def compile_latex_only(request: CompileRequest):
 
 @app.post("/api/ai/tailor")
 async def tailor(request: TailorRequest, background_tasks: BackgroundTasks, user_auth: dict = Depends(verify_user_and_tokens)): 
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
     # 1. Execute AI Logic FIRST
+    start_time = time.time()
     try:
-        result = execute_tailor_chain(request.resume_text, request.job_description)
+        result = execute_tailor_chain(request.resume_text, request.job_description, request.template_name)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_tailor", "success", latency_ms)
     except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_tailor", "failed", latency_ms, str(ai_error))
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
@@ -311,10 +386,18 @@ async def tailor(request: TailorRequest, background_tasks: BackgroundTasks, user
 
 @app.post("/api/ai/evaluate")
 async def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
     # 1. Execute AI Logic FIRST
+    start_time = time.time()
     try:
         result = execute_evaluate_chain(request.resume_text, request.job_description)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_evaluate", "success", latency_ms)
     except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_evaluate", "failed", latency_ms, str(ai_error))
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
@@ -323,13 +406,26 @@ async def evaluate(request: EvaluateRequest, user_auth: dict = Depends(verify_us
     return {"evaluation_result": result}
 
 @app.post("/api/ai/coverletter")
-async def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+async def coverletter(request: CoverLetterRequest, background_tasks: BackgroundTasks, user_auth: dict = Depends(verify_user_and_tokens)): 
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
     # 1. Execute AI Logic FIRST
+    start_time = time.time()
     try:
         result = execute_cover_letter_chain(request.resume_text, request.job_description)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_coverletter", "success", latency_ms)
     except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_coverletter", "failed", latency_ms, str(ai_error))
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+
+    # Handle ephemeral directory cleanup
+    session_dir = result.pop("session_dir", None)
+    if session_dir:
+        background_tasks.add_task(cleanup_session_and_task, "ephemeral_cl_task", session_dir)
 
     # 2. Deduct Token and Log SECOND
     deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_coverletter")
@@ -337,10 +433,18 @@ async def coverletter(request: CoverLetterRequest, user_auth: dict = Depends(ver
 
 @app.post("/api/ai/interview")
 async def interview(request: InterviewRequest, user_auth: dict = Depends(verify_user_and_tokens)): 
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
     # 1. Execute AI Logic FIRST
+    start_time = time.time()
     try:
         result = execute_interview_chain(request.job_description)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_interview", "success", latency_ms)
     except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_interview", "failed", latency_ms, str(ai_error))
         print(f"❌ [AI ERROR]: {str(ai_error)}")
         raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
 
@@ -348,6 +452,216 @@ async def interview(request: InterviewRequest, user_auth: dict = Depends(verify_
     deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_interview")
     return {"interview_data": result}
 
+@app.post("/api/ai/linkedin")
+async def linkedin_optimize(request: LinkedInRequest, user_auth: dict = Depends(verify_user_and_tokens)):
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
+    start_time = time.time()
+    try:
+        result = execute_linkedin_chain(request.linkedin_content, request.job_description)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_linkedin", "success", latency_ms)
+    except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_linkedin", "failed", latency_ms, str(ai_error))
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+    
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_linkedin")
+    return {"linkedin_data": result}
+
+@app.post("/api/ai/outreach")
+async def outreach_generate(request: OutreachRequest, user_auth: dict = Depends(verify_user_and_tokens)):
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
+    start_time = time.time()
+    try:
+        result = execute_outreach_chain(request.resume_text, request.job_description)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_outreach", "success", latency_ms)
+    except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_outreach", "failed", latency_ms, str(ai_error))
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+    
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_outreach")
+    return {"outreach_data": result}
+
+@app.post("/api/ai/roadmap")
+async def roadmap_generate(request: RoadmapRequest, user_auth: dict = Depends(verify_user_and_tokens)):
+    # 0. Rate Limit Check
+    check_user_rate_limit(user_auth["user_id"])
+    
+    start_time = time.time()
+    try:
+        result = execute_roadmap_chain(request.resume_text, request.target_goal)
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_roadmap", "success", latency_ms)
+    except Exception as ai_error:
+        latency_ms = int((time.time() - start_time) * 1000)
+        log_generation(user_auth["user_id"], "ai_roadmap", "failed", latency_ms, str(ai_error))
+        print(f"❌ [AI ERROR]: {str(ai_error)}")
+        raise HTTPException(status_code=500, detail="AI processing failed. Your token was not deducted.")
+    
+    deduct_token_and_log(user_auth["user_id"], user_auth["current_tokens"], "ai_roadmap")
+    return {"roadmap_data": result}
+
+# ==========================================
+# 6.5 FREE TOOLS (No Auth Required)
+# ==========================================
+
+@app.post("/api/free/rewrite-bullet")
+async def rewrite_bullet(req: BulletRewriteRequest, request: Request):
+    """Free tool: Rewrite a single resume bullet using STAR/XYZ formula."""
+    ip = request.client.host if request.client else "unknown"
+    key = f"rate_limit_free_bullet:{ip}"
+    current = redis_client.get(key)
+    if current and int(current) >= 10:
+        raise HTTPException(429, "Too many free requests. Please try again in an hour.")
+    
+    pipe = redis_client.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, 3600)
+    pipe.execute()
+
+    prompt = f"""Rewrite this weak resume bullet point into a powerful, metric-driven statement using the XYZ formula (Accomplished [X] as measured by [Y], by doing [Z]).
+
+ORIGINAL BULLET: {req.bullet_text}
+TARGET ROLE (optional): {req.target_role or 'General'}
+
+Return JSON: {{ "original": "...", "rewritten": "...", "improvement_notes": "..." }}"""
+    
+    try:
+        raw = call_llm(prompt, force_json=True)
+        return parse_ai_json(raw)
+    except Exception as e:
+        print(f"❌ [AI ERROR] Free rewrite: {e}")
+        raise HTTPException(status_code=500, detail="AI processing failed.")
+
+# ==========================================
+# 6.6 REFERRAL SYSTEM
+# ==========================================
+import string
+import random
+
+def generate_random_code(length=8):
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(chars) for _ in range(length))
+
+@app.get("/api/referral/stats")
+async def get_referral_stats(user_auth: dict = Depends(verify_user_and_tokens)):
+    """Get user's referral code and stats."""
+    user_id = user_auth["user_id"]
+    
+    # Check if user has a profile with a referral code
+    profile_res = supabase.table("profiles").select("referral_code").eq("id", user_id).execute()
+    
+    referral_code = None
+    if profile_res.data and len(profile_res.data) > 0:
+        referral_code = profile_res.data[0].get("referral_code")
+        
+    if not referral_code:
+        # Generate new one
+        referral_code = generate_random_code()
+        # Upsert profile (assuming user exists in auth.users, they should have a profile, if not create one)
+        try:
+            supabase.table("profiles").upsert({
+                "id": user_id,
+                "referral_code": referral_code
+            }).execute()
+        except Exception as e:
+            print(f"Error creating referral code: {e}")
+            raise HTTPException(status_code=500, detail="Could not generate referral code")
+
+    # Get referral stats
+    referrals_res = supabase.table("referrals").select("*").eq("referrer_id", user_id).execute()
+    referrals = referrals_res.data if referrals_res.data else []
+    
+    completed_count = sum(1 for r in referrals if r.get("status") == "completed" or r.get("status") == "rewarded")
+    pending_count = sum(1 for r in referrals if r.get("status") == "pending")
+    total_earned = sum(r.get("tokens_awarded", 0) for r in referrals)
+
+    return {
+        "referral_code": referral_code,
+        "stats": {
+            "completed": completed_count,
+            "pending": pending_count,
+            "tokens_earned": total_earned,
+            "history": referrals
+        }
+    }
+
+@app.post("/api/referral/redeem")
+async def redeem_referral(code: str = Body(..., embed=True), user_auth: dict = Depends(verify_user_and_tokens)):
+    """When a new user signs up and enters a code."""
+    new_user_id = user_auth["user_id"]
+    
+    # Find referrer
+    profile_res = supabase.table("profiles").select("id").eq("referral_code", code).execute()
+    if not profile_res.data or len(profile_res.data) == 0:
+        raise HTTPException(status_code=400, detail="Invalid referral code.")
+        
+    referrer_id = profile_res.data[0]["id"]
+    if referrer_id == new_user_id:
+        raise HTTPException(status_code=400, detail="You cannot refer yourself.")
+        
+    # Check if already redeemed
+    existing = supabase.table("referrals").select("id").eq("referred_user_id", new_user_id).execute()
+    if existing.data and len(existing.data) > 0:
+        raise HTTPException(status_code=400, detail="You have already redeemed a referral code.")
+
+    # Record referral and award tokens
+    try:
+        # Record
+        supabase.table("referrals").insert({
+            "referrer_id": referrer_id,
+            "referred_email": "signup",
+            "referred_user_id": new_user_id,
+            "status": "rewarded",
+            "tokens_awarded": 5
+        }).execute()
+        
+        # Award new user
+        supabase.rpc('increment_tokens', {'user_id': new_user_id, 'amount': 5}).execute()
+        # Award referrer
+        supabase.rpc('increment_tokens', {'user_id': referrer_id, 'amount': 5}).execute()
+        
+        return {"success": True, "message": "Referral applied! Both users received 5 tokens."}
+    except Exception as e:
+        print(f"Error redeeming referral: {e}")
+        raise HTTPException(status_code=500, detail="Could not process referral.")
+
+@app.post("/api/free/resignation-letter")
+async def generate_resignation_letter(req: ResignationRequest, request: Request):
+    """Free tool: Generate a resignation letter."""
+    ip = request.client.host if request.client else "unknown"
+    key = f"rate_limit_free_resignation:{ip}"
+    current = redis_client.get(key)
+    if current and int(current) >= 5:
+        raise HTTPException(429, "Too many free requests. Please try again later.")
+    
+    pipe = redis_client.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, 3600)
+    pipe.execute()
+
+    prompt_template = load_prompt("resignation", "prompt_resignation.txt")
+    prompt = prompt_template \
+        .replace('{employee_name}', req.employee_name) \
+        .replace('{company_name}', req.company_name) \
+        .replace('{last_date}', req.last_date) \
+        .replace('{tone}', req.tone) \
+        .replace('{reason}', req.reason or 'No specific reason provided')
+
+    try:
+        raw = call_llm(prompt, force_json=True)
+        return parse_ai_json(raw)
+    except Exception as e:
+        print(f"❌ [AI ERROR] Free resignation letter: {e}")
+        raise HTTPException(status_code=500, detail="AI processing failed.")
 
 # ==========================================
 # 7. STRIPE PAYMENT & WEBHOOK ROUTES

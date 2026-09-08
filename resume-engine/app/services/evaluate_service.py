@@ -3,12 +3,13 @@ Evaluate Service — Career Catalyst Resume Engine.
 Performs ATS scoring with deterministic math-based scoring (not LLM-scored).
 """
 import json
+import hashlib
 from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
 
-from app.services.llm_client import call_llm_structured, load_prompt
+from app.services.llm_client import call_llm_structured, load_prompt, get_redis_client
 
 
 # ==========================================
@@ -36,8 +37,22 @@ class AIResumeExtractionSchema(BaseModel):
 # ==========================================
 # 2. CORE EXECUTION CHAIN
 # ==========================================
+def _hash_eval(resume: str, jd: str) -> str:
+    combined = f"{resume[:500]}||{jd[:500]}"
+    return hashlib.sha256(combined.encode()).hexdigest()
+
 def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
     try:
+        print("--- 🧠 ATS Evaluator: Checking Cache ---")
+        eval_hash = _hash_eval(resume_text, job_description)
+        redis_client = get_redis_client()
+        
+        if redis_client:
+            cached = redis_client.get(f"eval_cache:{eval_hash}")
+            if cached:
+                print("--- ⚡ ATS Evaluator: Cache Hit! Returning cached result ---")
+                return json.loads(cached)
+
         print("--- 🧠 ATS Evaluator: Extracting Semantic Data ---")
         prompt_template = load_prompt("evaluate", "prompt_evaluate.txt")
         today_date = datetime.now().strftime("%B %Y")
@@ -73,7 +88,7 @@ def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
 
         print(f"--- ✅ Evaluation Complete. Semantic ATS Score: {final_score}% ---")
 
-        return {
+        result = {
             "score": final_score,
             "dimension_scores": {
                 "keyword_match": final_score,
@@ -85,6 +100,11 @@ def execute_evaluate_chain(resume_text: str, job_description: str) -> dict:
             "missing_keywords": missing_hard + missing_soft,
             "constructive_roasts": ai_data.get("constructive_roasts", [])
         }
+        
+        if redis_client:
+            redis_client.setex(f"eval_cache:{eval_hash}", 3600, json.dumps(result))
+            
+        return result
 
     except Exception as e:
         print(f"❌ ATS Evaluation Pipeline Halted: {e}")

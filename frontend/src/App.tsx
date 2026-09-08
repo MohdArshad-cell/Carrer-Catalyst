@@ -12,6 +12,15 @@ import FeaturesPage from './pages/FeaturesPage';
 import ProtectedRoute from './components/ProtectedRoute'; 
 import AtsXrayPage from './pages/AtsXrayPage';
 import AdminDashboardPage from './pages/AdminDashboardPage'; 
+import LinkedInOptimizerPage from './pages/LinkedInOptimizerPage';
+import ColdOutreachPage from './pages/ColdOutreachPage';
+import CareerRoadmapPage from './pages/CareerRoadmapPage';
+import BulletRewriterPage from './pages/BulletRewriterPage';
+import JobFitScorePage from './pages/JobFitScorePage';
+import ResignationLetterPage from './pages/ResignationLetterPage';
+import ResumeDiffPage from './pages/ResumeDiffPage';
+import ReferralPage from './pages/ReferralPage';
+import UsageHistoryPage from './pages/UsageHistoryPage';
 import "./App.css";
 
 function App() {
@@ -30,6 +39,10 @@ function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/ats-xray" element={<AtsXrayPage />} />
+        <Route path="/bullet-rewriter" element={<BulletRewriterPage />} />
+        <Route path="/job-fit" element={<JobFitScorePage />} />
+        <Route path="/resignation-letter" element={<ResignationLetterPage />} />
+        <Route path="/resume-diff" element={<ResumeDiffPage />} />
 
         {/* =========================================
             Protected Routes - Premium SaaS Tools
@@ -62,6 +75,31 @@ function App() {
         <Route path="/mock-interview" element={
             <ProtectedRoute>
                 <MockInterviewPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/linkedin-optimizer" element={
+            <ProtectedRoute>
+                <LinkedInOptimizerPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/cold-outreach" element={
+            <ProtectedRoute>
+                <ColdOutreachPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/career-roadmap" element={
+            <ProtectedRoute>
+                <CareerRoadmapPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/referrals" element={
+            <ProtectedRoute>
+                <ReferralPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/history" element={
+            <ProtectedRoute>
+                <UsageHistoryPage />
             </ProtectedRoute>
         } />
         

@@ -1,0 +1,11 @@
+Generate a professional resignation letter.
+
+Employee Name: {employee_name}
+Company Name: {company_name}
+Last Working Day: {last_date}
+Tone: {tone}
+Reason (optional): {reason}
+
+Return JSON with exactly these two keys:
+- "subject_line": "..."
+- "letter_body": "..."

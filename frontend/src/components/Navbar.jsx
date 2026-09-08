@@ -96,6 +96,24 @@ const Navbar = () => {
                 <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
                     <Link to="/features" onClick={closeMenu}>Features</Link>
                     
+                    <div className="nav-dropdown" style={{ position: 'relative', display: 'inline-block' }}>
+                        <button className="nav-dropdown-btn" style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontWeight: '500', cursor: 'pointer', padding: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            Free Tools <span>▼</span>
+                        </button>
+                        <div className="nav-dropdown-content" style={{ position: 'absolute', top: '100%', left: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', minWidth: '200px', display: 'none', flexDirection: 'column', padding: '0.5rem', zIndex: 100 }}>
+                            <Link to="/bullet-rewriter" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>✨ Bullet Rewriter</Link>
+                            <Link to="/job-fit" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>🎯 Job Fit Score</Link>
+                            <Link to="/resignation-letter" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>✉️ Resignation Letter</Link>
+                            <Link to="/resume-diff" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>🔍 Resume Diff Tool</Link>
+                        </div>
+                    </div>
+                    
+                    {/* Add simple hover CSS for the dropdown in line for now to avoid modifying an external css file if not needed */}
+                    <style>{`
+                        .nav-dropdown:hover .nav-dropdown-content { display: flex !important; }
+                        .nav-dropdown-content a:hover { background: rgba(255,255,255,0.1); }
+                    `}</style>
+                    
                     <Link to="/pricing" style={{ color: 'var(--accent-cyan)', fontWeight: '600' }} onClick={closeMenu}>
                         Pricing
                     </Link>
@@ -120,20 +138,33 @@ const Navbar = () => {
                                 title="Click to buy more tokens"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
-                                    background: 'rgba(0, 229, 255, 0.1)',
-                                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                                    background: tokens !== null && tokens <= 1 
+                                        ? 'rgba(239, 68, 68, 0.15)' 
+                                        : tokens !== null && tokens <= 5 
+                                            ? 'rgba(245, 158, 11, 0.15)' 
+                                            : 'rgba(0, 229, 255, 0.1)',
+                                    border: `1px solid ${tokens !== null && tokens <= 1 
+                                        ? 'rgba(239, 68, 68, 0.4)' 
+                                        : tokens !== null && tokens <= 5 
+                                            ? 'rgba(245, 158, 11, 0.4)' 
+                                            : 'rgba(0, 229, 255, 0.3)'}`,
                                     padding: '0.4rem 0.8rem',
                                     borderRadius: '50px',
-                                    color: 'var(--accent-cyan)',
+                                    color: tokens !== null && tokens <= 1 
+                                        ? '#ef4444' 
+                                        : tokens !== null && tokens <= 5 
+                                            ? '#f59e0b' 
+                                            : 'var(--accent-cyan)',
                                     fontSize: '0.85rem',
                                     fontWeight: 'bold',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.3s ease',
+                                    animation: tokens !== null && tokens <= 1 ? 'pulse 2s infinite' : 'none'
                                 }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                             >
-                                <span style={{ fontSize: '1rem' }}>💎</span>
+                                <span style={{ fontSize: '1rem' }}>{tokens !== null && tokens <= 1 ? '🔴' : tokens !== null && tokens <= 5 ? '🟡' : '💎'}</span>
                                 {tokens !== null ? `${tokens} Tokens` : '...'}
                             </button>
 
@@ -143,6 +174,22 @@ const Navbar = () => {
                                 style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}
                             >
                                 Dashboard
+                            </button>
+
+                            <button 
+                                onClick={() => { navigate('/referrals'); closeMenu(); }} 
+                                className="btn-outline" 
+                                style={{ borderColor: '#eab308', color: '#eab308' }}
+                            >
+                                Refer & Earn
+                            </button>
+
+                            <button 
+                                onClick={() => { navigate('/history'); closeMenu(); }} 
+                                className="btn-outline" 
+                                style={{ borderColor: '#8b5cf6', color: '#8b5cf6' }}
+                            >
+                                History
                             </button>
                             
                             <button onClick={handleLogout} className="btn-outline logout-btn">

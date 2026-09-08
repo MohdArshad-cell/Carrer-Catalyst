@@ -135,6 +135,7 @@ class GenerationRequest(BaseModel):
 class TailorRequest(BaseModel):
     resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
     job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
+    template_name: str = Field("modern_line", validation_alias=AliasChoices('template_name', 'templateName'))
     model_config = {"extra": "ignore"}
 
 class EvaluateRequest(BaseModel):
@@ -149,4 +150,32 @@ class CoverLetterRequest(BaseModel):
 
 class InterviewRequest(BaseModel):
     job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
+    model_config = {"extra": "ignore"}
+
+class LinkedInRequest(BaseModel):
+    linkedin_content: str = Field(..., validation_alias=AliasChoices('linkedin_content', 'linkedinContent'))
+    job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
+    model_config = {"extra": "ignore"}
+
+class OutreachRequest(BaseModel):
+    resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
+    job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
+    model_config = {"extra": "ignore"}
+
+class RoadmapRequest(BaseModel):
+    resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
+    target_goal: str = Field(..., validation_alias=AliasChoices('target_goal', 'targetGoal'))
+    model_config = {"extra": "ignore"}
+
+class BulletRewriteRequest(BaseModel):
+    bullet_text: str = Field(..., validation_alias=AliasChoices('bullet_text', 'bulletText'))
+    target_role: str = Field(None, validation_alias=AliasChoices('target_role', 'targetRole'))
+    model_config = {"extra": "ignore"}
+
+class ResignationRequest(BaseModel):
+    employee_name: str = Field(..., validation_alias=AliasChoices('employee_name', 'employeeName'))
+    company_name: str = Field(..., validation_alias=AliasChoices('company_name', 'companyName'))
+    last_date: str = Field(..., validation_alias=AliasChoices('last_date', 'lastDate'))
+    tone: str = Field("professional")
+    reason: str = Field(None)
     model_config = {"extra": "ignore"}

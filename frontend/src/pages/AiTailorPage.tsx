@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import PdfUploadButton from '../components/PdfUploadButton';
+import AiLoadingState from '../components/AiLoadingState';
+import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
 import './AiTailorPage.css';
 
@@ -18,9 +21,11 @@ const loadingSteps = [
 
 const AiTailorPage: React.FC = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [resumeText, setResumeText] = useState('');
     const [jobDescription, setJobDescription] = useState('');
+    const [templateName, setTemplateName] = useState('modern_line');
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState(0);
     const [error, setError] = useState('');
@@ -52,8 +57,10 @@ const AiTailorPage: React.FC = () => {
                 if (event.target?.result) setResumeText(event.target.result as string);
             };
             reader.readAsText(file);
+        } else if (file && file.type === "application/pdf") {
+            showToast('For PDF files, please use the "Upload PDF" button above.', 'info');
         } else {
-            setError("Please drop a valid .txt or .json file for now. (PDF coming soon)");
+            showToast('Please drop a valid .txt or .json file, or use the Upload PDF button.', 'warning');
         }
     };
 
@@ -88,7 +95,7 @@ const AiTailorPage: React.FC = () => {
             const user = session?.user;
 
             if (!user || !session) {
-                setError("You must be logged in to use this AI tool.");
+                showToast('You must be logged in to use this AI tool.', 'warning');
                 setIsLoading(false);
                 setTimeout(() => navigate('/login'), 2000);
                 return;
@@ -101,7 +108,8 @@ const AiTailorPage: React.FC = () => {
 
             const payload = { 
                 resume_text: resumeText, 
-                job_description: jobDescription 
+                job_description: jobDescription,
+                template_name: templateName
             };
             
             // ✅ API CALL WITH HEADERS
@@ -128,9 +136,15 @@ const AiTailorPage: React.FC = () => {
             
             // ✅ HANDLE EMPTY TOKENS OR EXPIRED SESSIONS (401/402/403)
             if (err.response?.status === 402 || err.response?.status === 401 || err.response?.status === 403) {
-                setError("🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...");
+                showToast('🚫 Tokens Empty or Session Expired! Redirecting to Premium upgrade...', 'error');
                 setIsLoading(false);
                 setTimeout(() => navigate('/pricing'), 3000);
+                return;
+            }
+
+            if (err.response?.status === 429) {
+                showToast('Too many requests. Please wait a moment before trying again.', 'warning');
+                setIsLoading(false);
                 return;
             }
 
@@ -247,7 +261,10 @@ const AiTailorPage: React.FC = () => {
 
                 <div className="tailor-input-grid">
                     <div className="panel glass-card relative-panel">
-                        <h2 className="panel-title">Your Resume (Text or JSON)</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0 }}>Your Resume (Text, JSON, or PDF)</h2>
+                            <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} disabled={isLoading} />
+                        </div>
                         <textarea
                             className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
@@ -255,7 +272,7 @@ const AiTailorPage: React.FC = () => {
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            placeholder='Paste your raw resume text, LaTeX code, or drag & drop a .json/.txt file here...'
+                            placeholder='Paste your resume text, or click "Upload PDF" above to extract text from a PDF file...'
                             disabled={isLoading}
                         />
                     </div>
@@ -272,6 +289,25 @@ const AiTailorPage: React.FC = () => {
                 </div>
 
                 <div className="action-row text-center" style={{ margin: '3rem 0' }}>
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <label style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Resume Template
+                        </label>
+                        <select 
+                            className="premium-textarea" 
+                            style={{ padding: '0.8rem', width: '300px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', cursor: 'pointer' }}
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            disabled={isLoading}
+                        >
+                            <option value="modern_line" style={{ color: 'black' }}>Modern Line (Default)</option>
+                            <option value="classic" style={{ color: 'black' }}>Classic</option>
+                            <option value="professional" style={{ color: 'black' }}>Professional</option>
+                            <option value="elegant" style={{ color: 'black' }}>Elegant</option>
+                            <option value="one_column" style={{ color: 'black' }}>One Column</option>
+                        </select>
+                    </div>
+
                     <button 
                         className="btn-premium pulse-glow massive-btn" 
                         onClick={handleTailorResume} 
@@ -286,13 +322,7 @@ const AiTailorPage: React.FC = () => {
                 {(isLoading || latexCode || pdfData) && (
                     <div className="output-section">
                         {isLoading ? (
-                            <div className="loading-state glass-card text-center" style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}>
-                                <div className="spinner-premium"></div>
-                                <h3 className="step-text" style={{ color: 'var(--accent-cyan)', margin: '1.5rem 0' }}>{loadingSteps[loadingStep]}</h3>
-                                <div className="progress-bar-container">
-                                    <div className="progress-bar-fill" style={{ width: `${((loadingStep + 1) / 4) * 100}%` }}></div>
-                                </div>
-                            </div>
+                            <AiLoadingState steps={loadingSteps} currentStep={loadingStep} accentColor="var(--accent-cyan)" />
                         ) : (
                             <div className="results-wrapper">
                                 {metrics && (

@@ -13,6 +13,9 @@ rapidfuzz>=3.0.0
 # AI Engine (Core)
 google-generativeai>=0.4.0
 
+# PDF Processing
+pymupdf>=1.25.0
+
 # Database & Security
 supabase>=2.4.5
 PyJWT>=2.8.0
