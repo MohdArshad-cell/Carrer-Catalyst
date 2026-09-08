@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 // Added FaEye for the ATS X-Ray Vision icon, and FaLinkedin, FaPaperPlane, FaMapSigns for Phase 3 tools
-import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone, FaEye, FaLinkedin, FaPaperPlane, FaMapSigns } from "react-icons/fa6";
+import { FaWandMagicSparkles, FaFileLines, FaEnvelopeOpenText, FaFileSignature, FaMicrophone, FaEye, FaLinkedin, FaPaperPlane } from "react-icons/fa6";
+import { FaMapSigns } from "react-icons/fa";
 import ParticleBackground from '../components/ParticleBackground';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
