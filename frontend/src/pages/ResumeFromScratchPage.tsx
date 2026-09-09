@@ -280,7 +280,7 @@ const ResumeFromScratchPage: React.FC = () => {
             <div className="scratch-studio-container">
                 
                 <div className="studio-header text-center">
-                    <div className="hero-badge">
+                    <div className="glass-badge">
                         <span className="sparkle">⚙️</span> Workspace
                     </div>
                     <h1 className="animated-gradient-text">Resume Studio</h1>
@@ -290,7 +290,7 @@ const ResumeFromScratchPage: React.FC = () => {
                 <div className="scratch-builder-layout">
                     
                     {/* Sidebar Navigation Workspace */}
-                    <aside className="scratch-sidebar glass-card">
+                    <aside className="scratch-sidebar glass-card-premium">
                         <nav className="sidebar-nav">
                             {navItems.map(item => (
                                 <div key={item} className={`sidebar-item ${activeSection === item ? 'active' : ''}`} onClick={() => setActiveSection(item)}>
@@ -309,7 +309,7 @@ const ResumeFromScratchPage: React.FC = () => {
                     </aside>
 
                     {/* Main Forms Input Dashboard */}
-                    <main className="scratch-main-panel glass-card">
+                    <main className="scratch-main-panel glass-card-premium">
                         <div className="scratch-forms-area">
                             <h2 className="form-section-title">{activeSection}</h2>
                             {renderActiveForm()}
@@ -317,7 +317,7 @@ const ResumeFromScratchPage: React.FC = () => {
                     </main>
 
                     {/* Live Preview Visualization Engine */}
-                    <div className="scratch-preview-panel glass-card">
+                    <div className="scratch-preview-panel glass-card-premium">
                         <div className="scratch-preview-sticky">
                             <div className="preview-header">
                                 <h3 className="preview-title">Live Preview</h3>

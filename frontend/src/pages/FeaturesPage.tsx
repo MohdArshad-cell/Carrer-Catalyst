@@ -1,8 +1,9 @@
-import React, { useState, MouseEvent, useCallback } from 'react';
+import React, { MouseEvent, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
+import { useToast } from '../components/Toast';
 import './FeaturesPage.css';
 
 interface FeatureStat {
@@ -133,11 +134,10 @@ const featuresList: Feature[] = [
 
 const FeaturesPage: React.FC = () => {
     const navigate = useNavigate();
-    const [toastMsg, setToastMsg] = useState<string>('');
+    const { showToast } = useToast();
 
     const handleWaitlistClick = (featureName: string) => {
-        setToastMsg(`VIP Access granted for ${featureName}. We'll notify you! 🎉`);
-        setTimeout(() => setToastMsg(''), 4000);
+        showToast(`VIP Access granted for ${featureName}. We'll notify you! 🎉`, 'success');
     };
 
     // OP LEVEL: 3D Magnetic Tilt Logic
@@ -175,8 +175,8 @@ const FeaturesPage: React.FC = () => {
 
             <main className="features-main-container">
                 {/* Hero Section */}
-                <header className="features-hero fade-in">
-                    <div className="hero-badge pulse-glow" style={{ borderColor: 'rgba(0, 229, 255, 0.5)', color: '#00e5ff', background: 'rgba(0, 229, 255, 0.1)' }}>
+                <header className="features-hero animate-fade-up">
+                    <div className="glass-badge pulse-glow" style={{ borderColor: 'rgba(0, 229, 255, 0.5)', color: '#00e5ff', background: 'rgba(0, 229, 255, 0.1)' }}>
                         <span className="live-indicator"></span> 5 Core Modules Online
                     </div>
                     <h1 className="hero-title">
@@ -245,13 +245,6 @@ const FeaturesPage: React.FC = () => {
                     ))}
                 </div>
             </main>
-
-            <div className={`op-toast ${toastMsg ? 'visible' : ''}`}>
-                <div className="toast-glass">
-                    <span className="toast-icon">⚡</span>
-                    <p>{toastMsg}</p>
-                </div>
-            </div>
 
             <Footer />
         </div>

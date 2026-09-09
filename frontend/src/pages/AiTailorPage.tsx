@@ -252,7 +252,7 @@ const AiTailorPage: React.FC = () => {
             <div className="tailor-studio-container" style={{ paddingTop: '100px', paddingBottom: '3rem', maxWidth: '96%', margin: '0 auto' }}>
                 
                 <div className="studio-header text-center" style={{ marginBottom: '3rem' }}>
-                    <div className="hero-badge">
+                    <div className="glass-badge">
                         <span className="sparkle">✨</span> AI Optimizer
                     </div>
                     <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>Resume Tailor</h1>
@@ -260,13 +260,13 @@ const AiTailorPage: React.FC = () => {
                 </div>
 
                 <div className="tailor-input-grid">
-                    <div className="panel glass-card relative-panel">
+                    <div className="panel glass-card-premium relative-panel">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                             <h2 className="panel-title" style={{ margin: 0 }}>Your Resume (Text, JSON, or PDF)</h2>
                             <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} disabled={isLoading} />
                         </div>
                         <textarea
-                            className={`drop-zone premium-textarea ${isDragging ? 'drag-active' : ''}`}
+                            className={`drop-zone textarea-premium ${isDragging ? 'drag-active' : ''}`}
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
                             onDragOver={handleDragOver}
@@ -276,10 +276,10 @@ const AiTailorPage: React.FC = () => {
                             disabled={isLoading}
                         />
                     </div>
-                    <div className="panel glass-card">
+                    <div className="panel glass-card-premium">
                         <h2 className="panel-title">Target Job Description</h2>
                         <textarea
-                            className="premium-textarea"
+                            className="textarea-premium"
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             placeholder="Paste the target JD here..."
@@ -294,8 +294,8 @@ const AiTailorPage: React.FC = () => {
                             Resume Template
                         </label>
                         <select 
-                            className="premium-textarea" 
-                            style={{ padding: '0.8rem', width: '300px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', cursor: 'pointer' }}
+                            className="input-premium" 
+                            style={{ padding: '0.8rem', width: '300px', cursor: 'pointer' }}
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
                             disabled={isLoading}
@@ -326,7 +326,7 @@ const AiTailorPage: React.FC = () => {
                         ) : (
                             <div className="results-wrapper">
                                 {metrics && (
-                                    <div className="metrics-panel glass-card" style={{ marginBottom: '2rem' }}>
+                                    <div className="metrics-panel glass-card-premium" style={{ marginBottom: '2rem' }}>
                                         <div className="metrics-grid">
                                             <div className="metric-item">
                                                 <h4>Estimated ATS Match</h4>
@@ -349,7 +349,7 @@ const AiTailorPage: React.FC = () => {
                                 )}
 
                                 <div className="tailor-output-grid">
-                                    <div className="panel output-panel glass-card">
+                                    <div className="panel output-panel glass-card-premium">
                                         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                             <h3 style={{ margin: 0, color: 'var(--accent-cyan)' }}>💻 LaTeX Source</h3>
                                             <div style={{display: 'flex', gap: '10px'}}>
@@ -374,7 +374,7 @@ const AiTailorPage: React.FC = () => {
                                         />
                                     </div>
 
-                                    <div className="panel output-panel glass-card">
+                                    <div className="panel output-panel glass-card-premium">
                                         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                             <h3 style={{ margin: 0, color: 'var(--accent-purple)' }}>📄 PDF Preview</h3>
                                             <button onClick={handleDownloadPdf} className="btn-premium" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>

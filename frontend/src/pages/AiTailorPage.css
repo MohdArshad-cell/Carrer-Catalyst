@@ -16,27 +16,6 @@
 }
 
 /* === Headers & Badges === */
-.hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(0, 246, 255, 0.1);
-    color: var(--accent-cyan);
-    padding: 0.4rem 1.2rem;
-    border-radius: 50px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    border: 1px solid rgba(0, 246, 255, 0.2);
-    box-shadow: 0 0 15px rgba(0, 246, 255, 0.1);
-}
-
-.animated-gradient-text {
-    background: linear-gradient(90deg, #ffffff 0%, var(--accent-cyan) 50%, #ffffff 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 4s linear infinite;
-}
 
 /* Update this in AiTailorPage.css */
 .tailor-input-grid {
@@ -54,50 +33,12 @@
 }
 
 /* === Glass Panels & Inputs === */
-/* Update this in AiTailorPage.css */
-.glass-card {
-    background: rgba(13, 17, 28, 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    box-sizing: border-box;
-}
-
 .panel-title {
     color: var(--text-primary);
     font-size: 1.2rem;
     margin-top: 0;
     margin-bottom: 1rem;
     font-weight: 600;
-}
-
-/* Update this in AiTailorPage.css */
-.premium-textarea {
-    width: 100%;
-    min-height: 500px; /* Increased from 350px for proper UX */
-    box-sizing: border-box;
-    background-color: rgba(10, 15, 30, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    padding: 1.2rem;
-    resize: vertical;
-    transition: all 0.3s ease;
-    flex-grow: 1;
-}
-
-.premium-textarea:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 15px rgba(0, 246, 255, 0.15);
-    background-color: rgba(10, 15, 30, 0.8);
 }
 
 /* Drag & Drop Effect */
@@ -151,32 +92,6 @@
 }
 
 /* === Loading & Progress States === */
-.spinner-premium {
-    width: 60px;
-    height: 60px;
-    border: 3px solid rgba(0, 246, 255, 0.1);
-    border-top: 3px solid var(--accent-cyan);
-    border-radius: 50%;
-    animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-    margin: 0 auto;
-}
-
-.progress-bar-container {
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 1rem;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-    border-radius: 10px;
-    transition: width 0.5s ease-out;
-    box-shadow: 0 0 10px var(--accent-cyan);
-}
 
 /* === AI Metrics Panel === */
 .metrics-grid {
@@ -339,19 +254,6 @@
 
 
 /* === Animations === */
-@keyframes spin { 
-    0% { transform: rotate(0deg); } 
-    100% { transform: rotate(360deg); } 
-}
-
-@keyframes shine {
-    to { background-position: 200% center; }
-}
-
-@keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(10px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
 
 /* === Responsiveness === */
 @media (max-width: 1024px) {

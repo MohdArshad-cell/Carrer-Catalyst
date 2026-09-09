@@ -34,7 +34,7 @@ const AiToolsPage = () => {
                 
                 {/* Premium Header Section */}
                 <div className="page-header text-center">
-                    <div className="hero-badge">
+                    <div className="glass-badge" style={{ marginBottom: '1.5rem' }}>
                         <span className="sparkle">🛠️</span> Choose Your Weapon
                     </div>
                     <h1 className="hero-title animated-gradient-text">AI Toolkit Dashboard</h1>
@@ -47,7 +47,7 @@ const AiToolsPage = () => {
                 <div className="tools-bento-grid">
                     
                     {/* Tool 1: Resume From Scratch */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ResumeFromScratchPage')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ResumeFromScratchPage')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper">
@@ -60,7 +60,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 2: AI Resume Tailor */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ai-tailor')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ai-tailor')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper">
@@ -73,7 +73,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 3: ATS Score & Checker */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-evaluator')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-evaluator')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper">
@@ -86,7 +86,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 4: ATS X-Ray Vision (NEW ADDITION) */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-xray')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/ats-xray')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper" style={{ color: '#10b981' }}>
@@ -99,7 +99,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 5: AI Cover Letter Writer */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cover-letter')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cover-letter')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper">
@@ -112,7 +112,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 6: AI Mock Interview Simulator */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/mock-interview')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper">
@@ -125,7 +125,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 7: LinkedIn Optimizer */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/linkedin-optimizer')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/linkedin-optimizer')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper" style={{ color: '#0077b5' }}>
@@ -138,7 +138,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 8: Cold Outreach AI */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cold-outreach')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/cold-outreach')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper" style={{ color: '#ea580c' }}>
@@ -151,7 +151,7 @@ const AiToolsPage = () => {
                     </div>
 
                     {/* Tool 9: Career Roadmap AI */}
-                    <div className="bento-item tool-card glass-card hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/career-roadmap')}>
+                    <div className="bento-item tool-card glass-card-premium hover-glow" onMouseMove={handleMouseMove} onClick={() => navigate('/career-roadmap')}>
                         <div className="bento-glow"></div>
                         <div className="bento-content">
                             <div className="tool-icon-wrapper" style={{ color: '#22c55e' }}>
@@ -166,7 +166,7 @@ const AiToolsPage = () => {
                 </div>
 
                 {/* PREMIUM "HOW IT WORKS" SECTION */}
-                <div className="how-it-works-section glass-card" style={{ marginTop: '5rem', padding: '3rem' }}>
+                <div className="how-it-works-section glass-card-premium" style={{ marginTop: '5rem', padding: '3rem' }}>
                     <h2 className="section-title" style={{ marginBottom: '3rem' }}>A Simple Process</h2>
                     
                     <div className="timeline-premium">

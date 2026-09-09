@@ -68,7 +68,7 @@ const LoginPage = () => {
             <Navbar />
 
             <div className="login-studio-container">
-                <div className="login-glass-card">
+                <div className="glass-card-premium" style={{ width: '100%', maxWidth: '460px', position: 'relative', overflow: 'hidden' }}>
                     
                     <div className="text-center" style={{ marginBottom: '2.5rem' }}>
                         <div className="hero-badge" style={{ borderColor: '#3b82f6', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)', margin: '0 auto 1rem auto' }}>
@@ -95,7 +95,7 @@ const LoginPage = () => {
                                 type="email" 
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="login-premium-input"
+                                className="input-premium"
                                 placeholder="you@example.com"
                                 required
                             />
@@ -106,13 +106,13 @@ const LoginPage = () => {
                                 type="password" 
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="login-premium-input"
+                                className="input-premium"
                                 placeholder="••••••••"
                                 required
                             />
                         </div>
                         
-                        <button type="submit" disabled={loading} className="btn-premium login-submit-btn">
+                        <button type="submit" disabled={loading} className="btn-premium" style={{ marginTop: '10px' }}>
                             {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
                         </button>
                     </form>
