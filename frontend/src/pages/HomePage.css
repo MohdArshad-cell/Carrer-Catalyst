@@ -301,26 +301,50 @@
     opacity: 0.6;
 }
 
-.trusted-logos {
-    display: flex;
+.trusted-logos-wrapper {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+    /* Gradient mask to smoothly fade out the edges */
+    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.trusted-logos-track {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 3rem;
-    flex-wrap: wrap;
-    opacity: 0.35;
+    gap: 4rem;
+    padding-right: 4rem; /* Must match gap for seamless loop */
+    animation: scroll-l-to-r 25s linear infinite;
+}
+
+/* User specifically requested from Left to Right */
+@keyframes scroll-l-to-r {
+    0% { transform: translateX(calc(-50%)); }
+    100% { transform: translateX(0); }
 }
 
 .trusted-logo {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #94a3b8;
-    letter-spacing: 1px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    letter-spacing: 1.5px;
     user-select: none;
-    transition: opacity 0.3s;
+    opacity: 0.8; /* Brightened properly */
+    transition: opacity 0.3s ease, transform 0.3s ease, text-shadow 0.3s ease;
 }
 
-.trusted-logos:hover .trusted-logo {
-    opacity: 0.7;
+.trusted-logos-wrapper:hover .trusted-logos-track {
+    animation-play-state: paused;
+}
+
+.trusted-logo:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    text-shadow: 0 0 20px var(--accent-cyan);
+    color: #fff;
 }
 
 /* === 3. HOW IT WORKS === */
@@ -1086,7 +1110,7 @@
     .btn-hero-primary, .btn-hero-secondary { width: 100%; text-align: center; }
     .hero-stats-bar { gap: 1rem; }
     .stat-pill { min-width: 130px; padding: 1rem 1.5rem; }
-    .trusted-logos { gap: 1.5rem; }
+    .trusted-logos-track { gap: 2rem; padding-right: 2rem; }
     .trusted-logo { font-size: 1.1rem; }
     .how-section,
     .features-section,

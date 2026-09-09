@@ -225,14 +225,25 @@ const HomePage = () => {
             <section className="trusted-section">
                 <div className="container">
                     <p className="trusted-label">Trusted by job seekers targeting</p>
-                    <div className="trusted-logos">
-                        <span className="trusted-logo">Google</span>
-                        <span className="trusted-logo">Amazon</span>
-                        <span className="trusted-logo">Microsoft</span>
-                        <span className="trusted-logo">Meta</span>
-                        <span className="trusted-logo">Apple</span>
-                        <span className="trusted-logo">Netflix</span>
-                        <span className="trusted-logo">Stripe</span>
+                    <div className="trusted-logos-wrapper">
+                        <div className="trusted-logos-track">
+                            {/* Set 1 */}
+                            <span className="trusted-logo">Google</span>
+                            <span className="trusted-logo">Amazon</span>
+                            <span className="trusted-logo">Microsoft</span>
+                            <span className="trusted-logo">Meta</span>
+                            <span className="trusted-logo">Apple</span>
+                            <span className="trusted-logo">Netflix</span>
+                            <span className="trusted-logo">Stripe</span>
+                            {/* Set 2 (for infinite scroll) */}
+                            <span className="trusted-logo">Google</span>
+                            <span className="trusted-logo">Amazon</span>
+                            <span className="trusted-logo">Microsoft</span>
+                            <span className="trusted-logo">Meta</span>
+                            <span className="trusted-logo">Apple</span>
+                            <span className="trusted-logo">Netflix</span>
+                            <span className="trusted-logo">Stripe</span>
+                        </div>
                     </div>
                 </div>
             </section>
