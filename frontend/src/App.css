@@ -214,6 +214,7 @@ body {
     text-decoration: none;
     font-weight: 500;
     font-size: 1.05rem;
+    white-space: nowrap; /* Prevents text from splitting into two lines */
     transition: color 0.3s ease;
     position: relative;
     padding: 0.5rem 0;
@@ -260,6 +261,7 @@ body {
     align-items: center;
     gap: 5px;
     font-family: inherit;
+    white-space: nowrap; /* Prevents "Free Tools" from splitting */
 }
 
 .nav-dropdown-content {
@@ -276,6 +278,36 @@ body {
     flex-direction: column;
     padding: 0.5rem;
     z-index: 100;
+}
+
+/* User Profile specific dropdown */
+.profile-dropdown-content {
+    right: 0;
+    left: auto;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 0.5rem 0;
+}
+
+.dropdown-logout-btn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    padding: 0.8rem;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.dropdown-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
 }
 
 .nav-dropdown-content a {

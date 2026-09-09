@@ -114,18 +114,6 @@ const Navbar = () => {
 
                     {user ? (
                         <div className="nav-action-group">
-                            {/* ✅ Admin Button (Only visible if isAdmin is true) */}
-                            {isAdmin && (
-                                <button 
-                                    onClick={() => { navigate('/admin'); closeMenu(); }} 
-                                    className="btn-outline"
-                                    style={{ borderColor: '#f59e0b', color: '#f59e0b' }} 
-                                    title="Go to Admin Dashboard"
-                                >
-                                    Admin View
-                                </button>
-                            )}
-
                             <button 
                                 onClick={() => { navigate('/pricing'); closeMenu(); }} 
                                 className="token-pill"
@@ -142,16 +130,17 @@ const Navbar = () => {
                                         : tokens !== null && tokens <= 5 
                                             ? 'rgba(245, 158, 11, 0.4)' 
                                             : 'rgba(0, 229, 255, 0.3)'}`,
-                                    padding: '0.4rem 0.8rem',
+                                    padding: '0.4rem 1rem',
                                     borderRadius: '50px',
                                     color: tokens !== null && tokens <= 1 
                                         ? '#ef4444' 
                                         : tokens !== null && tokens <= 5 
                                             ? '#f59e0b' 
                                             : 'var(--accent-cyan)',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.9rem',
                                     fontWeight: 'bold',
                                     cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
                                     transition: 'all 0.3s ease',
                                     animation: tokens !== null && tokens <= 1 ? 'pulse 2s infinite' : 'none'
                                 }}
@@ -165,30 +154,28 @@ const Navbar = () => {
                             <button 
                                 onClick={() => { navigate('/ai-tools'); closeMenu(); }} 
                                 className="nav-cta-premium" 
-                                style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}
+                                style={{ whiteSpace: 'nowrap', background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}
                             >
                                 Dashboard
                             </button>
 
-                            <button 
-                                onClick={() => { navigate('/referrals'); closeMenu(); }} 
-                                className="btn-outline" 
-                                style={{ borderColor: '#eab308', color: '#eab308' }}
-                            >
-                                Refer & Earn
-                            </button>
-
-                            <button 
-                                onClick={() => { navigate('/history'); closeMenu(); }} 
-                                className="btn-outline" 
-                                style={{ borderColor: '#8b5cf6', color: '#8b5cf6' }}
-                            >
-                                History
-                            </button>
-                            
-                            <button onClick={handleLogout} className="btn-outline logout-btn">
-                                Logout
-                            </button>
+                            {/* USER PROFILE DROPDOWN */}
+                            <div className="nav-dropdown">
+                                <button className="nav-dropdown-btn profile-btn">
+                                    <span style={{ fontSize: '1.2rem' }}>👤</span> Account <span className="dropdown-arrow">▼</span>
+                                </button>
+                                <div className="nav-dropdown-content profile-dropdown-content">
+                                    {isAdmin && (
+                                        <Link to="/admin" onClick={closeMenu}>🛡️ Admin View</Link>
+                                    )}
+                                    <Link to="/referrals" onClick={closeMenu}>🎁 Refer & Earn</Link>
+                                    <Link to="/history" onClick={closeMenu}>🕒 History</Link>
+                                    <div className="dropdown-divider"></div>
+                                    <button onClick={handleLogout} className="dropdown-logout-btn">
+                                        🚪 Logout
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="nav-action-group">
