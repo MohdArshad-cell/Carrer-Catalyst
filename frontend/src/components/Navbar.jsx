@@ -96,23 +96,17 @@ const Navbar = () => {
                 <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
                     <Link to="/features" onClick={closeMenu}>Features</Link>
                     
-                    <div className="nav-dropdown" style={{ position: 'relative', display: 'inline-block' }}>
-                        <button className="nav-dropdown-btn" style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontWeight: '500', cursor: 'pointer', padding: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div className="nav-dropdown">
+                        <button className="nav-dropdown-btn">
                             Free Tools <span>▼</span>
                         </button>
-                        <div className="nav-dropdown-content" style={{ position: 'absolute', top: '100%', left: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', minWidth: '200px', display: 'none', flexDirection: 'column', padding: '0.5rem', zIndex: 100 }}>
-                            <Link to="/bullet-rewriter" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>✨ Bullet Rewriter</Link>
-                            <Link to="/job-fit" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>🎯 Job Fit Score</Link>
-                            <Link to="/resignation-letter" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>✉️ Resignation Letter</Link>
-                            <Link to="/resume-diff" onClick={closeMenu} style={{ padding: '0.8rem', color: 'white', textDecoration: 'none', borderRadius: '4px', display: 'block' }}>🔍 Resume Diff Tool</Link>
+                        <div className="nav-dropdown-content">
+                            <Link to="/bullet-rewriter" onClick={closeMenu}>✨ Bullet Rewriter</Link>
+                            <Link to="/job-fit" onClick={closeMenu}>🎯 Job Fit Score</Link>
+                            <Link to="/resignation-letter" onClick={closeMenu}>✉️ Resignation Letter</Link>
+                            <Link to="/resume-diff" onClick={closeMenu}>🔍 Resume Diff Tool</Link>
                         </div>
                     </div>
-                    
-                    {/* Add simple hover CSS for the dropdown in line for now to avoid modifying an external css file if not needed */}
-                    <style>{`
-                        .nav-dropdown:hover .nav-dropdown-content { display: flex !important; }
-                        .nav-dropdown-content a:hover { background: rgba(255,255,255,0.1); }
-                    `}</style>
                     
                     <Link to="/pricing" style={{ color: 'var(--accent-cyan)', fontWeight: '600' }} onClick={closeMenu}>
                         Pricing
