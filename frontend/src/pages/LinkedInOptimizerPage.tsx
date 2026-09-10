@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Linkedin, Copy, CheckCircle, Upload, ChevronDown } from 'lucide-react';
+import { Linkedin, Copy, CheckCircle, Upload, ChevronDown, Sparkles, FileText, Target, Briefcase, User, Lightbulb } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -166,10 +166,15 @@ const LinkedInOptimizerPage: React.FC = () => {
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Transform your profile into a magnet for recruiters.</p>
                 </div>
 
-                <div className="tailor-input-grid">
-                    <div className="panel glass-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h2 className="panel-title" style={{ margin: 0 }}>Current LinkedIn Profile</h2>
+                <div className="tailor-input-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', alignItems: 'stretch' }}>
+                    <div className="panel glass-card" style={{ position: 'relative', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #0077b5, transparent)' }}></div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.3rem', color: '#e2e8f0' }}>
+                                <User size={22} color="#0077b5" />
+                                Current Profile Context
+                            </h2>
                             <input 
                                 type="file" 
                                 accept="application/pdf" 
@@ -181,29 +186,41 @@ const LinkedInOptimizerPage: React.FC = () => {
                                 className="btn-outline" 
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading || isLoading}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease' }}
                             >
                                 <Upload size={16} />
-                                {isUploading ? 'Extracting...' : 'Upload PDF Export'}
+                                {isUploading ? 'Extracting...' : 'Upload PDF'}
                             </button>
                         </div>
+                        
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', marginTop: '-0.5rem' }}>
+                            Upload your LinkedIn export or paste your About and Experience sections manually.
+                        </p>
+                        
                         <textarea
                             className="premium-textarea"
                             value={linkedinContent}
                             onChange={(e) => setLinkedinContent(e.target.value)}
-                            placeholder="Upload your LinkedIn PDF export, or paste your current About section and Experience bullets here..."
+                            placeholder="Paste your content here..."
                             disabled={isLoading}
+                            style={{ minHeight: '300px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.2rem', fontSize: '0.95rem', lineHeight: '1.6' }}
                         />
                     </div>
-                    <div className="panel glass-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h2 className="panel-title" style={{ margin: 0 }}>Target Role / JD</h2>
+
+                    <div className="panel glass-card" style={{ position: 'relative', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #00a0dc, transparent)' }}></div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.3rem', color: '#e2e8f0' }}>
+                                <Target size={22} color="#00a0dc" />
+                                Target Role Alignment
+                            </h2>
                             <div style={{ position: 'relative' }}>
                                 <select 
                                     value={tone} 
                                     onChange={(e) => setTone(e.target.value)}
                                     className="premium-input"
-                                    style={{ appearance: 'none', paddingRight: '2rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '0.5rem 1rem' }}
+                                    style={{ appearance: 'none', paddingRight: '2.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', padding: '0.6rem 1.2rem', fontSize: '0.9rem', cursor: 'pointer' }}
                                     disabled={isLoading}
                                 >
                                     <option value="Professional">Professional Tone</option>
@@ -211,15 +228,21 @@ const LinkedInOptimizerPage: React.FC = () => {
                                     <option value="Executive & Bold">Executive & Bold</option>
                                     <option value="Story-Driven">Story-Driven</option>
                                 </select>
-                                <ChevronDown size={16} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255,255,255,0.5)' }} />
+                                <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--accent-cyan)' }} />
                             </div>
                         </div>
+
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', marginTop: '-0.5rem' }}>
+                            Paste the target Job Description to align your profile keywords and focus.
+                        </p>
+
                         <textarea
                             className="premium-textarea"
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
-                            placeholder="Paste the target Job Description to align your profile with..."
+                            placeholder="Paste Job Description here..."
                             disabled={isLoading}
+                            style={{ minHeight: '300px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.2rem', fontSize: '0.95rem', lineHeight: '1.6' }}
                         />
                     </div>
                 </div>
@@ -236,49 +259,66 @@ const LinkedInOptimizerPage: React.FC = () => {
                 </div>
 
                 {optimizedData && (
-                    <div className="output-section" style={{ maxWidth: '900px', margin: '0 auto' }}>
-                        <div className="panel output-panel glass-card" style={{ padding: '2rem' }}>
-                            <h3 style={{ margin: '0 0 2rem 0', color: '#0077b5', borderBottom: '1px solid rgba(0,119,181,0.2)', paddingBottom: '1rem' }}>
-                                Optimized Profile Content
+                    <div className="output-section" style={{ maxWidth: '1000px', margin: '4rem auto 0', animation: 'fadeInUp 0.6s ease-out' }}>
+                        <div className="text-center" style={{ marginBottom: '3rem' }}>
+                            <h2 style={{ fontSize: '2.5rem', color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                                <Sparkles color="#00a0dc" size={32} />
+                                Your New Profile is Ready
+                            </h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                                Copy and paste these optimized sections directly into LinkedIn.
+                            </p>
+                        </div>
+
+                        {/* HEADLINE CARD */}
+                        <div className="panel glass-card" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px', borderLeft: '4px solid #0077b5', background: 'linear-gradient(145deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 15, 0.9) 100%)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem' }}>
+                                    <Lightbulb size={24} color="#0077b5" /> Headline
+                                </h3>
+                                <button className="btn-outline" onClick={() => handleCopy(optimizedData.headline, 'headline')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', background: copiedStates['headline'] ? 'rgba(16, 185, 129, 0.2)' : 'transparent', color: copiedStates['headline'] ? '#10b981' : 'white', borderColor: copiedStates['headline'] ? '#10b981' : 'rgba(255,255,255,0.2)' }}>
+                                    {copiedStates['headline'] ? <CheckCircle size={16}/> : <Copy size={16}/>} {copiedStates['headline'] ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.4)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', color: '#f8fafc', fontSize: '1.1rem', fontWeight: 500, letterSpacing: '0.3px', lineHeight: '1.6' }}>
+                                {optimizedData.headline}
+                            </div>
+                        </div>
+
+                        {/* ABOUT SECTION CARD */}
+                        <div className="panel glass-card" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px', borderLeft: '4px solid #00a0dc', background: 'linear-gradient(145deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 15, 0.9) 100%)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem' }}>
+                                    <FileText size={24} color="#00a0dc" /> About Section
+                                </h3>
+                                <button className="btn-outline" onClick={() => handleCopy(optimizedData.about_section, 'about')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', background: copiedStates['about'] ? 'rgba(16, 185, 129, 0.2)' : 'transparent', color: copiedStates['about'] ? '#10b981' : 'white', borderColor: copiedStates['about'] ? '#10b981' : 'rgba(255,255,255,0.2)' }}>
+                                    {copiedStates['about'] ? <CheckCircle size={16}/> : <Copy size={16}/>} {copiedStates['about'] ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                            <div className="markdown-content" style={{ background: 'rgba(0,0,0,0.4)', padding: '2rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', color: '#cbd5e1', lineHeight: '1.8', fontSize: '1.05rem' }}>
+                                <ReactMarkdown>{optimizedData.about_section}</ReactMarkdown>
+                            </div>
+                        </div>
+
+                        {/* EXPERIENCE SECTION CARD */}
+                        <div className="panel glass-card" style={{ padding: '2rem', borderRadius: '16px', borderLeft: '4px solid var(--accent-cyan)', background: 'linear-gradient(145deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 15, 0.9) 100%)' }}>
+                            <h3 style={{ color: 'white', margin: '0 0 2rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem' }}>
+                                <Briefcase size={24} color="var(--accent-cyan)" /> Experience Section
                             </h3>
-
-                            <div style={{ marginBottom: '2.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h4 style={{ color: 'white', margin: 0 }}>Headline</h4>
-                                    <button className="btn-outline" onClick={() => handleCopy(optimizedData.headline, 'headline')} style={{ padding: '0.4rem 0.8rem' }}>
-                                        {copiedStates['headline'] ? <CheckCircle size={16}/> : <Copy size={16}/>} Copy
-                                    </button>
-                                </div>
-                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
-                                    {optimizedData.headline}
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '2.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h4 style={{ color: 'white', margin: 0 }}>About Section</h4>
-                                    <button className="btn-outline" onClick={() => handleCopy(optimizedData.about_section, 'about')} style={{ padding: '0.4rem 0.8rem' }}>
-                                        {copiedStates['about'] ? <CheckCircle size={16}/> : <Copy size={16}/>} Copy
-                                    </button>
-                                </div>
-                                <div className="markdown-content" style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                                    <ReactMarkdown>{optimizedData.about_section}</ReactMarkdown>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 style={{ color: 'white', marginBottom: '1.5rem' }}>Experience Section</h4>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {optimizedData.experience_bullets.map((exp, idx) => (
-                                    <div key={idx} style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                            <h5 style={{ color: 'var(--accent-cyan)', margin: 0, fontSize: '1.1rem' }}>{exp.company}</h5>
-                                            <button className="btn-outline" onClick={() => handleCopy(exp.bullets.join('\n'), `exp-${idx}`)} style={{ padding: '0.4rem 0.8rem' }}>
-                                                {copiedStates[`exp-${idx}`] ? <CheckCircle size={16}/> : <Copy size={16}/>} Copy
+                                    <div key={idx} style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', position: 'relative', overflow: 'hidden' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: 'rgba(255,255,255,0.2)' }}></div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', paddingLeft: '1rem' }}>
+                                            <h4 style={{ color: 'white', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{exp.company}</h4>
+                                            <button className="btn-outline" onClick={() => handleCopy(exp.bullets.join('\n'), `exp-${idx}`)} style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', background: copiedStates[`exp-${idx}`] ? 'rgba(16, 185, 129, 0.2)' : 'transparent', color: copiedStates[`exp-${idx}`] ? '#10b981' : 'var(--text-secondary)', borderColor: copiedStates[`exp-${idx}`] ? '#10b981' : 'rgba(255,255,255,0.2)' }}>
+                                                {copiedStates[`exp-${idx}`] ? <CheckCircle size={14}/> : <Copy size={14}/>} {copiedStates[`exp-${idx}`] ? 'Copied' : 'Copy'}
                                             </button>
                                         </div>
-                                        <ul style={{ color: 'var(--text-secondary)', paddingLeft: '1.5rem', margin: 0, lineHeight: '1.6' }}>
+                                        <ul style={{ color: '#cbd5e1', paddingLeft: '2.5rem', margin: 0, lineHeight: '1.7', fontSize: '1rem' }}>
                                             {exp.bullets.map((bullet, bIdx) => (
-                                                <li key={bIdx} style={{ marginBottom: '0.5rem' }}>{bullet}</li>
+                                                <li key={bIdx} style={{ marginBottom: '0.75rem' }}>{bullet}</li>
                                             ))}
                                         </ul>
                                     </div>
