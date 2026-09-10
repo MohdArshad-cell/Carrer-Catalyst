@@ -162,7 +162,7 @@ const LinkedInOptimizerPage: React.FC = () => {
                     <div className="hero-badge" style={{ background: 'rgba(0, 119, 181, 0.1)', color: '#0077b5', border: '1px solid rgba(0, 119, 181, 0.2)' }}>
                         <Linkedin size={16} style={{ display: 'inline', marginRight: '5px' }}/> Social Optimization
                     </div>
-                    <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem', background: 'linear-gradient(90deg, #0077b5, #00a0dc)' }}>LinkedIn Optimizer</h1>
+                    <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem', background: 'linear-gradient(90deg, #0077b5, #00a0dc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>LinkedIn Optimizer</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Transform your profile into a magnet for recruiters.</p>
                 </div>
 
