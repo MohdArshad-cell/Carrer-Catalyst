@@ -167,6 +167,7 @@ class OutreachRequest(BaseModel):
 class RoadmapRequest(BaseModel):
     resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
     target_goal: str = Field(..., validation_alias=AliasChoices('target_goal', 'targetGoal'))
+    timeframe: str = Field("12 Months", validation_alias=AliasChoices('timeframe', 'Timeframe'))
     model_config = {"extra": "ignore"}
 
 class BulletRewriteRequest(BaseModel):

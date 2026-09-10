@@ -1,21 +1,36 @@
 You are an expert career coach and technical mentor.
 
-Given the user's current resume and their 1-year to 3-year target role/industry, generate a structured, highly actionable career roadmap.
+Given the user's current resume and their target role/industry, generate a structured, highly actionable career roadmap.
 
-CURRENT RESUME:
+TIMEFRAME: {timeframe}
+
+<resume>
 {resume_text}
+</resume>
 
-TARGET GOAL:
+<target_goal>
 {target_goal}
+</target_goal>
 
-Return a JSON object with the following structure:
-- **current_assessment**: Brief 2-sentence summary of where they stand vs their goal.
-- **skills_gap**: Array of strings listing technical/soft skills they lack.
-- **milestones**: Array of exactly 3 milestone objects (e.g., 0-3 months, 3-6 months, 6-12 months). Each milestone must have:
-  - timeframe (string)
-  - focus (string)
-  - action_items (array of strings, exactly 3 actionable steps)
-- **recommended_resources**: Array of exactly 3 objects with:
-  - title (string, e.g., "AWS Solutions Architect Course")
-  - type (string, e.g., "Certification", "Book", "Project Idea")
-  - reason (string, why it helps them close the gap)
+CRITICAL JSON INSTRUCTION:
+Return ONLY a valid JSON object. For multi-line strings, you MUST use the literal characters `\n` to represent newlines. DO NOT output actual raw line breaks within strings. The response must parse correctly via python's `json.loads()`.
+
+OUTPUT FORMAT:
+{
+  "current_assessment": "Brief 2-sentence summary of where they stand vs their goal.",
+  "skills_gap": ["skill 1", "skill 2"],
+  "milestones": [
+    {
+      "timeframe": "0-3 months",
+      "focus": "focus area",
+      "action_items": ["step 1", "step 2", "step 3"]
+    }
+  ],
+  "recommended_resources": [
+    {
+      "title": "AWS Solutions Architect Course",
+      "type": "Certification",
+      "reason": "Why it helps"
+    }
+  ]
+}

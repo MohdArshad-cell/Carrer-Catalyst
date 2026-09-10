@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Map, Target, BookOpen, Clock, AlertTriangle } from 'lucide-react';
+import { Map, Target, BookOpen, Clock, AlertTriangle, Settings2, FileText } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
@@ -37,6 +37,7 @@ const CareerRoadmapPage: React.FC = () => {
 
     const [resumeText, setResumeText] = useState('');
     const [targetGoal, setTargetGoal] = useState('');
+    const [timeframe, setTimeframe] = useState('12 Months');
     const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -62,7 +63,8 @@ const CareerRoadmapPage: React.FC = () => {
 
             const payload = { 
                 resume_text: resumeText,
-                target_goal: targetGoal 
+                target_goal: targetGoal,
+                timeframe: timeframe
             };
             
             const response = await axios.post(`${API_BASE_URL}/api/ai/roadmap`, payload, {
@@ -123,14 +125,18 @@ const CareerRoadmapPage: React.FC = () => {
                     <div className="hero-badge" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
                         <Map size={16} style={{ display: 'inline', marginRight: '5px' }}/> Career Planning
                     </div>
-                    <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem', background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}>Career Roadmap AI</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Map out your exact steps to promotion or pivot over the next 12 months.</p>
+                    <h1 className="animated-gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem', background: 'linear-gradient(90deg, #22c55e, #16a34a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>Career Roadmap AI</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Map out your exact steps to promotion or pivot.</p>
                 </div>
 
-                <div className="tailor-input-grid">
-                    <div className="panel glass-card relative-panel">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <h2 className="panel-title" style={{ margin: 0 }}>Your Resume</h2>
+                <div className="tailor-input-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', alignItems: 'stretch' }}>
+                    {/* Resume Panel */}
+                    <div className="panel glass-card" style={{ position: 'relative', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #22c55e, transparent)' }}></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.3rem', color: '#e2e8f0' }}>
+                                <FileText size={22} color="#22c55e" /> Your Resume
+                            </h2>
                             <PdfUploadButton onTextExtracted={(text) => setResumeText(text)} disabled={isLoading} />
                         </div>
                         <textarea
@@ -139,16 +145,39 @@ const CareerRoadmapPage: React.FC = () => {
                             onChange={(e) => setResumeText(e.target.value)}
                             placeholder="Paste your resume or upload a PDF..."
                             disabled={isLoading}
+                            style={{ minHeight: '200px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1rem', color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.6', width: '100%', boxSizing: 'border-box' }}
                         />
                     </div>
-                    <div className="panel glass-card">
-                        <h2 className="panel-title">Target Goal (1-3 Years)</h2>
+                    
+                    {/* Target Goal Panel */}
+                    <div className="panel glass-card" style={{ position: 'relative', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #16a34a, transparent)' }}></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.3rem', color: '#e2e8f0' }}>
+                                <Target size={22} color="#16a34a" /> Target Goal
+                            </h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Settings2 size={16} color="var(--text-secondary)" />
+                                <select 
+                                    value={timeframe} 
+                                    onChange={(e) => setTimeframe(e.target.value)}
+                                    disabled={isLoading}
+                                    style={{ background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
+                                >
+                                    <option value="6 Months">6 Months</option>
+                                    <option value="12 Months">12 Months</option>
+                                    <option value="3 Years">3 Years</option>
+                                    <option value="5 Years">5 Years</option>
+                                </select>
+                            </div>
+                        </div>
                         <textarea
                             className="premium-textarea"
                             value={targetGoal}
                             onChange={(e) => setTargetGoal(e.target.value)}
                             placeholder="E.g., Transition from Frontend Developer to Full Stack Engineer, or getting promoted to Senior PM."
                             disabled={isLoading}
+                            style={{ minHeight: '200px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1rem', color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.6', width: '100%', boxSizing: 'border-box' }}
                         />
                     </div>
                 </div>

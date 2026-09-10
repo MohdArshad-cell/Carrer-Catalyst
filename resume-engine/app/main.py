@@ -497,7 +497,7 @@ async def roadmap_generate(request: RoadmapRequest, user_auth: dict = Depends(ve
     
     start_time = time.time()
     try:
-        result = execute_roadmap_chain(request.resume_text, request.target_goal)
+        result = execute_roadmap_chain(request.resume_text, request.target_goal, request.timeframe)
         latency_ms = int((time.time() - start_time) * 1000)
         log_generation(user_auth["user_id"], "ai_roadmap", "success", latency_ms)
     except Exception as ai_error:
