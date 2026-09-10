@@ -5,10 +5,28 @@ Given the candidate's resume and target company/role, generate:
 2. **cold_email** — Subject line + body. Professional, value-driven, max 200 words.
 3. **follow_up_email** — Polite 1-week follow-up. Max 100 words.
 
-CANDIDATE RESUME:
+TONE REQUIRED: {tone}
+
+<resume>
 {resume_text}
+</resume>
 
-TARGET ROLE / COMPANY:
+<job_description>
 {job_description}
+</job_description>
 
-Return a JSON object with keys: linkedin_connection_note, cold_email (with subject + body), follow_up_email (with subject + body).
+CRITICAL JSON INSTRUCTION:
+Return ONLY a valid JSON object. For multi-line strings, you MUST use the literal characters `\n` to represent newlines. DO NOT output actual raw line breaks within strings. The response must parse correctly via python's `json.loads()`.
+
+OUTPUT FORMAT:
+{
+  "linkedin_connection_note": "note...",
+  "cold_email": {
+    "subject": "subject...",
+    "body": "body with \\n\\n for paragraphs..."
+  },
+  "follow_up_email": {
+    "subject": "subject...",
+    "body": "body with \\n\\n for paragraphs..."
+  }
+}

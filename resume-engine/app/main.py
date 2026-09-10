@@ -478,7 +478,7 @@ async def outreach_generate(request: OutreachRequest, user_auth: dict = Depends(
     
     start_time = time.time()
     try:
-        result = execute_outreach_chain(request.resume_text, request.job_description)
+        result = execute_outreach_chain(request.resume_text, request.job_description, request.tone)
         latency_ms = int((time.time() - start_time) * 1000)
         log_generation(user_auth["user_id"], "ai_outreach", "success", latency_ms)
     except Exception as ai_error:

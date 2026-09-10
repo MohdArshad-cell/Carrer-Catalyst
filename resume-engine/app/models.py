@@ -161,6 +161,7 @@ class LinkedInRequest(BaseModel):
 class OutreachRequest(BaseModel):
     resume_text: str = Field(..., validation_alias=AliasChoices('resume_text', 'resumeText'))
     job_description: str = Field(..., validation_alias=AliasChoices('job_description', 'jobDescription'))
+    tone: str = Field("Professional", validation_alias=AliasChoices('tone', 'Tone'))
     model_config = {"extra": "ignore"}
 
 class RoadmapRequest(BaseModel):
