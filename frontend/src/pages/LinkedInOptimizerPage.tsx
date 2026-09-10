@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Linkedin, Copy, CheckCircle } from 'lucide-react';
+import { Linkedin, Copy, CheckCircle, Upload, ChevronDown } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ParticleBackground from '../components/ParticleBackground';
@@ -28,9 +29,12 @@ const LinkedInOptimizerPage: React.FC = () => {
 
     const [linkedinContent, setLinkedinContent] = useState('');
     const [jobDescription, setJobDescription] = useState('');
+    const [tone, setTone] = useState('Professional');
     const [optimizedData, setOptimizedData] = useState<LinkedInData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleCopy = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
@@ -39,6 +43,39 @@ const LinkedInOptimizerPage: React.FC = () => {
             setCopiedStates(prev => ({ ...prev, [id]: false }));
         }, 2000);
         showToast('Copied to clipboard!', 'success');
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            showToast('Please upload a PDF file.', 'error');
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await axios.post(`${API_BASE_URL}/api/upload-pdf`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            if (response.data.extracted_text) {
+                setLinkedinContent(response.data.extracted_text);
+                showToast('PDF extracted successfully!', 'success');
+            }
+        } catch (error: any) {
+            console.error('PDF upload failed:', error);
+            showToast(error.response?.data?.detail || 'Failed to extract text from PDF.', 'error');
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
     };
 
     const handleGenerate = async () => {
@@ -63,7 +100,8 @@ const LinkedInOptimizerPage: React.FC = () => {
 
             const payload = { 
                 linkedin_content: linkedinContent,
-                job_description: jobDescription 
+                job_description: jobDescription,
+                tone: tone
             };
             
             const response = await axios.post(`${API_BASE_URL}/api/ai/linkedin`, payload, {
@@ -130,17 +168,52 @@ const LinkedInOptimizerPage: React.FC = () => {
 
                 <div className="tailor-input-grid">
                     <div className="panel glass-card">
-                        <h2 className="panel-title">Current LinkedIn Content</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0 }}>Current LinkedIn Profile</h2>
+                            <input 
+                                type="file" 
+                                accept="application/pdf" 
+                                style={{ display: 'none' }} 
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                            />
+                            <button 
+                                className="btn-outline" 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading || isLoading}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+                            >
+                                <Upload size={16} />
+                                {isUploading ? 'Extracting...' : 'Upload PDF Export'}
+                            </button>
+                        </div>
                         <textarea
                             className="premium-textarea"
                             value={linkedinContent}
                             onChange={(e) => setLinkedinContent(e.target.value)}
-                            placeholder="Paste your current About section and Experience bullets here..."
+                            placeholder="Upload your LinkedIn PDF export, or paste your current About section and Experience bullets here..."
                             disabled={isLoading}
                         />
                     </div>
                     <div className="panel glass-card">
-                        <h2 className="panel-title">Target Role / JD</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h2 className="panel-title" style={{ margin: 0 }}>Target Role / JD</h2>
+                            <div style={{ position: 'relative' }}>
+                                <select 
+                                    value={tone} 
+                                    onChange={(e) => setTone(e.target.value)}
+                                    className="premium-input"
+                                    style={{ appearance: 'none', paddingRight: '2rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '0.5rem 1rem' }}
+                                    disabled={isLoading}
+                                >
+                                    <option value="Professional">Professional Tone</option>
+                                    <option value="Conversational">Conversational Tone</option>
+                                    <option value="Executive & Bold">Executive & Bold</option>
+                                    <option value="Story-Driven">Story-Driven</option>
+                                </select>
+                                <ChevronDown size={16} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255,255,255,0.5)' }} />
+                            </div>
+                        </div>
                         <textarea
                             className="premium-textarea"
                             value={jobDescription}
@@ -188,8 +261,8 @@ const LinkedInOptimizerPage: React.FC = () => {
                                         {copiedStates['about'] ? <CheckCircle size={16}/> : <Copy size={16}/>} Copy
                                     </button>
                                 </div>
-                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                                    {optimizedData.about_section}
+                                <div className="markdown-content" style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                                    <ReactMarkdown>{optimizedData.about_section}</ReactMarkdown>
                                 </div>
                             </div>
 
