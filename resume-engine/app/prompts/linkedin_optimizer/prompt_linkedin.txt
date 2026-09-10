@@ -29,3 +29,5 @@ You must return a valid JSON object matching this exact schema:
     }
   ]
 }
+
+CRITICAL JSON INSTRUCTION: Ensure all newlines within your string values (especially in `about_section`) are properly escaped as `\n` (e.g., "Paragraph 1\\n\\nParagraph 2"). DO NOT output literal newline characters inside strings.
